@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>UPVM - Encuesta de Calidad</title>
+    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+    <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+    <style>
+        .profile-img {
+            display: block;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #004b23;
+            margin: 10px auto;
+        }
+    </style>
+</head>
+<body>
+    <div data-role="page" id="encuesta-page">
+        <div data-role="header" data-theme="b">
+            <a href="{{ url_for('menu') }}" data-icon="home" data-ajax="false">Menú</a>
+            <h1>Evaluación UPVM</h1>
+        </div>
+
+        <div role="main" class="ui-content">
+            <img src="{{ url_for('static', filename='images/image1.jpeg') }}" alt="Mi Foto" class="profile-img">
+            <h2 style="text-align: center; color: #004b23;">Encuesta sobre la UPVM</h2>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <p style="color:red; text-align:center;">{{ message }}</p>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('encuesta') }}" method="POST" data-ajax="false">
+                
+                <!-- Pregunta 1 -->
+                <div class="ui-field-contain">
+                    <label for="pregunta1">1. ¿Cómo calificas el nivel académico de los profesores?</label>
+                    <select name="pregunta1" id="pregunta1" required>
+                        <option value="" disabled selected>Selecciona una opción</option>
+                        <option value="Excelente">Excelente</option>
+                        <option value="Bueno">Bueno</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Deficiente">Deficiente</option>
+                    </select>
+                </div>
+
+                <!-- Pregunta 2 -->
+                <fieldset data-role="controlgroup">
+                    <legend>2. ¿Consideras que las instalaciones están en buen estado?</legend>
+                    <input type="radio" name="pregunta2" id="p2_1" value="Totalmente de acuerdo" required>
+                    <label for="p2_1">Totalmente de acuerdo</label>
+                    
+                    <input type="radio" name="pregunta2" id="p2_2" value="En desacuerdo">
+                    <label for="p2_2">En desacuerdo</label>
+                    
+                    <input type="radio" name="pregunta2" id="p2_3" value="Neutral">
+                    <label for="p2_3">Neutral</label>
+                </fieldset>
+
+                <br>
+
+                <!-- Pregunta 3 -->
+                <div class="ui-field-contain">
+                    <label for="pregunta3">3. ¿Qué servicio necesita mejorar con urgencia?</label>
+                    <select name="pregunta3" id="pregunta3" required>
+                        <option value="" disabled selected>Selecciona un servicio</option>
+                        <option value="Cafetería">Cafetería</option>
+                        <option value="Biblioteca">Biblioteca</option>
+                        <option value="Servicios Escolares">Servicios Escolares</option>
+                        <option value="Conexión de Internet (Wi-Fi)">Conexión de Internet (Wi-Fi)</option>
+                    </select>
+                </div>
+
+                <!-- Pregunta 4 -->
+                <div class="ui-field-contain">
+                    <label for="pregunta4">4. ¿Qué sugerencia le darías a la administración?</label>
+                    <input type="text" name="pregunta4" id="pregunta4" placeholder="Escribe tu sugerencia..." required>
+                </div>
+
+                <!-- Pregunta 5 -->
+                <div class="ui-field-contain">
+                    <label for="pregunta5">5. ¿Recomendarías la UPVM a un amigo o familiar?</label>
+                    <select name="pregunta5" id="pregunta5" required>
+                        <option value="" disabled selected>Selecciona tu respuesta</option>
+                        <option value="Sí, definitivamente">Sí, definitivamente</option>
+                        <option value="Tal vez">Tal vez</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+
+                <br>
+                <button type="submit" class="ui-btn ui-btn-b ui-corner-all">Enviar Encuesta</button>
+            </form>
+        </div>
+
+        <div data-role="footer" data-position="fixed">
+            <h4>&copy; 2026 Actividad UPVM</h4>
+        </div>
+    </div>
+</body>
+</html>

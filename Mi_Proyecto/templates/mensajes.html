@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Servicio de Mensajería</title>
+  <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+  <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+  <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+  <style>
+    #caja-mensajes {
+      height: 350px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 12px;
+      background: #fafafa;
+      margin-bottom: 15px;
+    }
+    .msg-item {
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: #e9e9e9;
+      margin-bottom: 8px;
+      max-width: 80%;
+      word-wrap: break-word;
+    }
+    .msg-item.propio {
+      background: #004b23;
+      color: #ffffff;
+      margin-left: auto;
+    }
+    .msg-meta {
+      font-size: 0.75em;
+      opacity: 0.8;
+      margin-bottom: 3px;
+    }
+  </style>
+</head>
+<body>
+  <div data-role="page" id="chat-page">
+    <div data-role="header" data-theme="b">
+      <a href="{{ url_for('menu') }}" data-icon="home" data-ajax="false">Menú</a>
+      <h1>Mensajería</h1>
+      <span class="ui-btn-right" id="estado-chat" style="font-size: 11px; padding: 5px;">Conectando...</span>
+    </div>
+
+    <div role="main" class="ui-content">
+      <h2>Chat de la Comunidad</h2>
+
+      <div id="caja-mensajes">
+        <p id="chat-vacio" style="text-align: center; color: #888;">Cargando mensajes...</p>
+      </div>
+
+      <form id="form-chat">
+        <div class="ui-field-contain">
+          <label for="chat-usuario">Tu Nombre:</label>
+          <input type="text" id="chat-usuario" value="{{ session['usuario'] }}" maxlength="30" required>
+        </div>
+
+        <div class="ui-field-contain">
+          <label for="chat-texto">Mensaje:</label>
+          <input type="text" id="chat-texto" placeholder="Escribe un mensaje..." maxlength="500" required autocomplete="off">
+        </div>
+
+        <button type="submit" id="btn-enviar" class="ui-btn ui-btn-b ui-corner-all">Enviar Mensaje</button>
+      </form>
+    </div>
+
+    <div data-role="footer" data-position="fixed">
+      <h4>Chat en tiempo real conectado a Railway</h4>
+    </div>
+  </div>
+
+  <script>
+    const INTERVALO_MS = 2000;
+    let ultimoId = 0;
+
+    const caja = document.getElementById("caja-mensajes");
+    const vacio = document.getElementById("chat-vacio");
+    const estado = document.getElementById("estado-chat");
+    const formulario = document.getElementById("form-chat");
+    const campoUsuario = document.getElementById("chat-usuario");
+    const campoTexto = document.getElementById("chat-texto");
+    const botonEnviar = document.getElementById("btn-enviar");
+
+    function pintarMensaje(m) {
+      if (vacio) vacio.style.display = 'none';
+      const div = document.createElement("div");
+      const esPropio = m.usuario === campoUsuario.value.trim();
+      div.className = "msg-item" + (esPropio ? " propio" : "");
+
+      const meta = document.createElement("div");
+      meta.className = "msg-meta";
+      const fechaObj = m.fecha ? new Date(m.fecha) : new Date();
+      const hora = fechaObj.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+      meta.textContent = m.usuario + " · " + hora;
+
+      const cuerpo = document.createElement("div");
+      cuerpo.textContent = m.texto;
+
+      div.append(meta, cuerpo);
+      caja.appendChild(div);
+    }
+
+    async function consultarMensajes() {
+      try {
+        const resp = await fetch("/api/mensajes?desde=" + ultimoId);
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        const nuevos = await resp.json();
+        if (nuevos.length > 0) {
+          if (vacio) vacio.style.display = 'none';
+          nuevos.forEach(pintarMensaje);
+          ultimoId = nuevos[nuevos.length - 1].id;
+          caja.scrollTop = caja.scrollHeight;
+        } else if (ultimoId === 0 && vacio) {
+          vacio.textContent = "Aún no hay mensajes. ¡Sé el primero!";
+        }
+        estado.textContent = "Conectado";
+      } catch (err) {
+        estado.textContent = "Sin conexión...";
+      }
+    }
+
+    formulario.addEventListener("submit", async (evento) => {
+      evento.preventDefault();
+      const usuario = campoUsuario.value.trim();
+      const texto = campoTexto.value.trim();
+      if (!usuario || !texto) return;
+
+      botonEnviar.disabled = true;
+      try {
+        const resp = await fetch("/api/mensajes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ usuario, texto })
+        });
+        if (!resp.ok) {
+          alert("No se pudo enviar el mensaje.");
+        } else {
+          campoTexto.value = "";
+          await consultarMensajes();
+        }
+      } catch (err) {
+        alert("Error al conectar con el servidor.");
+      } finally {
+        botonEnviar.disabled = false;
+        campoTexto.focus();
+      }
+    });
+
+    consultarMensajes();
+    setInterval(consultarMensajes, INTERVALO_MS);
+  </script>
+</body>
+</html>

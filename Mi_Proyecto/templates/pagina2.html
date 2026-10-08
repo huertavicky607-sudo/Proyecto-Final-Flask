@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Página 2</title>
+	<link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+	<script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+	<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+	<style>
+		.foto-perfil {
+			display: block;
+			width: min(80vw, 280px);
+			height: min(80vw, 280px);
+			margin: 20px auto;
+			object-fit: cover;
+			border-radius: 50%;
+			border: 5px solid #2c3e50;
+		}
+	</style>
+</head>
+<body>
+	<div data-role="page" id="pagina-2">
+		<div data-role="header" data-theme="b">
+			<a href="{{ url_for('menu') }}" data-icon="home" data-ajax="false">Menú</a>
+			<h1>Página 2</h1>
+		</div>
+
+		<div role="main" class="ui-content">
+			<h2>También estoy aquí</h2>
+			<img class="foto-perfil" src="{{ url_for('static', filename='images/image3.jpeg') }}" alt="Mi foto de perfil">
+			<a href="{{ url_for('mapas') }}" class="ui-btn ui-corner-all ui-btn-b" data-ajax="false">Regresar a Mapas</a>
+		</div>
+
+		<div data-role="footer" data-position="fixed">
+			<div data-role="navbar">
+				<ul>
+					<li><a href="{{ url_for('mapas') }}" data-icon="arrow-l" data-ajax="false">Página 1</a></li>
+					<li><a href="{{ url_for('menu') }}" data-icon="home" data-ajax="false">Inicio</a></li>
+				</ul>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Panel de Ventas (CRUD)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/app.css') }}">
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+</head>
+<body>
+<div data-role="page" id="inicio">
+    <header data-role="header" class="topbar">
+        <div class="brand"><span class="brand-mark">SV</span><span>Sistema de Ventas</span></div>
+        <a href="{{ url_for('menu') }}" class="ui-btn ui-btn-inline ui-corner-all help-button" data-ajax="false">Menú Principal</a>
+        <a href="#ayuda" data-rel="dialog" class="ui-btn ui-btn-inline ui-corner-all help-button">Ayuda</a>
+    </header>
+    <main role="main" class="ui-content shell">
+        <section class="intro">
+            <div><p class="eyebrow">Panel operativo</p><h1>Controla tus ventas<br><em>con claridad.</em></h1><p class="intro-copy">Administra clientes, catálogo y movimientos desde un solo lugar.</p></div>
+            <div class="pulse"><span class="pulse-dot"></span>Base de datos conectada</div>
+        </section>
+        <div id="notice" class="notice" role="status"></div>
+        <nav class="nav-grid" aria-label="Secciones">
+            <a href="#usuarios" class="nav-card"><span class="card-number">01</span><strong>Usuarios</strong><span>Clientes y contactos</span><b>Ir al registro &#8594;</b></a>
+            <a href="#productos" class="nav-card accent"><span class="card-number">02</span><strong>Productos</strong><span>Catálogo e inventario</span><b>Ir al catálogo &#8594;</b></a>
+            <a href="#ventas" class="nav-card dark"><span class="card-number">03</span><strong>Ventas</strong><span>Operaciones y totales</span><b>Ver movimientos &#8594;</b></a>
+        </nav>
+        <section class="summary-strip"><div><small>USUARIOS ACTIVOS</small><strong id="active-users">-</strong></div><div><small>PRODUCTOS EN CATÁLOGO</small><strong id="product-count">-</strong></div><div><small>VENTAS REGISTRADAS</small><strong id="sale-count">-</strong></div></section>
+    </main>
+</div>
+
+<div data-role="page" id="usuarios"><header data-role="header" class="section-header"><a href="#inicio" data-transition="slide" class="ui-btn ui-icon-carat-l ui-btn-icon-notext">Inicio</a><h1>Usuarios</h1><a href="#usuario-form" data-rel="dialog" class="ui-btn ui-btn-inline ui-corner-all" data-mode="new">+ Nuevo</a></header><main role="main" class="ui-content shell"><div class="section-heading"><p class="eyebrow">Directorio</p><h2>Personas registradas</h2><input class="query-input" data-query="usuarios" type="search" placeholder="Consultar por nombre, correo o teléfono..."></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Estado</th><th></th></tr></thead><tbody id="usuarios-list"></tbody></table></div></main></div>
+<div data-role="page" id="productos"><header data-role="header" class="section-header"><a href="#inicio" data-transition="slide" class="ui-btn ui-icon-carat-l ui-btn-icon-notext">Inicio</a><h1>Productos</h1><a href="#producto-form" data-rel="dialog" class="ui-btn ui-btn-inline ui-corner-all" data-mode="new">+ Nuevo</a></header><main role="main" class="ui-content shell"><div class="section-heading"><p class="eyebrow">Inventario</p><h2>Catálogo de productos</h2><input class="query-input" data-query="productos" type="search" placeholder="Consultar por nombre o descripción..."></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Producto</th><th>Descripción</th><th>Precio</th><th>Stock</th><th>Estado</th><th></th></tr></thead><tbody id="productos-list"></tbody></table></div></main></div>
+<div data-role="page" id="ventas"><header data-role="header" class="section-header"><a href="#inicio" data-transition="slide" class="ui-btn ui-icon-carat-l ui-btn-icon-notext">Inicio</a><h1>Ventas</h1><a href="#venta-form" data-rel="dialog" class="ui-btn ui-btn-inline ui-corner-all" data-mode="new">+ Nueva</a></header><main role="main" class="ui-content shell"><div class="section-heading"><p class="eyebrow">Actividad</p><h2>Historial de ventas</h2><input class="query-input" data-query="ventas" type="search" placeholder="Consultar por cliente o producto..."></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>Producto</th><th>Cant.</th><th>Subtotal</th><th>Impuesto</th><th>Total</th><th></th></tr></thead><tbody id="ventas-list"></tbody></table></div></main></div>
+
+<div data-role="page" id="usuario-form" data-close-btn="right"><header data-role="header"><h1 id="usuario-form-title">Nuevo usuario</h1></header><main role="main" class="ui-content form-content"><form id="usuario-form-data"><input type="hidden" name="id_usuario"><label>Nombre<input name="nombre" required maxlength="100"></label><label>Email<input type="email" name="email" required maxlength="150"></label><label>Teléfono<input name="telefono" maxlength="20"></label><label class="check-row"><input type="checkbox" name="activo" value="1" checked> Usuario activo</label><button type="submit" class="ui-btn ui-corner-all primary">Guardar usuario</button></form></main></div>
+<div data-role="page" id="producto-form" data-close-btn="right"><header data-role="header"><h1 id="producto-form-title">Nuevo producto</h1></header><main role="main" class="ui-content form-content"><form id="producto-form-data"><input type="hidden" name="id_producto"><label>Nombre<input name="nombre" required maxlength="150"></label><label>Descripción<textarea name="descripcion" maxlength="1000"></textarea></label><div class="two-fields"><label>Precio<input type="number" name="precio" min="0" step="0.01" required></label><label>Stock<input type="number" name="stock" min="0" step="1" required></label></div><label>Imagen (nombre del archivo)<input name="imagen" maxlength="255"></label><label class="check-row"><input type="checkbox" name="activo" value="1" checked> Producto activo</label><button type="submit" class="ui-btn ui-corner-all primary">Guardar producto</button></form></main></div>
+<div data-role="page" id="venta-form" data-close-btn="right"><header data-role="header"><h1 id="venta-form-title">Nueva venta</h1></header><main role="main" class="ui-content form-content"><form id="venta-form-data"><input type="hidden" name="id_venta"><label>Usuario<select name="id_usuario" id="sale-user" required></select></label><label>Producto<select name="id_producto" id="sale-product" required></select></label><div class="two-fields"><label>Cantidad<input type="number" name="cantidad" min="1" step="1" value="1" required></label><label>Impuesto (%)<input type="number" name="tasa_impuesto" min="0" step="0.01" value="16" required></label></div><p class="form-hint">El precio y los totales se calculan desde el producto y el servidor.</p><button type="submit" class="ui-btn ui-corner-all primary">Guardar venta</button></form></main></div>
+<div data-role="dialog" id="ayuda"><header data-role="header"><h1>Ayuda rápida</h1></header><main role="main" class="ui-content"><p>Usa las tarjetas para navegar. Los registros relacionados no se pueden eliminar mientras tengan ventas asociadas.</p><a href="#" data-rel="back" class="ui-btn ui-corner-all">Cerrar</a></main></div>
+
+<script src="{{ url_for('static', filename='assets/app.js') }}"></script>
+</body>
+</html>

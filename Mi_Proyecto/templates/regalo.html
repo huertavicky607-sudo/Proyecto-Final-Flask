@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>UPVM - ¡Gracias!</title>
+    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+    <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+    <style>
+        .profile-img {
+            display: block;
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #004b23;
+            margin: 10px auto;
+        }
+        .gift-box {
+            font-size: 70px;
+            text-align: center;
+            margin: 15px 0;
+        }
+        .coupon {
+            background-color: #e8f5e9;
+            border: 2px dashed #004b23;
+            padding: 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: #004b23;
+            font-size: 1.1em;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div data-role="page" id="regalo-page">
+        <div data-role="header" data-theme="b">
+            <a href="{{ url_for('menu') }}" data-icon="home" data-ajax="false">Menú</a>
+            <h1>¡Encuesta Completada!</h1>
+        </div>
+
+        <div role="main" class="ui-content" style="text-align: center;">
+            <img src="{{ url_for('static', filename='images/image1.jpeg') }}" alt="Mi Foto" class="profile-img">
+            <h2 style="color: #004b23;">¡Muchas Gracias por tu tiempo!</h2>
+            <p>Tus respuestas se han guardado exitosamente en Railway.</p>
+            
+            <div class="gift-box">🎁</div>
+            
+            <div class="coupon">CÓDIGO: ORGULLO_UPVM</div>
+            <p style="font-size: 0.9em; color:#666; margin-top: 8px;">(Válido para un café gratis en la próxima kermés universitaria)</p>
+
+            <br>
+            <a href="{{ url_for('menu') }}" class="ui-btn ui-btn-b ui-corner-all" data-ajax="false">Volver al Menú Principal</a>
+        </div>
+
+        <div data-role="footer" data-position="fixed">
+            <h4>&copy; 2026 Actividad UPVM</h4>
+        </div>
+    </div>
+</body>
+</html>

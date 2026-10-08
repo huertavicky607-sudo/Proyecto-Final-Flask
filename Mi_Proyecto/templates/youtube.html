@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Video YouTube</title>
+    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+    <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+    <style>
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* Relación de aspecto 16:9 */
+            height: 0;
+            overflow: hidden;
+            max-width: 100%;
+            border-radius: 8px;
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div data-role="page" id="youtube-page">
+        <div data-role="header" data-theme="b">
+            <a href="{{ url_for('menu') }}" data-icon="home" data-ajax="false">Menú</a>
+            <h1>Sección YouTube</h1>
+        </div>
+
+        <div role="main" class="ui-content">
+            <h2>Reproductor de Video</h2>
+            <div class="video-container">
+                <iframe src="https://www.youtube.com/embed/{{ video_id }}" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen>
+                </iframe>
+            </div>
+        </div>
+
+        <div data-role="footer" data-position="fixed">
+            <h4>Video Multimedia</h4>
+        </div>
+    </div>
+</body>
+</html>

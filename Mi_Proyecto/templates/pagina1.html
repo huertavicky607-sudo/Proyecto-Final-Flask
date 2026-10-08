@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Mapas</title>
+	<link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+	<script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+	<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+	<style>
+		.foto-perfil {
+			display: block;
+			width: min(80vw, 280px);
+			height: min(80vw, 280px);
+			margin: 20px auto;
+			object-fit: cover;
+			border-radius: 50%;
+			border: 5px solid #2c3e50;
+		}
+
+		#mapa-js {
+			width: 100% !important;
+			height: 380px !important;
+			border-radius: 8px;
+			border: 1px solid #2c3e50;
+			margin-top: 10px;
+			display: block;
+		}
+	</style>
+</head>
+<body>
+	<div data-role="page" id="pagina-1">
+		<div data-role="header" data-theme="b">
+			<a href="{{ url_for('menu') }}" data-icon="home" data-ajax="false">Menú</a>
+			<h1>Soy Virginia</h1>
+		</div>
+
+		<div role="main" class="ui-content">
+			<h2>Mi foto</h2>
+			<img class="foto-perfil" src="{{ url_for('static', filename='images/image1.jpeg') }}" alt="Mi foto de perfil">
+
+			<hr style="margin: 25px 0; border: 0; border-top: 1px solid #ccc;">
+
+			<!-- MAPA CON IFRAME -->
+			<section id="seccion-iframe">
+				<h2>Ubicación (Mapa iFrame)</h2>
+				<p>Encuentra la ubicación en el mapa estático:</p>
+				
+				<iframe 
+					src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3758.672322049102!2d-99.1022204!3d19.6006437!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x85d1f5e27a6f2bd7%3A0x62a14e9f90f23cd!2sCoacalco%20de%20Berrioz%C3%A1bal!5e0!3m2!1ses-419!2smx!4v1700000000000!5m2!1ses-419!2smx" 
+					width="100%" 
+					height="380" 
+					style="border:0; border-radius: 8px;" 
+					allowfullscreen="" 
+					loading="lazy" 
+					referrerpolicy="no-referrer-when-downgrade">
+				</iframe>
+			</section>
+
+			<hr style="margin: 25px 0; border: 0; border-top: 1px solid #ccc;">
+
+			<!-- MAPA INTERACTIVO CON API -->
+			<section id="seccion-javascript">
+				<h2>Cómo llegar (Mapa Interactivo JS)</h2>
+				<p>Mapa interactivo generado mediante API Key:</p>
+				<div id="mapa-js"></div>
+			</section>
+
+			<br>
+			<a href="{{ url_for('presentacion') }}" class="ui-btn ui-corner-all ui-btn-b" data-ajax="false">Ir a la página 2</a>
+		</div>
+
+		<div data-role="footer" data-position="fixed">
+			<div data-role="navbar">
+				<ul>
+					<li><a href="{{ url_for('menu') }}" data-icon="home" data-ajax="false">Inicio</a></li>
+					<li><a href="{{ url_for('presentacion') }}" data-icon="arrow-r" data-ajax="false">Página 2</a></li>
+				</ul>
+			</div>
+		</div>
+
+		<script>
+			function initMap() {
+				var miUbicacion = { lat: 19.4407, lng: -99.2047 };
+
+				var map = new google.maps.Map(document.getElementById("mapa-js"), {
+					zoom: 16,
+					center: miUbicacion,
+				});
+
+				var marker = new google.maps.Marker({
+					position: miUbicacion,
+					map: map,
+					title: "Ubicación del Museo Soumaya",
+				});
+			}
+
+			$(document).on("pageshow", "#pagina-1", function() {
+				if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') {
+					initMap();
+				}
+			});
+		</script>
+
+		<!-- Recuerda colocar aquí tu API Key de Google Maps -->
+		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9L5mILVOoY3ztaxUaYEx7PB4UYV6y-M4" async defer></script>
+	</div>
+</body>
+</html>

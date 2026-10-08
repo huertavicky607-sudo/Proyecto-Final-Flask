@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Iniciar Sesión</title>
+    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+    <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+</head>
+<body>
+    <div data-role="page" id="login-page">
+        <div data-role="header" data-theme="b">
+            <h1>Acceso al Sistema</h1>
+        </div>
+
+        <div role="main" class="ui-content">
+            <h2 style="text-align: center;">Iniciar Sesión</h2>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div style="color: red; text-align: center; margin-bottom: 15px;">{{ message }}</div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('login') }}" method="POST" data-ajax="false">
+                <label for="username">Usuario:</label>
+                <input type="text" name="username" id="username" value="" placeholder="Ingresa tu usuario" required>
+
+                <label for="password">Contraseña:</label>
+                <input type="password" name="password" id="password" value="" placeholder="Ingresa tu contraseña" required>
+
+                <br>
+                <button type="submit" class="ui-btn ui-btn-b ui-corner-all">Ingresar</button>
+            </form>
+        </div>
+
+        <div data-role="footer" data-position="fixed">
+            <h4>Sistema Flask & jQuery Mobile</h4>
+        </div>
+    </div>
+</body>
+</html>
