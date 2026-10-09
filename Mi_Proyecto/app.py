@@ -103,7 +103,7 @@ USUARIOS_DEMO = {
 # ----------------------------------------------------
 # AUTENTICACIÓN
 # ----------------------------------------------------
-@app.route('/mensajes')
+@app.route('/')
 def mensajes():
     if 'usuario' not in session:
         return redirect(url_for('login'))
