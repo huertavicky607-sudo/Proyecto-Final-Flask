@@ -104,10 +104,10 @@ USUARIOS_DEMO = {
 # AUTENTICACIÓN
 # ----------------------------------------------------
 @app.route('/')
-def mensajes():
-    if 'usuario' not in session:
-        return redirect(url_for('login'))
-    return render_template('mensajes.html')
+def index():
+    if 'usuario' in session:
+        return redirect(url_for('menu'))
+    return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
