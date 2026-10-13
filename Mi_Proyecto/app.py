@@ -28,15 +28,16 @@ def init_db():
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            # 1. Tabla Encuesta UPVM
+            # 1. Tabla Encuesta UPVM (con el campo nombre incluido)
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS respuestas (
                     id INT AUTO_INCREMENT PRIMARY KEY,
-                    pregunta1 VARCHAR(50),
-                    pregunta2 VARCHAR(50),
-                    pregunta3 VARCHAR(50),
-                    pregunta4 VARCHAR(255),
-                    pregunta5 VARCHAR(50),
+                    nombre VARCHAR(100),
+                    pregunta1 VARCHAR(100),
+                    pregunta2 VARCHAR(100),
+                    pregunta3 VARCHAR(100),
+                    pregunta4 TEXT,
+                    pregunta5 VARCHAR(100),
                     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -206,6 +207,7 @@ def encuesta():
         return redirect(url_for('login'))
         
     if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
         p1 = request.form.get('pregunta1')
         p2 = request.form.get('pregunta2')
         p3 = request.form.get('pregunta3')
@@ -215,9 +217,9 @@ def encuesta():
         try:
             conn = get_db_connection()
             with conn.cursor() as cursor:
-                sql = """INSERT INTO respuestas (pregunta1, pregunta2, pregunta3, pregunta4, pregunta5) 
-                         VALUES (%s, %s, %s, %s, %s)"""
-                cursor.execute(sql, (p1, p2, p3, p4, p5))
+                sql = """INSERT INTO respuestas (nombre, pregunta1, pregunta2, pregunta3, pregunta4, pregunta5) 
+                         VALUES (%s, %s, %s, %s, %s, %s)"""
+                cursor.execute(sql, (nombre, p1, p2, p3, p4, p5))
             conn.commit()
             conn.close()
             return redirect(url_for('regalo'))
@@ -233,7 +235,7 @@ def regalo():
     return render_template('regalo.html')
 
 # ----------------------------------------------------
-# SERVICIO DE MENSAJERÍA (Corregido a 'mensajes')
+# SERVICIO DE MENSAJERÍA
 # ----------------------------------------------------
 @app.route('/mensajes')
 def mensajes():
