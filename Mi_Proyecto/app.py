@@ -6,7 +6,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'clave_secreta_desarrollo')
 
 # ----------------------------------------------------
-# CONFIGURACIÓN DE BASE DE DATOS (RAILWAY)
+# CONFIGURACIÓN DE BASE DE DATOS (RAILWAY / RENDER)
 # ----------------------------------------------------
 DB_HOST = os.getenv('DB_HOST', 'localhost')
 DB_PORT = int(os.getenv('DB_PORT', 3306))
@@ -49,7 +49,7 @@ def init_db():
                     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-            # 3. Tablas para el CRUD de Ventas
+            # 3. Tablas para el CRUD de Ventas y Usuarios
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS usuarios (
                     id_usuario INT AUTO_INCREMENT PRIMARY KEY,
@@ -57,6 +57,7 @@ def init_db():
                     email VARCHAR(150) NOT NULL UNIQUE,
                     telefono VARCHAR(20),
                     activo TINYINT(1) NOT NULL DEFAULT 1,
+                    password VARCHAR(255) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -96,15 +97,6 @@ def init_db():
 
 init_db()
 
-USUARIOS_DEMO = {
-    "virginia": "12345"
-}
-
-# ----------------------------------------------------
-# AUTENTICACIÓN
-# ----------------------------------------------------
-from werkzeug.security import generate_password_hash, check_password_hash
-
 # ----------------------------------------------------
 # RUTAS DE AUTENTICACIÓN Y REGISTRO
 # ----------------------------------------------------
@@ -119,22 +111,26 @@ def index():
 def login():
     error = None
     if request.method == 'POST':
-        correo = request.form.get('correo', '').strip()
+        email = request.form.get('correo', '').strip()
         password = request.form.get('password', '')
 
-        cursor = mysql.connection.cursor()
-        cursor.execute("SELECT id, nombre, password_hash FROM usuarios WHERE correo = %s", (correo,))
-        usuario = cursor.fetchone()
-        cursor.close()
+        try:
+            conn = get_db_connection()
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT id_usuario, nombre, password FROM usuarios WHERE email = %s", (email,))
+                usuario = cursor.fetchone()
+            conn.close()
 
-        # usuario[0]=id, usuario[1]=nombre, usuario[2]=password_hash
-        if usuario and check_password_hash(usuario[2], password):
-            session.clear()
-            session['usuario_id'] = usuario[0]
-            session['nombre'] = usuario[1]
-            return redirect(url_for('menu'))
-        else:
-            error = "Correo o contraseña incorrectos."
+            # usuario['id_usuario'], usuario['nombre'], usuario['password']
+            if usuario and usuario['password'] == password:
+                session.clear()
+                session['usuario_id'] = usuario['id_usuario']
+                session['nombre'] = usuario['nombre']
+                return redirect(url_for('menu'))
+            else:
+                error = "Correo o contraseña incorrectos."
+        except Exception as e:
+            error = f"Error en la base de datos: {e}"
 
     return render_template('login.html', error=error)
 
@@ -143,32 +139,30 @@ def registro():
     error = None
     if request.method == 'POST':
         nombre = request.form.get('nombre', '').strip()
-        correo = request.form.get('correo', '').strip()
-        sexo = request.form.get('sexo', '')
-        edad = request.form.get('edad', '')
-        carrera = request.form.get('carrera', '').strip()
+        email = request.form.get('correo', '').strip()
+        telefono = request.form.get('telefono', '').strip()
         password = request.form.get('password', '')
         confirmar = request.form.get('confirmar', '')
 
-        if not nombre or not carrera or not correo or not sexo or not edad:
-            error = "Por favor, completa todos los campos."
+        if not nombre or not email or not password:
+            error = "Por favor, completa los campos obligatorios."
         elif password != confirmar:
             error = "Las contraseñas no coinciden."
-        elif len(password) < 8:
-            error = "La contraseña debe tener al menos 8 caracteres."
+        elif len(password) < 6:
+            error = "La contraseña debe tener al menos 6 caracteres."
         else:
-            hashed_pw = generate_password_hash(password)
             try:
-                cursor = mysql.connection.cursor()
-                cursor.execute(
-                    "INSERT INTO usuarios (nombre, correo, sexo, edad, carrera, password_hash) VALUES (%s, %s, %s, %s, %s, %s)",
-                    (nombre, correo, sexo, edad, carrera, hashed_pw)
-                )
-                mysql.connection.commit()
-                cursor.close()
+                conn = get_db_connection()
+                with conn.cursor() as cursor:
+                    cursor.execute(
+                        "INSERT INTO usuarios (nombre, email, telefono, password, activo) VALUES (%s, %s, %s, %s, 1)",
+                        (nombre, email, telefono, password)
+                    )
+                conn.commit()
+                conn.close()
                 return redirect(url_for('login', registrado=1))
             except Exception as e:
-                error = "El correo ya está registrado o hubo un error en los datos."
+                error = "El correo ya está registrado o hubo un error al guardar."
 
     return render_template('registro.html', error=error)
 
@@ -182,34 +176,34 @@ def logout():
 # ----------------------------------------------------
 @app.route('/menu')
 def menu():
-    if 'usuario' not in session:
+    if 'usuario_id' not in session:
         return redirect(url_for('login'))
     return render_template('menu.html')
 
 @app.route('/mapas')
 def mapas():
-    if 'usuario' not in session:
+    if 'usuario_id' not in session:
         return redirect(url_for('login'))
     return render_template('pagina1.html')
 
 @app.route('/presentacion')
 def presentacion():
-    if 'usuario' not in session:
+    if 'usuario_id' not in session:
         return redirect(url_for('login'))
     return render_template('pagina2.html')
 
 @app.route('/youtube')
 def youtube():
-    if 'usuario' not in session:
+    if 'usuario_id' not in session:
         return redirect(url_for('login'))
-    return render_template('youtube.html', video_id="dQw4w9WgXcQ")
+    return render_template('youtube.html', video_id="vK9he9d-JN0")
 
 # ----------------------------------------------------
 # ENCUESTA UPVM
 # ----------------------------------------------------
 @app.route('/encuesta', methods=['GET', 'POST'])
 def encuesta():
-    if 'usuario' not in session:
+    if 'usuario_id' not in session:
         return redirect(url_for('login'))
         
     if request.method == 'POST':
@@ -235,7 +229,7 @@ def encuesta():
 
 @app.route('/regalo')
 def regalo():
-    if 'usuario' not in session:
+    if 'usuario_id' not in session:
         return redirect(url_for('login'))
     return render_template('regalo.html')
 
@@ -244,7 +238,7 @@ def regalo():
 # ----------------------------------------------------
 @app.route('/mensajes')
 def mensajes_view():
-    if 'usuario' not in session:
+    if 'usuario_id' not in session:
         return redirect(url_for('login'))
     return render_template('mensajes.html')
 
@@ -286,7 +280,7 @@ def crear_mensaje():
 # ----------------------------------------------------
 @app.route('/crud')
 def crud():
-    if 'usuario' not in session:
+    if 'usuario_id' not in session:
         return redirect(url_for('login'))
     return render_template('crud.html')
 
@@ -318,7 +312,7 @@ def api_crud():
                         cursor.execute('UPDATE usuarios SET nombre=%s, email=%s, telefono=%s, activo=%s WHERE id_usuario=%s',
                                        (nombre, email, telefono, activo, id_u))
                     else:
-                        cursor.execute('INSERT INTO usuarios (nombre, email, telefono, activo) VALUES (%s, %s, %s, %s)',
+                        cursor.execute('INSERT INTO usuarios (nombre, email, telefono, password, activo) VALUES (%s, %s, %s, "123456", %s)',
                                        (nombre, email, telefono, activo))
                     conn.commit()
                     conn.close()
@@ -386,7 +380,6 @@ def api_crud():
                     cantidad = int(payload.get('cantidad', 1))
                     tasa_impuesto = float(payload.get('tasa_impuesto', 16.0))
 
-                    # Obtener precio unitario del producto
                     cursor.execute('SELECT precio FROM productos WHERE id_producto=%s', (id_p,))
                     prod = cursor.fetchone()
                     if not prod:
