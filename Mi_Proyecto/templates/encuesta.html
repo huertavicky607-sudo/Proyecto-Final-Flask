@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
     <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
     <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
-<style>
+    <style>
         .profile-img {
             display: block;
             width: 110px;
@@ -18,29 +18,30 @@
             margin: 15px auto 10px auto;
         }
 
-        /* Estilo responsivo para escritorio/laptop con scroll interno */
+        /* Estilo responsivo para escritorio/laptop con scroll interno optimizado */
         @media (min-width: 768px) {
             body {
                 background-color: #f4f6f9;
                 display: flex;
                 justify-content: center;
-                align-items: flex-start;
+                align-items: center;
                 min-height: 100vh;
                 margin: 0;
             }
             .ui-page {
                 max-width: 750px !important;
                 width: 100% !important;
-                margin: 30px auto !important;
+                margin: 20px auto !important;
                 border-radius: 12px;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.1);
                 position: relative !important;
                 display: block !important;
-                max-height: 90vh;
-                overflow-y: auto !important; /* Habilita el desplazamiento vertical */
+                max-height: 85vh !important;
+                overflow-y: auto !important; /* Desplazamiento vertical interno */
             }
             .ui-content {
-                padding-top: 25px !important;
+                padding-top: 20px !important;
+                padding-bottom: 50px !important; /* Espacio extra para que el botón de enviar se vea completo */
             }
         }
     </style>
@@ -118,4 +119,18 @@
                         <option value="" disabled selected>Selecciona tu respuesta</option>
                         <option value="Sí, definitivamente">Sí, definitivamente</option>
                         <option value="Tal vez">Tal vez</option>
-                        <option value="No">No
+                        <option value="No">No</option>
+                    </select>
+                </div>
+
+                <br><br>
+                <button type="submit" class="ui-btn ui-btn-b ui-corner-all">Enviar Encuesta</button>
+            </form>
+        </div>
+
+        <div data-role="footer">
+            <h4>&copy; 2026 Actividad UPVM</h4>
+        </div>
+    </div>
+</body>
+</html>
