@@ -103,35 +103,78 @@ USUARIOS_DEMO = {
 # ----------------------------------------------------
 # AUTENTICACIÓN
 # ----------------------------------------------------
+from werkzeug.security import generate_password_hash, check_password_hash
+
+# ----------------------------------------------------
+# RUTAS DE AUTENTICACIÓN Y REGISTRO
+# ----------------------------------------------------
+
 @app.route('/')
 def index():
-    if 'usuario' in session:
+    if 'usuario_id' in session:
         return redirect(url_for('menu'))
     return redirect(url_for('login'))
 
-@app.route('/mensajes')
-def mensajes():
-    if 'usuario' not in session:
-        return redirect(url_for('login'))
-    return render_template('mensajes.html')
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    error = None
     if request.method == 'POST':
-        usuario = request.form.get('username')
-        password = request.form.get('password')
+        correo = request.form.get('correo', '').strip()
+        password = request.form.get('password', '')
 
-        if usuario in USUARIOS_DEMO and USUARIOS_DEMO[usuario] == password:
-            session['usuario'] = usuario
+        cursor = mysql.connection.cursor()
+        cursor.execute("SELECT id, nombre, password_hash FROM usuarios WHERE correo = %s", (correo,))
+        usuario = cursor.fetchone()
+        cursor.close()
+
+        # usuario[0]=id, usuario[1]=nombre, usuario[2]=password_hash
+        if usuario and check_password_hash(usuario[2], password):
+            session.clear()
+            session['usuario_id'] = usuario[0]
+            session['nombre'] = usuario[1]
             return redirect(url_for('menu'))
         else:
-            flash('Usuario o contraseña incorrectos', 'error')
+            error = "Correo o contraseña incorrectos."
 
-    return render_template('login.html')
+    return render_template('login.html', error=error)
+
+@app.route('/registro', methods=['GET', 'POST'])
+def registro():
+    error = None
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        correo = request.form.get('correo', '').strip()
+        sexo = request.form.get('sexo', '')
+        edad = request.form.get('edad', '')
+        carrera = request.form.get('carrera', '').strip()
+        password = request.form.get('password', '')
+        confirmar = request.form.get('confirmar', '')
+
+        if not nombre or not carrera or not correo or not sexo or not edad:
+            error = "Por favor, completa todos los campos."
+        elif password != confirmar:
+            error = "Las contraseñas no coinciden."
+        elif len(password) < 8:
+            error = "La contraseña debe tener al menos 8 caracteres."
+        else:
+            hashed_pw = generate_password_hash(password)
+            try:
+                cursor = mysql.connection.cursor()
+                cursor.execute(
+                    "INSERT INTO usuarios (nombre, correo, sexo, edad, carrera, password_hash) VALUES (%s, %s, %s, %s, %s, %s)",
+                    (nombre, correo, sexo, edad, carrera, hashed_pw)
+                )
+                mysql.connection.commit()
+                cursor.close()
+                return redirect(url_for('login', registrado=1))
+            except Exception as e:
+                error = "El correo ya está registrado o hubo un error en los datos."
+
+    return render_template('registro.html', error=error)
 
 @app.route('/logout')
 def logout():
-    session.pop('usuario', None)
+    session.clear()
     return redirect(url_for('login'))
 
 # ----------------------------------------------------
