@@ -121,7 +121,6 @@ def login():
                 usuario = cursor.fetchone()
             conn.close()
 
-            # usuario['id_usuario'], usuario['nombre'], usuario['password']
             if usuario and usuario['password'] == password:
                 session.clear()
                 session['usuario_id'] = usuario['id_usuario']
@@ -172,7 +171,7 @@ def logout():
     return redirect(url_for('login'))
 
 # ----------------------------------------------------
-# MENÚ Y SECCIONES
+# MENÚ Y SECCIONES (Corregido a 'usuario_id')
 # ----------------------------------------------------
 @app.route('/menu')
 def menu():
