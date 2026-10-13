@@ -26,27 +26,16 @@
                 <input type="text" name="nombre" id="nombre" maxlength="100" required>
 
                 <label for="correo">Correo electrónico:</label>
-                <input type="email" name="correo" id="correo" maxlength="150" required>
+                <input type="email" name="correo" id="correo" maxlength="150" required placeholder="ejemplo@correo.com">
 
-                <label for="sexo">Sexo:</label>
-                <select name="sexo" id="sexo" required>
-                    <option value="">Selecciona...</option>
-                    <option value="Hombre">Hombre</option>
-                    <option value="Mujer">Mujer</option>
-                    <option value="Otro">Otro</option>
-                </select>
+                <label for="telefono">Teléfono:</label>
+                <input type="text" name="telefono" id="telefono" maxlength="20" required placeholder="555-0000">
 
-                <label for="edad">Edad:</label>
-                <input type="number" name="edad" id="edad" min="15" max="99" required>
-
-                <label for="carrera">Carrera / Programa:</label>
-                <input type="text" name="carrera" id="carrera" maxlength="100" required>
-
-                <label for="password">Contraseña (mínimo 8 caracteres):</label>
-                <input type="password" name="password" id="password" minlength="8" required>
+                <label for="password">Contraseña (mínimo 6 caracteres):</label>
+                <input type="password" name="password" id="password" minlength="6" required>
 
                 <label for="confirmar">Confirmar contraseña:</label>
-                <input type="password" name="password" id="confirmar" minlength="8" required>
+                <input type="password" name="confirmar" id="confirmar" minlength="6" required>
 
                 <button type="submit" class="ui-btn ui-btn-b ui-corner-all">Registrarme</button>
             </form>
