@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
     <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
     <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
-    <style>
+<style>
         .profile-img {
             display: block;
             width: 110px;
@@ -18,18 +18,26 @@
             margin: 15px auto 10px auto;
         }
 
-        /* Estilo responsivo para escritorio/laptop */
+        /* Estilo responsivo para escritorio/laptop con scroll interno */
         @media (min-width: 768px) {
             body {
                 background-color: #f4f6f9;
+                display: flex;
+                justify-content: center;
+                align-items: flex-start;
+                min-height: 100vh;
+                margin: 0;
             }
             .ui-page {
                 max-width: 750px !important;
-                margin: 40px auto !important;
+                width: 100% !important;
+                margin: 30px auto !important;
                 border-radius: 12px;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.1);
                 position: relative !important;
                 display: block !important;
+                max-height: 90vh;
+                overflow-y: auto !important; /* Habilita el desplazamiento vertical */
             }
             .ui-content {
                 padding-top: 25px !important;
