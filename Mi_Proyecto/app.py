@@ -1,6 +1,7 @@
 import os
 import pymysql
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'clave_secreta_desarrollo')
@@ -28,7 +29,7 @@ def init_db():
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            # 1. Tabla Encuesta UPVM (con el campo nombre incluido)
+            # 1. Tabla Encuesta UPVM
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS respuestas (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -99,7 +100,7 @@ def init_db():
 init_db()
 
 # ----------------------------------------------------
-# RUTAS DE AUTENTICACIÓN Y REGISTRO
+# RUTAS DE AUTENTICACIÓN Y REGISTRO (CON HASH)
 # ----------------------------------------------------
 
 @app.route('/')
@@ -122,7 +123,8 @@ def login():
                 usuario = cursor.fetchone()
             conn.close()
 
-            if usuario and usuario['password'] == password:
+            # Verificamos usando check_password_hash comparando la contraseña escrita con el hash guardado
+            if usuario and check_password_hash(usuario['password'], password):
                 session.clear()
                 session['usuario_id'] = usuario['id_usuario']
                 session['nombre'] = usuario['nombre']
@@ -152,11 +154,14 @@ def registro():
             error = "La contraseña debe tener al menos 6 caracteres."
         else:
             try:
+                # Generamos el hash seguro de la contraseña antes de guardarla
+                hashed_password = generate_password_hash(password)
+
                 conn = get_db_connection()
                 with conn.cursor() as cursor:
                     cursor.execute(
                         "INSERT INTO usuarios (nombre, email, telefono, password, activo) VALUES (%s, %s, %s, %s, 1)",
-                        (nombre, email, telefono, password)
+                        (nombre, email, telefono, hashed_password)
                     )
                 conn.commit()
                 conn.close()
@@ -328,8 +333,10 @@ def api_crud():
                         cursor.execute('UPDATE usuarios SET nombre=%s, email=%s, telefono=%s, activo=%s WHERE id_usuario=%s',
                                        (nombre, email, telefono, activo, id_u))
                     else:
-                        cursor.execute('INSERT INTO usuarios (nombre, email, telefono, password, activo) VALUES (%s, %s, %s, "123456", %s)',
-                                       (nombre, email, telefono, activo))
+                        # Si se crea un usuario desde el CRUD, también guardamos una contraseña por defecto hasheada ('123456')
+                        default_pwd = generate_password_hash("123456")
+                        cursor.execute('INSERT INTO usuarios (nombre, email, telefono, password, activo) VALUES (%s, %s, %s, %s, %s)',
+                                       (nombre, email, telefono, default_pwd, activo))
                     conn.commit()
                     conn.close()
                     return jsonify({'message': 'Usuario guardado correctamente.'})
