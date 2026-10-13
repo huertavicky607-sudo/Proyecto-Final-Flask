@@ -17,6 +17,26 @@
             border: 3px solid #004b23;
             margin: 10px auto;
         }
+
+        /* Estilo para ordenar y centrar la encuesta en laptops y pantallas grandes */
+        @media (min-width: 768px) {
+            body {
+                background-color: #f4f6f9;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                margin: 0;
+            }
+            .ui-page {
+                max-width: 750px !important;
+                margin: 30px auto !important;
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                position: relative !important;
+                display: block !important;
+            }
+        }
     </style>
 </head>
 <body>
