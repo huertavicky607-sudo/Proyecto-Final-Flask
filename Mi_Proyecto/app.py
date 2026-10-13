@@ -178,7 +178,22 @@ def logout():
 def menu():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-    return render_template('menu.html')
+    
+    nombre_usuario = session.get('nombre', '')
+    if not nombre_usuario:
+        try:
+            conn = get_db_connection()
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT nombre FROM usuarios WHERE id_usuario = %s", (session['usuario_id'],))
+                res = cursor.fetchone()
+                if res:
+                    nombre_usuario = res['nombre']
+                    session['nombre'] = nombre_usuario
+            conn.close()
+        except:
+            nombre_usuario = "Usuario"
+
+    return render_template('menu.html', nombre=nombre_usuario)
 
 @app.route('/mapas')
 def mapas():
