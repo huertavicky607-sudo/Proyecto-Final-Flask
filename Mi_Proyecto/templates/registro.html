@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Registro de Usuario</title>
+    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+    <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+</head>
+<body>
+    <div data-role="page" id="registro-page">
+        <div data-role="header" data-theme="b">
+            <h1>Crear Cuenta</h1>
+        </div>
+
+        <div role="main" class="ui-content">
+            {% if error %}
+                <div style="background-color: #fee2e2; color: #991b1b; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;">
+                    {{ error }}
+                </div>
+            {% endif %}
+
+            <form action="{{ url_for('registro') }}" method="post" data-ajax="false">
+                <label for="nombre">Nombre completo:</label>
+                <input type="text" name="nombre" id="nombre" maxlength="100" required>
+
+                <label for="correo">Correo electrónico:</label>
+                <input type="email" name="correo" id="correo" maxlength="150" required>
+
+                <label for="sexo">Sexo:</label>
+                <select name="sexo" id="sexo" required>
+                    <option value="">Selecciona...</option>
+                    <option value="Hombre">Hombre</option>
+                    <option value="Mujer">Mujer</option>
+                    <option value="Otro">Otro</option>
+                </select>
+
+                <label for="edad">Edad:</label>
+                <input type="number" name="edad" id="edad" min="15" max="99" required>
+
+                <label for="carrera">Carrera / Programa:</label>
+                <input type="text" name="carrera" id="carrera" maxlength="100" required>
+
+                <label for="password">Contraseña (mínimo 8 caracteres):</label>
+                <input type="password" name="password" id="password" minlength="8" required>
+
+                <label for="confirmar">Confirmar contraseña:</label>
+                <input type="password" name="password" id="confirmar" minlength="8" required>
+
+                <button type="submit" class="ui-btn ui-btn-b ui-corner-all">Registrarme</button>
+            </form>
+
+            <div style="margin-top: 20px; text-align: center;">
+                <a href="{{ url_for('login') }}" class="ui-btn ui-corner-all" data-ajax="false">¿Ya tienes cuenta? Inicia sesión</a>
+            </div>
+        </div>
+
+        <div data-role="footer" data-position="fixed" data-theme="b">
+            <h4>Registro de Usuarios</h4>
+        </div>
+    </div>
+</body>
+</html>
