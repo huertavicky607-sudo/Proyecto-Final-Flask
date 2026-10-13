@@ -171,7 +171,7 @@ def logout():
     return redirect(url_for('login'))
 
 # ----------------------------------------------------
-# MENÚ Y SECCIONES (Corregido a 'usuario_id')
+# MENÚ Y SECCIONES
 # ----------------------------------------------------
 @app.route('/menu')
 def menu():
@@ -233,10 +233,10 @@ def regalo():
     return render_template('regalo.html')
 
 # ----------------------------------------------------
-# SERVICIO DE MENSAJERÍA
+# SERVICIO DE MENSAJERÍA (Corregido a 'mensajes')
 # ----------------------------------------------------
 @app.route('/mensajes')
-def mensajes_view():
+def mensajes():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
     return render_template('mensajes.html')
