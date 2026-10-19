@@ -91,6 +91,18 @@ def init_db():
                     FOREIGN KEY (id_producto) REFERENCES productos(id_producto)
                 )
             """)
+            # 4. Tabla para Seguimiento de Cookies y Eventos
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS eventos (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    visitante_id VARCHAR(100),
+                    usuario_id INT,
+                    tipo VARCHAR(50),
+                    pagina VARCHAR(255),
+                    detalle TEXT,
+                    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
         conn.commit()
         conn.close()
         print("Estructura de Base de Datos inicializada correctamente.")
@@ -100,7 +112,7 @@ def init_db():
 init_db()
 
 # ----------------------------------------------------
-# RUTAS DE AUTENTICACIÓN Y REGISTRO (CON HASH)
+# RUTAS DE AUTENTICACIÓN Y REGISTRO
 # ----------------------------------------------------
 
 @app.route('/')
@@ -121,16 +133,26 @@ def login():
             with conn.cursor() as cursor:
                 cursor.execute("SELECT id_usuario, nombre, password FROM usuarios WHERE email = %s", (email,))
                 usuario = cursor.fetchone()
-            conn.close()
 
-            # Verificamos usando check_password_hash comparando la contraseña escrita con el hash guardado
-            if usuario and check_password_hash(usuario['password'], password):
-                session.clear()
-                session['usuario_id'] = usuario['id_usuario']
-                session['nombre'] = usuario['nombre']
-                return redirect(url_for('menu'))
-            else:
-                error = "Correo o contraseña incorrectos."
+                if usuario and check_password_hash(usuario['password'], password):
+                    session.clear()
+                    session['usuario_id'] = usuario['id_usuario']
+                    session['nombre'] = usuario['nombre']
+
+                    # VINCULACIÓN DE COOKIE: asociar historial de la cookie al usuario
+                    visitante_cookie = request.cookies.get('visitante_id')
+                    if visitante_cookie:
+                        cursor.execute(
+                            "UPDATE eventos SET usuario_id = %s WHERE visitante_id = %s AND usuario_id IS NULL",
+                            (usuario['id_usuario'], visitante_cookie)
+                        )
+                        conn.commit()
+
+                    conn.close()
+                    return redirect(url_for('menu'))
+                else:
+                    error = "Correo o contraseña incorrectos."
+            conn.close()
         except Exception as e:
             error = f"Error en la base de datos: {e}"
 
@@ -154,9 +176,7 @@ def registro():
             error = "La contraseña debe tener al menos 6 caracteres."
         else:
             try:
-                # Generamos el hash seguro de la contraseña antes de guardarla
                 hashed_password = generate_password_hash(password)
-
                 conn = get_db_connection()
                 with conn.cursor() as cursor:
                     cursor.execute(
@@ -175,6 +195,86 @@ def registro():
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
+# ----------------------------------------------------
+# API DE TRACKER DE COOKIES
+# ----------------------------------------------------
+@app.post('/api/tracker')
+def api_tracker():
+    datos = request.get_json(silent=True) or {}
+    visitante_id = datos.get('visitante_id')
+    tipo = datos.get('tipo', 'vista')
+    pagina = datos.get('pagina', '')
+    detalle = datos.get('detalle', '')
+    usuario_id = session.get('usuario_id')
+
+    if not visitante_id:
+        return jsonify({'error': 'Falta cookie visitante_id'}), 400
+
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO eventos (visitante_id, usuario_id, tipo, pagina, detalle) VALUES (%s, %s, %s, %s, %s)",
+                (visitante_id, usuario_id, tipo, pagina, detalle)
+            )
+        conn.commit()
+        conn.close()
+        return jsonify({'status': 'ok'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ----------------------------------------------------
+# PANEL DE MÉTRICAS Y ACTIVIDAD RECIENTE
+# ----------------------------------------------------
+@app.route('/metrics')
+def metrics():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            # Estadísticas
+            cursor.execute("SELECT COUNT(DISTINCT visitante_id) AS visitantes FROM eventos")
+            v_count = cursor.fetchone()['visitantes']
+
+            cursor.execute("SELECT COUNT(DISTINCT visitante_id) AS sesiones FROM eventos WHERE usuario_id IS NOT NULL")
+            s_count = cursor.fetchone()['sesiones']
+
+            cursor.execute("SELECT COUNT(DISTINCT usuario_id) AS identificados FROM eventos WHERE usuario_id IS NOT NULL")
+            u_count = cursor.fetchone()['identificados']
+
+            cursor.execute("SELECT COUNT(*) AS vistas FROM eventos WHERE tipo = 'vista'")
+            vistas_count = cursor.fetchone()['vistas']
+
+            cursor.execute("SELECT COUNT(*) AS clics FROM eventos WHERE tipo = 'clic'")
+            clics_count = cursor.fetchone()['clics']
+
+            # Actividad reciente
+            sql_eventos = """
+                SELECT DATE_FORMAT(e.fecha, '%%H:%%i:%%s') AS hora,
+                       COALESCE(u.nombre, 'Anónimo') AS quien,
+                       e.tipo, e.pagina, e.detalle
+                FROM eventos e
+                LEFT JOIN usuarios u ON u.id_usuario = e.usuario_id
+                ORDER BY e.id DESC LIMIT 25
+            """
+            cursor.execute(sql_eventos)
+            lista_eventos = cursor.fetchall()
+
+        conn.close()
+        stats = {
+            'visitantes': v_count,
+            'sesiones': s_count,
+            'identificados': u_count,
+            'vistas': vistas_count,
+            'clics': clics_count
+        }
+        return render_template('metrics.html', stats=stats, eventos=lista_eventos)
+    except Exception as e:
+        flash(f"Error al cargar métricas: {e}", "error")
+        return redirect(url_for('menu'))
 
 # ----------------------------------------------------
 # MENÚ Y SECCIONES
@@ -314,7 +414,6 @@ def api_crud():
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            # ENTIDAD: USUARIOS
             if entity == 'usuarios':
                 if action == 'list':
                     cursor.execute('SELECT id_usuario, nombre, email, telefono, activo FROM usuarios ORDER BY id_usuario DESC')
@@ -333,7 +432,6 @@ def api_crud():
                         cursor.execute('UPDATE usuarios SET nombre=%s, email=%s, telefono=%s, activo=%s WHERE id_usuario=%s',
                                        (nombre, email, telefono, activo, id_u))
                     else:
-                        # Si se crea un usuario desde el CRUD, también guardamos una contraseña por defecto hasheada ('123456')
                         default_pwd = generate_password_hash("123456")
                         cursor.execute('INSERT INTO usuarios (nombre, email, telefono, password, activo) VALUES (%s, %s, %s, %s, %s)',
                                        (nombre, email, telefono, default_pwd, activo))
@@ -348,7 +446,6 @@ def api_crud():
                     conn.close()
                     return jsonify({'message': 'Usuario eliminado correctamente.'})
 
-            # ENTIDAD: PRODUCTOS
             elif entity == 'productos':
                 if action == 'list':
                     cursor.execute('SELECT id_producto, nombre, descripcion, precio, stock, imagen, activo FROM productos ORDER BY id_producto DESC')
@@ -382,7 +479,6 @@ def api_crud():
                     conn.close()
                     return jsonify({'message': 'Producto eliminado correctamente.'})
 
-            # ENTIDAD: VENTAS
             elif entity == 'ventas':
                 if action == 'list':
                     sql = """SELECT v.id_venta, v.id_usuario, v.id_producto, u.nombre AS usuario, p.nombre AS producto, 

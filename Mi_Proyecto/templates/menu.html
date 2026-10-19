@@ -26,6 +26,7 @@
                 <a href="{{ url_for('encuesta') }}" class="ui-btn ui-corner-all" data-ajax="false">📝 Encuesta de Satisfacción</a>
                 <a href="{{ url_for('mensajes') }}" class="ui-btn ui-corner-all" data-ajax="false">💬 Servicio de Mensajería</a>
                 <a href="{{ url_for('crud') }}" class="ui-btn ui-corner-all ui-btn-b" data-ajax="false">⚙️ Gestión (CRUD)</a>
+                <a href="{{ url_for('metrics') }}" class="ui-btn ui-corner-all ui-btn-b" data-ajax="false">📊 Métricas y Rastreo de Cookies</a>
             </div>
         </div>
 
@@ -33,5 +34,6 @@
             <h4>Panel General de Navegación</h4>
         </div>
     </div>
+    <script src="{{ url_for('static', filename='assets/tracker.js') }}"></script>
 </body>
 </html>

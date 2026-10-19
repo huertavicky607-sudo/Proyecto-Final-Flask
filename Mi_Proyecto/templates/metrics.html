@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Métricas del Sitio</title>
+    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+    <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+    <style>
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 20px 0; }
+        .metric-card { background: #f0f4f9; border-radius: 8px; padding: 16px; text-align: center; }
+        .metric-card h3 { font-size: 2rem; margin: 0; color: #1a73e8; }
+        .metric-card p { margin: 4px 0 0; font-size: 0.85rem; color: #5f6368; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+        th { background: #f8f9fa; color: #5f6368; }
+    </style>
+</head>
+<body>
+    <div data-role="page" id="metricas-page">
+        <div data-role="header" data-theme="b">
+            <a href="{{ url_for('menu') }}" data-icon="back" data-ajax="false">Menú</a>
+            <h1>Métricas del sitio</h1>
+        </div>
+
+        <div role="main" class="ui-content">
+            <h2>Métricas del sitio</h2>
+            <p>Se actualiza en tiempo real. Actividad rastreada con cookies.</p>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h3>{{ stats.visitantes }}</h3>
+                    <p>Visitantes únicos</p>
+                </div>
+                <div class="metric-card">
+                    <h3>{{ stats.sesiones }}</h3>
+                    <p>Sesiones</p>
+                </div>
+                <div class="metric-card">
+                    <h3>{{ stats.identificados }}</h3>
+                    <p>Usuarios identificados</p>
+                </div>
+                <div class="metric-card">
+                    <h3>{{ stats.vistas }}</h3>
+                    <p>Páginas vistas</p>
+                </div>
+                <div class="metric-card">
+                    <h3>{{ stats.clics }}</h3>
+                    <p>Clics</p>
+                </div>
+            </div>
+
+            <h3>Actividad reciente</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Hora</th>
+                            <th>Quién</th>
+                            <th>Qué</th>
+                            <th>Página</th>
+                            <th>Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ev in eventos %}
+                        <tr>
+                            <td>{{ ev.hora }}</td>
+                            <td><strong>{{ ev.quien }}</strong></td>
+                            <td><span class="ui-btn ui-btn-inline ui-mini">{{ ev.tipo }}</span></td>
+                            <td>{{ ev.pagina }}</td>
+                            <td>{{ ev.detalle }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5">No hay actividad registrada aún.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='assets/tracker.js') }}"></script>
+</body>
+</html>
