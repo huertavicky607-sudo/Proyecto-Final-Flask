@@ -109,7 +109,7 @@ def init_db():
     except Exception as e:
         print(f"Aviso de conexión DB: {e}")
 
-init_db()
+#init_db()
 
 # ----------------------------------------------------
 # RUTAS DE AUTENTICACIÓN Y REGISTRO
