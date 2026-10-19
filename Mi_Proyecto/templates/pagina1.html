@@ -81,32 +81,43 @@
 
 <script>
 			function initMap() {
-				var miUbicacion = { lat: 19.4407, lng: -99.2047 };
+				console.log("Iniciando carga del mapa...");
 				var contenedor = document.getElementById("mapa-js");
 				
-				if (!contenedor) return;
+				if (!contenedor) {
+					console.error("No se encontró el contenedor #mapa-js en el DOM");
+					return;
+				}
 
-				var map = new google.maps.Map(contenedor, {
-					zoom: 16,
-					center: miUbicacion,
-				});
+				var miUbicacion = { lat: 19.4407, lng: -99.2047 };
 
-				var marker = new google.maps.Marker({
-					position: miUbicacion,
-					map: map,
-					title: "Ubicación del Museo Soumaya",
-				});
+				try {
+					var map = new google.maps.Map(contenedor, {
+						zoom: 16,
+						center: miUbicacion,
+					});
 
-				// Forzar redibujado para que tome el tamaño correcto en jQuery Mobile
-				setTimeout(function() {
-					google.maps.event.trigger(map, 'resize');
-					map.setCenter(miUbicacion);
-				}, 300);
+					var marker = new google.maps.Marker({
+						position: miUbicacion,
+						map: map,
+						title: "Ubicación del Museo Soumaya",
+					});
+
+					// Darle un respiro a jQuery Mobile para redimensionar el mapa
+					setTimeout(function() {
+						google.maps.event.trigger(map, 'resize');
+						map.setCenter(miUbicacion);
+						console.log("Mapa renderizado correctamente.");
+					}, 1000);
+
+				} catch (error) {
+					console.error("Error al inicializar Google Maps:", error);
+				}
 			}
 
-			// Inicializar el mapa cada vez que se muestre la página
+			// Disparar cuando la página de jQuery Mobile esté completamente visible
 			$(document).on("pageshow", "#pagina-1", function() {
-				initMap();
+				setTimeout(initMap, 500);
 			});
 		</script>
 		<!-- Script de Google Maps cargando la función callback -->
