@@ -80,8 +80,7 @@
 		</div>
 
 <script>
-			// Función global que llama Google Maps
-			window.initMap = function() {
+			function initMap() {
 				var miUbicacion = { lat: 19.4407, lng: -99.2047 };
 				var contenedor = document.getElementById("mapa-js");
 				
@@ -98,18 +97,16 @@
 					title: "Ubicación del Museo Soumaya",
 				});
 
-				// Forzar redibujado de Google Maps por jQuery Mobile
+				// Forzar redibujado para que tome el tamaño correcto en jQuery Mobile
 				setTimeout(function() {
 					google.maps.event.trigger(map, 'resize');
 					map.setCenter(miUbicacion);
 				}, 300);
-			};
+			}
 
-			// Disparar la inicialización al mostrar la página en jQuery Mobile
+			// Inicializar el mapa cada vez que se muestre la página
 			$(document).on("pageshow", "#pagina-1", function() {
-				if (typeof google !== 'undefined' && typeof google.maps.undefined !== 'undefined') {
-					initMap();
-				}
+				initMap();
 			});
 		</script>
 		<!-- Script de Google Maps cargando la función callback -->
