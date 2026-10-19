@@ -134,30 +134,40 @@ def login():
                 cursor.execute("SELECT id_usuario, nombre, password FROM usuarios WHERE email = %s", (email,))
                 usuario = cursor.fetchone()
 
-                if usuario and check_password_hash(usuario['password'], password):
-                    session.clear()
-                    session['usuario_id'] = usuario['id_usuario']
-                    session['nombre'] = usuario['nombre']
+                if usuario:
+                    pwd_db = usuario['password']
+                    es_valido = False
 
-                    # VINCULACIÓN DE COOKIE: asociar historial de la cookie al usuario
-                    visitante_cookie = request.cookies.get('visitante_id')
-                    if visitante_cookie:
-                        cursor.execute(
-                            "UPDATE eventos SET usuario_id = %s WHERE visitante_id = %s AND usuario_id IS NULL",
-                            (usuario['id_usuario'], visitante_cookie)
-                        )
-                        conn.commit()
+                    # Si la contraseña en la BD ya es un hash seguro
+                    if pwd_db.startswith('pbkdf2:') or pwd_db.startswith('scrypt:'):
+                        es_valido = check_password_hash(pwd_db, password)
+                    else:
+                        # Si es una contraseña vieja en texto plano
+                        es_valido = (pwd_db == password)
 
-                    conn.close()
-                    return redirect(url_for('menu'))
-                else:
-                    error = "Correo o contraseña incorrectos."
+                    if es_valido:
+                        session.clear()
+                        session['usuario_id'] = usuario['id_usuario']
+                        session['nombre'] = usuario['nombre']
+
+                        # VINCULACIÓN DE COOKIE
+                        visitante_cookie = request.cookies.get('visitante_id')
+                        if visitante_cookie:
+                            cursor.execute(
+                                "UPDATE eventos SET usuario_id = %s WHERE visitante_id = %s AND usuario_id IS NULL",
+                                (usuario['id_usuario'], visitante_cookie)
+                            )
+                            conn.commit()
+
+                        conn.close()
+                        return redirect(url_for('menu'))
+
+                error = "Correo o contraseña incorrectos."
             conn.close()
         except Exception as e:
             error = f"Error en la base de datos: {e}"
 
     return render_template('login.html', error=error)
-
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
     error = None
