@@ -79,11 +79,14 @@
 			</div>
 		</div>
 
-		<script>
+<script>
 			function initMap() {
 				var miUbicacion = { lat: 19.4407, lng: -99.2047 };
 
-				var map = new google.maps.Map(document.getElementById("mapa-js"), {
+				var mapElement = document.getElementById("mapa-js");
+				if (!mapElement) return;
+
+				var map = new google.maps.Map(mapElement, {
 					zoom: 16,
 					center: miUbicacion,
 				});
@@ -94,13 +97,14 @@
 					title: "Ubicación del Museo Soumaya",
 				});
 
-				// Forzar el redibujado para que jQuery Mobile no lo deje en blanco
+				// Forzar el redibujado para que aparezca de inmediato
 				setTimeout(function() {
 					google.maps.event.trigger(map, 'resize');
 					map.setCenter(miUbicacion);
-				}, 400);
+				}, 300);
 			}
 
+			// Ejecutar al mostrar la página en jQuery Mobile
 			$(document).on("pageshow", "#pagina-1", function() {
 				if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') {
 					initMap();
@@ -108,8 +112,8 @@
 			});
 		</script>
 
-		<!-- Script de Google Maps con tu API Key real -->
-		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9L5mILVOoY3ztaxUaYEx7PB4UYV6y-M4" async defer></script>
+		<!-- Script de Google Maps cargando la función callback -->
+		<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9L5mILVOoY3ztaxUaYEx7PB4UYV6y-M4"></script>
 	</div>
 </body>
 </html>
