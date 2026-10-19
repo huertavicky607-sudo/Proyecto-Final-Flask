@@ -93,6 +93,12 @@
 					map: map,
 					title: "Ubicación del Museo Soumaya",
 				});
+
+				// Forzar el redibujado para que jQuery Mobile no lo deje en blanco
+				setTimeout(function() {
+					google.maps.event.trigger(map, 'resize');
+					map.setCenter(miUbicacion);
+				}, 400);
 			}
 
 			$(document).on("pageshow", "#pagina-1", function() {
@@ -102,7 +108,7 @@
 			});
 		</script>
 
-		<!-- Recuerda colocar aquí tu API Key de Google Maps -->
+		<!-- Script de Google Maps con tu API Key real -->
 		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9L5mILVOoY3ztaxUaYEx7PB4UYV6y-M4" async defer></script>
 	</div>
 </body>
