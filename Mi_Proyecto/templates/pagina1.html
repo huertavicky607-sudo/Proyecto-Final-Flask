@@ -80,13 +80,14 @@
 		</div>
 
 <script>
-			function initMap() {
+			// Función global que llama Google Maps
+			window.initMap = function() {
 				var miUbicacion = { lat: 19.4407, lng: -99.2047 };
+				var contenedor = document.getElementById("mapa-js");
+				
+				if (!contenedor) return;
 
-				var mapElement = document.getElementById("mapa-js");
-				if (!mapElement) return;
-
-				var map = new google.maps.Map(mapElement, {
+				var map = new google.maps.Map(contenedor, {
 					zoom: 16,
 					center: miUbicacion,
 				});
@@ -97,21 +98,20 @@
 					title: "Ubicación del Museo Soumaya",
 				});
 
-				// Forzar el redibujado para que aparezca de inmediato
+				// Forzar redibujado de Google Maps por jQuery Mobile
 				setTimeout(function() {
 					google.maps.event.trigger(map, 'resize');
 					map.setCenter(miUbicacion);
 				}, 300);
-			}
+			};
 
-			// Ejecutar al mostrar la página en jQuery Mobile
+			// Disparar la inicialización al mostrar la página en jQuery Mobile
 			$(document).on("pageshow", "#pagina-1", function() {
-				if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') {
+				if (typeof google !== 'undefined' && typeof google.maps.undefined !== 'undefined') {
 					initMap();
 				}
 			});
 		</script>
-
 		<!-- Script de Google Maps cargando la función callback -->
 		<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9L5mILVOoY3ztaxUaYEx7PB4UYV6y-M4"></script>
 	</div>
