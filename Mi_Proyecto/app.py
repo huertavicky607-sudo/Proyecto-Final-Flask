@@ -99,7 +99,8 @@ def init_db():
                     usuario_id INT,
                     tipo VARCHAR(50),
                     pagina VARCHAR(255),
-                    detalle TEXT,
+                    elemento VARCHAR(100) DEFAULT NULL,
+                    segundos INT DEFAULT 0,
                     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -138,11 +139,9 @@ def login():
                     pwd_db = usuario['password']
                     es_valido = False
 
-                    # Si la contraseña en la BD ya es un hash seguro
                     if pwd_db.startswith('pbkdf2:') or pwd_db.startswith('scrypt:'):
                         es_valido = check_password_hash(pwd_db, password)
                     else:
-                        # Si es una contraseña vieja en texto plano
                         es_valido = (pwd_db == password)
 
                     if es_valido:
@@ -150,7 +149,6 @@ def login():
                         session['usuario_id'] = usuario['id_usuario']
                         session['nombre'] = usuario['nombre']
 
-                        # VINCULACIÓN DE COOKIE
                         visitante_cookie = request.cookies.get('visitante_id')
                         if visitante_cookie:
                             cursor.execute(
@@ -168,6 +166,7 @@ def login():
             error = f"Error en la base de datos: {e}"
 
     return render_template('login.html', error=error)
+
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
     error = None
@@ -216,17 +215,21 @@ def api_tracker():
     tipo = datos.get('tipo', 'vista')
     pagina = datos.get('pagina', '')
     detalle = datos.get('detalle', '')
+    segundos = int(datos.get('segundos', 0))
     usuario_id = session.get('usuario_id')
 
     if not visitante_id:
         return jsonify({'error': 'Falta cookie visitante_id'}), 400
 
+    elemento = detalle if tipo == 'clic' else None
+    segundos_val = segundos if tipo == 'tiempo' else 0
+
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO eventos (visitante_id, usuario_id, tipo, pagina, detalle) VALUES (%s, %s, %s, %s, %s)",
-                (visitante_id, usuario_id, tipo, pagina, detalle)
+                "INSERT INTO eventos (visitante_id, usuario_id, tipo, pagina, elemento, segundos) VALUES (%s, %s, %s, %s, %s, %s)",
+                (visitante_id, usuario_id, tipo, pagina, elemento, segundos_val)
             )
         conn.commit()
         conn.close()
@@ -235,56 +238,110 @@ def api_tracker():
         return jsonify({'error': str(e)}), 500
 
 # ----------------------------------------------------
-# PANEL DE MÉTRICAS Y ACTIVIDAD RECIENTE
+# API DE MÉTRICAS PARA EL PANEL DINÁMICO
 # ----------------------------------------------------
-@app.route('/metrics')
-def metrics():
+@app.route('/api/metricas')
+def api_metricas():
     if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+        return jsonify({'error': 'No autorizado'}), 401
 
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            # Estadísticas
-            cursor.execute("SELECT COUNT(DISTINCT visitante_id) AS visitantes FROM eventos")
-            v_count = cursor.fetchone()['visitantes']
+            # Resumen KPIs
+            cursor.execute("""
+                SELECT COUNT(DISTINCT visitante_id) AS visitantes,
+                       COUNT(DISTINCT sesion_id)    AS sesiones,
+                       COUNT(DISTINCT usuario_id)   AS usuarios,
+                       COALESCE(SUM(tipo = 'vista'), 0) AS vistas,
+                       COALESCE(SUM(tipo = 'clic'), 0)  AS clics
+                FROM eventos
+            """)
+            resumen = cursor.fetchone()
 
-            cursor.execute("SELECT COUNT(DISTINCT visitante_id) AS sesiones FROM eventos WHERE usuario_id IS NOT NULL")
-            s_count = cursor.fetchone()['sesiones']
+            # Tiempo promedio por sesión
+            cursor.execute("""
+                SELECT COALESCE(ROUND(AVG(total)), 0) AS promedio
+                FROM (SELECT SUM(segundos) AS total FROM eventos
+                      WHERE tipo = 'tiempo' GROUP BY visitante_id) AS t
+            """)
+            prom_res = cursor.fetchone()
+            resumen['tiempo_promedio'] = prom_res['promedio'] if prom_res else 0
 
-            cursor.execute("SELECT COUNT(DISTINCT usuario_id) AS identificados FROM eventos WHERE usuario_id IS NOT NULL")
-            u_count = cursor.fetchone()['identificados']
+            # Páginas
+            cursor.execute("""
+                SELECT pagina,
+                       SUM(tipo = 'vista') AS vistas,
+                       SUM(tipo = 'clic')  AS clics,
+                       COALESCE(SUM(segundos), 0) AS segundos
+                FROM eventos
+                GROUP BY pagina
+                ORDER BY vistas DESC
+                LIMIT 10
+            """)
+            paginas = cursor.fetchall()
 
-            cursor.execute("SELECT COUNT(*) AS vistas FROM eventos WHERE tipo = 'vista'")
-            vistas_count = cursor.fetchone()['vistas']
+            # Clics
+            cursor.execute("""
+                SELECT elemento, pagina, COUNT(*) AS total
+                FROM eventos
+                WHERE tipo = 'clic' AND elemento IS NOT NULL AND elemento != ''
+                GROUP BY elemento, pagina
+                ORDER BY total DESC
+                LIMIT 10
+            """)
+            clics = cursor.fetchall()
 
-            cursor.execute("SELECT COUNT(*) AS clics FROM eventos WHERE tipo = 'clic'")
-            clics_count = cursor.fetchone()['clics']
-
-            # Actividad reciente (CORREGIDO: Formato de hora limpio)
-            sql_eventos = """
-                SELECT DATE_FORMAT(e.fecha, '%H:%i:%s') AS hora,
-                       COALESCE(u.nombre, 'Anónimo') AS quien,
-                       e.tipo, e.pagina, e.detalle
+            # Usuarios
+            cursor.execute("""
+                SELECT COALESCE(u.nombre, '(anónimos)') AS nombre,
+                       'Ingeniería' AS carrera,
+                       COUNT(DISTINCT e.visitante_id) AS sesiones,
+                       SUM(e.tipo = 'vista') AS vistas,
+                       SUM(e.tipo = 'clic')  AS clics,
+                       COALESCE(SUM(e.segundos), 0) AS segundos,
+                       MAX(e.fecha) AS ultima
                 FROM eventos e
                 LEFT JOIN usuarios u ON u.id_usuario = e.usuario_id
-                ORDER BY e.id DESC LIMIT 25
-            """
-            cursor.execute(sql_eventos)
-            lista_eventos = cursor.fetchall()
+                GROUP BY e.usuario_id, u.nombre
+                ORDER BY ultima DESC
+            """)
+            usuarios = cursor.fetchall()
+
+            # Por carrera
+            carreras = [
+                {'carrera': 'Ingeniería en Tecnologías de la Información', 'usuarios': len(usuarios), 'clics': resumen['clics'], 'segundos': sum(u['segundos'] for u in usuarios)}
+            ]
+
+            # Actividad reciente
+            cursor.execute("""
+                SELECT DATE_FORMAT(e.fecha, '%H:%i:%s') AS hora,
+                       COALESCE(u.nombre, 'Anónimo') AS nombre,
+                       e.tipo, e.pagina, e.elemento, e.segundos
+                FROM eventos e
+                LEFT JOIN usuarios u ON u.id_usuario = e.usuario_id
+                ORDER BY e.id DESC
+                LIMIT 15
+            """)
+            recientes = cursor.fetchall()
 
         conn.close()
-        stats = {
-            'visitantes': v_count,
-            'sesiones': s_count,
-            'identificados': u_count,
-            'vistas': vistas_count,
-            'clics': clics_count
-        }
-        return render_template('metrics.html', stats=stats, eventos=lista_eventos)
+        return jsonify({
+            'resumen': resumen,
+            'paginas': paginas,
+            'clics': clics,
+            'usuarios': usuarios,
+            'carreras': carreras,
+            'recientes': recientes
+        })
     except Exception as e:
-        flash(f"Error al cargar métricas: {e}", "error")
-        return redirect(url_for('menu'))
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/metrics')
+def metrics():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('metrics.html')
 
 # ----------------------------------------------------
 # MENÚ Y SECCIONES
@@ -514,8 +571,6 @@ def api_crud():
                     if not prod:
                         conn.close()
                         return jsonify({'error': 'Producto no encontrado.'}), 422
-                    
-                    print(f"DEBUG: id_u={id_u}, id_p={id_p}, cantidad={cantidad}")
                     
                     precio_unit = float(prod['precio'])
                     total_bruto = cantidad * precio_unit
