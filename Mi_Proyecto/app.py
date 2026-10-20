@@ -261,9 +261,9 @@ def metrics():
             cursor.execute("SELECT COUNT(*) AS clics FROM eventos WHERE tipo = 'clic'")
             clics_count = cursor.fetchone()['clics']
 
-            # Actividad reciente
+            # Actividad reciente (CORREGIDO: Formato de hora limpio)
             sql_eventos = """
-                SELECT DATE_FORMAT(e.fecha, '%%H:%%i:%%s') AS hora,
+                SELECT DATE_FORMAT(e.fecha, '%H:%i:%s') AS hora,
                        COALESCE(u.nombre, 'Anónimo') AS quien,
                        e.tipo, e.pagina, e.detalle
                 FROM eventos e
@@ -379,7 +379,7 @@ def listar_mensajes():
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            cursor.execute("SELECT id, usuario, texto, DATE_FORMAT(fecha, '%%Y-%%m-%%dT%%H:%%i:%%sZ') as fecha FROM mensajes WHERE id > %s ORDER BY id ASC", (desde,))
+            cursor.execute("SELECT id, usuario, texto, DATE_FORMAT(fecha, '%Y-%m-%dT%H:%i:%sZ') as fecha FROM mensajes WHERE id > %s ORDER BY id ASC", (desde,))
             nuevos = cursor.fetchall()
         conn.close()
         return jsonify(nuevos), 200
@@ -514,6 +514,8 @@ def api_crud():
                     if not prod:
                         conn.close()
                         return jsonify({'error': 'Producto no encontrado.'}), 422
+                    
+                    print(f"DEBUG: id_u={id_u}, id_p={id_p}, cantidad={cantidad}")
                     
                     precio_unit = float(prod['precio'])
                     total_bruto = cantidad * precio_unit
