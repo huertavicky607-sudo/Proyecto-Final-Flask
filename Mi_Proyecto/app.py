@@ -255,6 +255,9 @@ def api_tracker():
 # ----------------------------------------------------
 # API DE MÉTRICAS PARA EL PANEL DINÁMICO
 # ----------------------------------------------------
+# ----------------------------------------------------
+# API DE MÉTRICAS PARA EL PANEL DINÁMICO
+# ----------------------------------------------------
 @app.route('/api/metricas')
 def api_metricas():
     if 'usuario_id' not in session:
@@ -263,22 +266,20 @@ def api_metricas():
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            # 1. Resumen KPIs básicos
+            # Resumen KPIs (Usando visitante_id para sesiones)
             cursor.execute("""
                 SELECT COUNT(DISTINCT visitante_id) AS visitantes,
-                       COUNT(DISTINCT sesion_id)    AS sesiones,
+                       COUNT(DISTINCT visitante_id) AS sesiones,
                        COUNT(DISTINCT usuario_id)   AS usuarios,
                        COALESCE(SUM(CASE WHEN tipo = 'vista' THEN 1 ELSE 0 END), 0) AS vistas,
                        COALESCE(SUM(CASE WHEN tipo = 'clic' THEN 1 ELSE 0 END), 0)  AS clics
                 FROM eventos
             """)
             resumen = cursor.fetchone()
-
-            # Asegurar valores por defecto si vienen nulos
             if not resumen:
                 resumen = {'visitantes': 0, 'sesiones': 0, 'usuarios': 0, 'vistas': 0, 'clics': 0}
 
-            # 2. Tiempo promedio por sesión
+            # Tiempo promedio por sesión (agrupado por visitante_id)
             try:
                 cursor.execute("""
                     SELECT COALESCE(ROUND(AVG(total)), 0) AS promedio
@@ -286,78 +287,66 @@ def api_metricas():
                           WHERE tipo = 'tiempo' GROUP BY visitante_id) AS t
                 """)
                 prom_res = cursor.fetchone()
-                resumen['tiempo_promedio'] = prom_res['promedio'] if prom_res and prom_res['promedio'] else 0
+                resumen['tiempo_promedio'] = prom_res['promedio'] if prom_res and prom_res.get('promedio') else 0
             except:
                 resumen['tiempo_promedio'] = 0
 
-            # 3. Páginas
-            try:
-                cursor.execute("""
-                    SELECT pagina,
-                           SUM(CASE WHEN tipo = 'vista' THEN 1 ELSE 0 END) AS vistas,
-                           SUM(CASE WHEN tipo = 'clic' THEN 1 ELSE 0 END)  AS clics,
-                           COALESCE(SUM(segundos), 0) AS segundos
-                    FROM eventos
-                    GROUP BY pagina
-                    ORDER BY vistas DESC
-                    LIMIT 10
-                """)
-                paginas = cursor.fetchall()
-            except:
-                paginas = []
+            # Páginas
+            cursor.execute("""
+                SELECT pagina,
+                       SUM(CASE WHEN tipo = 'vista' THEN 1 ELSE 0 END) AS vistas,
+                       SUM(CASE WHEN tipo = 'clic' THEN 1 ELSE 0 END)  AS clics,
+                       COALESCE(SUM(segundos), 0) AS segundos
+                FROM eventos
+                GROUP BY pagina
+                ORDER BY vistas DESC
+                LIMIT 10
+            """)
+            paginas = cursor.fetchall() or []
 
-            # 4. Clics
-            try:
-                cursor.execute("""
-                    SELECT elemento, pagina, COUNT(*) AS total
-                    FROM eventos
-                    WHERE tipo = 'clic' AND elemento IS NOT NULL AND elemento != ''
-                    GROUP BY elemento, pagina
-                    ORDER BY total DESC
-                    LIMIT 10
-                """)
-                clics = cursor.fetchall()
-            except:
-                clics = []
+            # Clics
+            cursor.execute("""
+                SELECT elemento, pagina, COUNT(*) AS total
+                FROM eventos
+                WHERE tipo = 'clic' AND elemento IS NOT NULL AND elemento != ''
+                GROUP BY elemento, pagina
+                ORDER BY total DESC
+                LIMIT 10
+            """)
+            clics = cursor.fetchall() or []
 
-            # 5. Usuarios (Mapeando con id_usuario de tu tabla usuarios)
-            try:
-                cursor.execute("""
-                    SELECT COALESCE(u.nombre, '(anónimos)') AS nombre,
-                           'Ingeniería' AS carrera,
-                           COUNT(DISTINCT e.visitante_id) AS sesiones,
-                           SUM(CASE WHEN e.tipo = 'vista' THEN 1 ELSE 0 END) AS vistas,
-                           SUM(CASE WHEN e.tipo = 'clic' THEN 1 ELSE 0 END)  AS clics,
-                           COALESCE(SUM(e.segundos), 0) AS segundos,
-                           MAX(e.fecha) AS ultima
-                    FROM eventos e
-                    LEFT JOIN usuarios u ON u.id_usuario = e.usuario_id
-                    GROUP BY e.usuario_id, u.nombre
-                    ORDER BY ultima DESC
-                """)
-                usuarios = cursor.fetchall()
-            except:
-                usuarios = []
+            # Usuarios
+            cursor.execute("""
+                SELECT COALESCE(u.nombre, '(anónimos)') AS nombre,
+                       'Ingeniería' AS carrera,
+                       COUNT(DISTINCT e.visitante_id) AS sesiones,
+                       SUM(CASE WHEN e.tipo = 'vista' THEN 1 ELSE 0 END) AS vistas,
+                       SUM(CASE WHEN e.tipo = 'clic' THEN 1 ELSE 0 END)  AS clics,
+                       COALESCE(SUM(e.segundos), 0) AS segundos,
+                       MAX(e.fecha) AS ultima
+                FROM eventos e
+                LEFT JOIN usuarios u ON u.id_usuario = e.usuario_id
+                GROUP BY e.usuario_id, u.nombre
+                ORDER BY ultima DESC
+            """)
+            usuarios = cursor.fetchall() or []
 
-            # 6. Por carrera
+            # Por carrera
             carreras = [
                 {'carrera': 'Ingeniería en Tecnologías de la Información', 'usuarios': len(usuarios), 'clics': resumen['clics'], 'segundos': sum(u.get('segundos', 0) for u in usuarios)}
             ]
 
-            # 7. Actividad reciente
-            try:
-                cursor.execute("""
-                    SELECT DATE_FORMAT(e.fecha, '%H:%i:%s') AS hora,
-                           COALESCE(u.nombre, 'Anónimo') AS nombre,
-                           e.tipo, e.pagina, e.elemento, e.segundos
-                    FROM eventos e
-                    LEFT JOIN usuarios u ON u.id_usuario = e.usuario_id
-                    ORDER BY e.id DESC
-                    LIMIT 15
-                """)
-                recientes = cursor.fetchall()
-            except:
-                recientes = []
+            # Actividad reciente
+            cursor.execute("""
+                SELECT DATE_FORMAT(e.fecha, '%H:%i:%s') AS hora,
+                       COALESCE(u.nombre, 'Anónimo') AS nombre,
+                       e.tipo, e.pagina, e.elemento, e.segundos
+                FROM eventos e
+                LEFT JOIN usuarios u ON u.id_usuario = e.usuario_id
+                ORDER BY e.id DESC
+                LIMIT 15
+            """)
+            recientes = cursor.fetchall() or []
 
         conn.close()
         return jsonify({
