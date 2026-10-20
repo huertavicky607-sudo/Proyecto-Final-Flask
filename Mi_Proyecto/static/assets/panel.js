@@ -1,4 +1,3 @@
-// panel.js para Flask
 function duracion(segundos) {
     segundos = Number(segundos);
     const m = Math.floor(segundos / 60);
@@ -34,6 +33,17 @@ function llenarTabla(id, encabezados, filas, convertir) {
     });
 }
 
+function agregarBarras(id, columna, filas, campo) {
+    const maximo = Math.max(...filas.map((f) => Number(f[campo])), 1);
+    document.querySelectorAll(`#${id} tbody tr`).forEach((tr, i) => {
+        if (!filas[i] || !tr.cells[columna]) return;
+        const barra = document.createElement('span');
+        barra.className = 'barra';
+        barra.style.width = `${(Number(filas[i][campo]) / maximo) * 100}%`;
+        tr.cells[columna].appendChild(barra);
+    });
+}
+
 function mostrarKpis(r) {
     const kpis = [
         ['Visitantes únicos', r.visitantes],
@@ -49,18 +59,19 @@ function mostrarKpis(r) {
     
     kpis.forEach(([titulo, valor]) => {
         const div = document.createElement('div');
-        div.className = 'kpi';
-        celda(div, valor, 'strong');
-        celda(div, titulo, 'span');
+        div.className = 'metric-card';
+        celda(div, valor, 'h3');
+        celda(div, titulo, 'p');
         contenedor.appendChild(div);
     });
 }
 
 const nombresTipo = { vista: '👁 vista', clic: '🖱 clic', tiempo: '⏱ tiempo' };
 
-async function cargarMetricas() {
+async function cargar() {
+    const estado = document.getElementById('estado');
     try {
-        const respuesta = await fetch('/api/metricas'); // O la ruta de tu API en Flask
+        const respuesta = await fetch('/api/metricas');
         if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
         const datos = await respuesta.json();
 
@@ -72,20 +83,27 @@ async function cargarMetricas() {
 
         llenarTabla('tabla-paginas', ['Página', 'Vistas', 'Clics', 'Tiempo total'], datos.paginas,
             (f) => [f.pagina, f.vistas, f.clics, duracion(f.segundos)]);
+        agregarBarras('tabla-paginas', 1, datos.paginas, 'vistas');
 
         llenarTabla('tabla-clics', ['Elemento', 'Página', 'Clics'], datos.clics,
             (f) => [f.elemento, f.pagina, f.total]);
+        agregarBarras('tabla-clics', 2, datos.clics, 'total');
 
-        llenarTabla('tabla-usuarios', ['Nombre', 'Sesiones', 'Vistas', 'Clics', 'Tiempo', 'Última actividad'],
+        llenarTabla('tabla-usuarios', ['Nombre', 'Carrera', 'Sesiones', 'Vistas', 'Clics', 'Tiempo', 'Última actividad'],
             datos.usuarios,
-            (f) => [f.nombre, f.sesiones, f.vistas, f.clics, duracion(f.segundos), f.ultima]);
+            (f) => [f.nombre, f.carrera, f.sesiones, f.vistas, f.clics, duracion(f.segundos), f.ultima]);
 
+        llenarTabla('tabla-carreras', ['Carrera', 'Usuarios', 'Clics', 'Tiempo total'], datos.carreras,
+            (f) => [f.carrera, f.usuarios, f.clics, duracion(f.segundos)]);
+        agregarBarras('tabla-carreras', 3, datos.carreras, 'segundos');
+
+        if(estado) estado.textContent = `Última actualización: ${new Date().toLocaleTimeString()}`;
     } catch (error) {
-        console.error("Error al cargar métricas:", error);
+        if(estado) estado.textContent = `No se pudieron cargar las métricas.`;
     }
 }
 
 document.addEventListener("DOMContentLoaded", function() {
-    cargarMetricas();
-    setInterval(cargarMetricas, 5000);
+    cargar();
+    setInterval(cargar, 5000);
 });
