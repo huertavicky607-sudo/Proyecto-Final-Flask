@@ -104,12 +104,24 @@ def init_db():
                     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+            
+            # Asegurar columnas si la tabla ya existía previamente sin ellas
+            try:
+                cursor.execute("ALTER TABLE eventos ADD COLUMN elemento VARCHAR(100) DEFAULT NULL")
+            except:
+                pass
+            try:
+                cursor.execute("ALTER TABLE eventos ADD COLUMN segundos INT DEFAULT 0")
+            except:
+                pass
+
         conn.commit()
         conn.close()
-        print("Estructura de Base de Datos inicializada correctamente.")
+        print("Estructura de Base de Datos inicializada y actualizada correctamente.")
     except Exception as e:
         print(f"Aviso de conexión DB: {e}")
 
+# Asegúrate de dejarlo descomntado al menos en este despliegue
 init_db()
 
 # ----------------------------------------------------
