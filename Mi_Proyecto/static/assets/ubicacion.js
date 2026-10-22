@@ -14,6 +14,14 @@ function cargarScriptLeaflet(callback) {
 
 // Inicializar todo una vez que Leaflet esté garantizado
 cargarScriptLeaflet(() => {
+    // Corregir los errores 404 de los iconos de Leaflet apuntando al CDN oficial
+    delete L.Icon.Default.prototype._getIconUrl;
+    L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    });
+
     const btnCapturar = document.getElementById('btn-capturar');
     const mensaje     = document.getElementById('mensaje');
     const datos       = document.getElementById('datos');
@@ -27,6 +35,12 @@ cargarScriptLeaflet(() => {
 
     // ---------- El mapa: Leaflet + mosaicos de OpenStreetMap ----------
     const mapa = L.map('mapa').setView([19.43, -99.13], 10);
+    
+    // Forzar a que Leaflet calcule bien el tamaño debido a jQuery Mobile
+    setTimeout(() => {
+        mapa.invalidateSize();
+    }, 300);
+
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -101,7 +115,7 @@ cargarScriptLeaflet(() => {
 
     async function cargarHistorial() {
         try {
-            const respuesta = await fetch('/api/ubicaciones');
+            const respuesta = __awaitFetchUbicaciones = await fetch('/api/ubicaciones');
             if (!respuesta.ok) return;
             const ubicaciones = await respuesta.json();
             
