@@ -27,9 +27,9 @@ btnCapturar.addEventListener('click', () => {
     btnCapturar.disabled = true;
     mostrar('Buscando tu ubicación…', 'info');
     navigator.geolocation.getCurrentPosition(guardar, fallo, {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
+        enableHighAccuracy: false, // Cambiado a false para que la laptop use red/wifi sin agotar el tiempo
+        timeout: 20000,           // Subimos a 20 segundos de espera
+        maximumAge: 60000,        // Permitir caché reciente para mayor velocidad
     });
 });
 
