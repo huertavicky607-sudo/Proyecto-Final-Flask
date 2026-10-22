@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi ubicación</title>
+    <!-- Leaflet: la librería que dibuja el mapa de OpenStreetMap -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <!-- Tus estilos generales y del mapa -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/app.css') }}">
+</head>
+<body>
+    <main class="tarjeta">
+        <h1>Mi ubicación</h1>
+        <!-- Si usas session de Flask para el nombre del usuario -->
+        <p>Sesión: <strong>{{ session.get('nombre', 'Invitado') }}</strong></p>
+
+        <button type="button" id="btn-capturar">Capturar mi ubicación</button>
+        <p id="mensaje" hidden></p>
+        <p id="datos" hidden></p>
+
+        <div id="mapa" style="height: 320px; margin-top: 14px; border-radius: 8px;"></div>
+
+        <h2>Últimas ubicaciones</h2>
+        <ol id="historial" class="historial"></ol>
+    </main>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Tu script de geolocalización adaptado para Flask -->
+    <script src="{{ url_for('static', filename='assets/ubicacion.js') }}"></script>
+</body>
+</html>
