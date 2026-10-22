@@ -123,9 +123,12 @@ cargarScriptLeaflet(() => {
         }
     }
 
-    cargarHistorial().then(() => {
+   cargarHistorial().then(() => {
         if (capaGuardadas.getLayers().length) {
             mapa.fitBounds(capaGuardadas.getBounds(), { maxZoom: 16, padding: [20, 20] });
         }
-    });
+        // Forzar la actualización del mapa para que los mosaicos se acomoden perfectamente
+        setTimeout(() => {
+            mapa.invalidateSize();
+        }, 200);
 });
