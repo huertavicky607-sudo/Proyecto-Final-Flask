@@ -123,7 +123,7 @@ cargarScriptLeaflet(() => {
         }
     }
 
-   cargarHistorial().then(() => {
+  cargarHistorial().then(() => {
         if (capaGuardadas.getLayers().length) {
             mapa.fitBounds(capaGuardadas.getBounds(), { maxZoom: 16, padding: [20, 20] });
         }
@@ -131,4 +131,5 @@ cargarScriptLeaflet(() => {
         setTimeout(() => {
             mapa.invalidateSize();
         }, 200);
+    });
 });
