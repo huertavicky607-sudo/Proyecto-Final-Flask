@@ -5,12 +5,10 @@
         const contenedor = document.getElementById('mapa');
         if (!contenedor) return;
 
-        // Si el mapa ya fue creado, solo le pedimos que recalcule su tamaño actual
+        // Si ya existía un mapa previo en este contenedor, lo destruimos para evitar conflictos de Leaflet
         if (mapaUbicacion) {
-            setTimeout(() => {
-                mapaUbicacion.invalidateSize();
-            }, 300);
-            return;
+            mapaUbicacion.remove();
+            mapaUbicacion = null;
         }
 
         // Validar que Leaflet esté disponible
@@ -24,7 +22,7 @@
             shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
         });
 
-        // Crear la instancia del mapa
+        // Crear la instancia limpia del mapa
         mapaUbicacion = L.map('mapa').setView([19.43, -99.13], 13);
 
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -35,9 +33,10 @@
         const capaGuardadas = L.featureGroup().addTo(mapaUbicacion);
         const capaActual    = L.layerGroup().addTo(mapaUbicacion);
 
-        // Doble reintento para asegurar que los mosaicos cuadren perfectamente
-        setTimeout(() => { mapaUbicacion.invalidateSize(); }, 300);
-        setTimeout(() => { mapaUbicacion.invalidateSize(); }, 700);
+        // Forzar recalculo de tamaño para adaptarlo al contenedor
+        setTimeout(() => { 
+            if (mapaUbicacion) mapaUbicacion.invalidateSize(); 
+        }, 300);
 
         const btnCapturar = document.getElementById('btn-capturar');
         const mensaje     = document.getElementById('mensaje');
@@ -152,12 +151,13 @@
         });
     }
 
-    // Escuchar tanto la carga de la página como los eventos de navegación de la app
-    window.addEventListener('pageshow', () => {
-        setTimeout(inicializarMapa, 250);
+    // Escuchar el evento de transición de jQuery Mobile para que dibuje el mapa al entrar desde el menú
+    $(document).on('pageshow', '#ubicacion, body', function () {
+        setTimeout(inicializarMapa, 300);
     });
 
+    // Por si se recarga la página directamente
     document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(inicializarMapa, 250);
+        setTimeout(inicializarMapa, 300);
     });
 })();
