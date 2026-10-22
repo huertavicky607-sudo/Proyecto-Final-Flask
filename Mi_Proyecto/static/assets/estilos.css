@@ -1,0 +1,79 @@
+/* Copiar a: C:\xampp\htdocs\ubicacion\estilos.css */
+mpphtdocsBicacionestilos.css */
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    font-family: system-ui, sans-serif;
+    background: #eef2f7;
+    color: #1f2937;
+}
+
+.tarjeta {
+    width: 100%;
+    max-width: 380px;
+    padding: 28px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, .08);
+}
+
+h1 { margin-top: 0; font-size: 1.5rem; }
+
+label { display: block; margin-bottom: 14px; font-size: .9rem; }
+
+input, select {
+    width: 100%;
+    margin-top: 4px;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+button, .boton {
+    display: inline-block;
+    width: 100%;
+    padding: 11px;
+    border: 0;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #fff;
+    font-size: 1rem;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+button:hover, .boton:hover { background: #1d4ed8; }
+
+.error  { padding: 10px; border-radius: 8px; background: #fee2e2; color: #991b1b; }
+.exito  { padding: 10px; border-radius: 8px; background: #dcfce7; color: #166534; }
+
+/* ---------- NUEVO: ejercicio de ubicación ---------- */
+
+[hidden] { display: none !important; }
+
+.tarjeta { max-width: 560px; }
+
+h2 { margin-top: 28px; font-size: 1.2rem; }
+
+button:disabled { background: #94a3b8; cursor: not-allowed; }
+
+.info { padding: 10px; border-radius: 8px; background: #dbeafe; color: #1e40af; }
+
+#datos { font-size: .9rem; }
+
+#mapa {
+    height: 320px;
+    margin-top: 14px;
+    border-radius: 8px;
+}
+
+.historial { padding-left: 20px; font-size: .85rem; }
+.historial li { margin-bottom: 4px; }
