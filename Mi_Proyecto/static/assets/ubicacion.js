@@ -14,7 +14,7 @@ function cargarScriptLeaflet(callback) {
 
 // Inicializar todo una vez que Leaflet esté garantizado
 cargarScriptLeaflet(() => {
-    // Corregir los errores 404 de los iconos de Leaflet apuntando al CDN oficial
+    // Corregir los iconos de Leaflet apuntando al CDN oficial
     delete L.Icon.Default.prototype._getIconUrl;
     L.Icon.Default.mergeOptions({
         iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -35,11 +35,6 @@ cargarScriptLeaflet(() => {
 
     // ---------- El mapa: Leaflet + mosaicos de OpenStreetMap ----------
     const mapa = L.map('mapa').setView([19.43, -99.13], 10);
-    
-    // Forzar a que Leaflet calcule bien el tamaño debido a jQuery Mobile
-    setTimeout(() => {
-        mapa.invalidateSize();
-    }, 300);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
@@ -48,6 +43,11 @@ cargarScriptLeaflet(() => {
 
     const capaGuardadas = L.featureGroup().addTo(mapa);
     const capaActual    = L.layerGroup().addTo(mapa);
+
+    // Forzar al mapa a recalcular sus dimensiones y acomodar las piezas visuales
+    setTimeout(() => {
+        mapa.invalidateSize();
+    }, 400);
 
     btnCapturar.addEventListener('click', () => {
         if (!window.isSecureContext || !navigator.geolocation) {
@@ -80,6 +80,7 @@ cargarScriptLeaflet(() => {
         capaActual.clearLayers();
         L.circle([latitude, longitude], { radius: accuracy }).addTo(capaActual);
         mapa.setView([latitude, longitude], 16);
+        mapa.invalidateSize(); // Asegurar acomodo al hacer zoom
         mostrarDatos(latitude, longitude, accuracy);
 
         try {
@@ -115,7 +116,7 @@ cargarScriptLeaflet(() => {
 
     async function cargarHistorial() {
         try {
-            const respuesta = __awaitFetchUbicaciones = await fetch('/api/ubicaciones');
+            const respuesta = await fetch('/api/ubicaciones');
             if (!respuesta.ok) return;
             const ubicaciones = await respuesta.json();
             
@@ -140,6 +141,7 @@ cargarScriptLeaflet(() => {
     cargarHistorial().then(() => {
         if (capaGuardadas.getLayers().length) {
             mapa.fitBounds(capaGuardadas.getBounds(), { maxZoom: 16, padding: [20, 20] });
+            mapa.invalidateSize();
         }
     });
 });
