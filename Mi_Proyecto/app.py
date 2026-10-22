@@ -1,5 +1,6 @@
 import os
 import pymysql
+from flask import render_template, request, jsonify, session
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -105,6 +106,20 @@ def init_db():
                 )
             """)
             
+            # 5. Tabla para Ubicaciones (Módulo nuevo)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS ubicaciones (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    usuario_id INT NULL,
+                    nombre VARCHAR(100) NOT NULL,
+                    latitud DECIMAL(9, 6) NOT NULL,
+                    longitud DECIMAL(9, 6) NOT NULL,
+                    precision_m INT UNSIGNED NOT NULL,
+                    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (usuario_id) REFERENCES usuarios(id_usuario) ON DELETE SET NULL
+                )
+            """)
+            
             # Asegurar columnas si la tabla ya existía previamente sin ellas
             try:
                 cursor.execute("ALTER TABLE eventos ADD COLUMN elemento VARCHAR(100) DEFAULT NULL")
@@ -121,7 +136,6 @@ def init_db():
     except Exception as e:
         print(f"Aviso de conexión DB: {e}")
 
-# Asegúrate de dejarlo descomntado al menos en este despliegue
 init_db()
 
 # ----------------------------------------------------
@@ -252,12 +266,6 @@ def api_tracker():
 # ----------------------------------------------------
 # API DE MÉTRICAS PARA EL PANEL DINÁMICO
 # ----------------------------------------------------
-# ----------------------------------------------------
-# API DE MÉTRICAS PARA EL PANEL DINÁMICO
-# ----------------------------------------------------
-# ----------------------------------------------------
-# API DE MÉTRICAS PARA EL PANEL DINÁMICO
-# ----------------------------------------------------
 @app.route('/api/metricas')
 def api_metricas():
     if 'usuario_id' not in session:
@@ -266,7 +274,6 @@ def api_metricas():
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            # Resumen KPIs (Usando visitante_id para sesiones)
             cursor.execute("""
                 SELECT COUNT(DISTINCT visitante_id) AS visitantes,
                        COUNT(DISTINCT visitante_id) AS sesiones,
@@ -279,7 +286,6 @@ def api_metricas():
             if not resumen:
                 resumen = {'visitantes': 0, 'sesiones': 0, 'usuarios': 0, 'vistas': 0, 'clics': 0}
 
-            # Tiempo promedio por sesión (agrupado por visitante_id)
             try:
                 cursor.execute("""
                     SELECT COALESCE(ROUND(AVG(total)), 0) AS promedio
@@ -291,7 +297,6 @@ def api_metricas():
             except:
                 resumen['tiempo_promedio'] = 0
 
-            # Páginas
             cursor.execute("""
                 SELECT pagina,
                        SUM(CASE WHEN tipo = 'vista' THEN 1 ELSE 0 END) AS vistas,
@@ -304,7 +309,6 @@ def api_metricas():
             """)
             paginas = cursor.fetchall() or []
 
-            # Clics
             cursor.execute("""
                 SELECT elemento, pagina, COUNT(*) AS total
                 FROM eventos
@@ -315,7 +319,6 @@ def api_metricas():
             """)
             clics = cursor.fetchall() or []
 
-            # Usuarios
             cursor.execute("""
                 SELECT COALESCE(u.nombre, '(anónimos)') AS nombre,
                        'Ingeniería' AS carrera,
@@ -331,12 +334,10 @@ def api_metricas():
             """)
             usuarios = cursor.fetchall() or []
 
-            # Por carrera
             carreras = [
                 {'carrera': 'Ingeniería en Tecnologías de la Información', 'usuarios': len(usuarios), 'clics': resumen['clics'], 'segundos': sum(u.get('segundos', 0) for u in usuarios)}
             ]
 
-            # Actividad reciente
             cursor.execute("""
                 SELECT DATE_FORMAT(e.fecha, '%H:%i:%s') AS hora,
                        COALESCE(u.nombre, 'Anónimo') AS nombre,
@@ -407,6 +408,71 @@ def youtube():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
     return render_template('youtube.html', video_id="vK9he9d-JN0")
+
+# ----------------------------------------------------
+# NUEVO MÓDULO: UBICACIÓN Y MAPAS
+# ----------------------------------------------------
+@app.route('/ubicacion')
+def vista_ubicacion():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('ubicacion.html')
+
+@app.route('/api/guardar', methods=['POST'])
+def guardar_ubicacion():
+    datos = request.get_json(silent=True) or {}
+    lat = datos.get('latitud')
+    lng = datos.get('longitud')
+    
+    if lat is None or lng is None or not (-90 <= float(lat) <= 90) or not (-180 <= float(lng) <= 180):
+        return jsonify({'error': 'Coordenadas inválidas.'}), 400
+
+    precision = round(float(datos.get('precision', 0)))
+    usuario_id = session.get('usuario_id')
+    nombre = session.get('nombre', 'invitado')
+
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            sql = """
+                INSERT INTO ubicaciones (usuario_id, nombre, latitud, longitud, precision_m) 
+                VALUES (%s, %s, %s, %s, %s)
+            """
+            cursor.execute(sql, (usuario_id, nombre, lat, lng, precision))
+            conn.commit()
+            nuevo_id = cursor.lastrowid
+        conn.close()
+        return jsonify({'id': nuevo_id}), 201
+    except Exception as e:
+        return jsonify({'error': f'Error al guardar: {str(e)}'}), 500
+
+@app.route('/api/ubicaciones', methods=['GET'])
+def obtener_ubicaciones():
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT nombre, latitud, longitud, precision_m, creado_en 
+                FROM ubicaciones 
+                ORDER BY id DESC 
+                LIMIT 50
+            """)
+            filas = cursor.fetchall()
+        conn.close()
+
+        ubicaciones = []
+        for f in filas:
+            ubicaciones.append({
+                'nombre': f['nombre'],
+                'latitud': float(f['latitud']),
+                'longitud': float(f['longitud']),
+                'precision_m': int(f['precision_m']),
+                'creado_en': str(f['creado_en'])
+            })
+
+        return jsonify(ubicaciones), 200
+    except Exception as e:
+        return jsonify({'error': f'Error al obtener: {str(e)}'}), 500
 
 # ----------------------------------------------------
 # ENCUESTA UPVM
