@@ -2,89 +2,39 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi ubicación</title>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <!-- Tus estilos generales del proyecto -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='assets/app.css') }}">
-    <style>
-        /* Estilos específicos para que la tarjeta de ubicación luzca impecable */
-        body {
-            margin: 0;
-            min-height: 100vh;
-            display: grid;
-            place-items: center;
-            padding: 16px;
-            font-family: system-ui, sans-serif;
-            background: #eef2f7;
-            color: #1f2937;
-        }
-        .tarjeta {
-            width: 100%;
-            max-width: 560px;
-            padding: 28px;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, .08);
-        }
-        h1 { margin-top: 0; font-size: 1.5rem; }
-        h2 { margin-top: 28px; font-size: 1.2rem; }
-        button, .boton {
-            display: inline-block;
-            width: 100%;
-            padding: 11px;
-            border: 0;
-            border-radius: 8px;
-            background: #2563eb;
-            color: #fff;
-            font-size: 1rem;
-            text-align: center;
-            text-decoration: none;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        button:hover, .boton:hover { background: #1d4ed8; }
-        button:disabled { background: #94a3b8; cursor: not-allowed; }
-        .error  { padding: 10px; border-radius: 8px; background: #fee2e2; color: #991b1b; margin-top: 10px; }
-        .exito  { padding: 10px; border-radius: 8px; background: #dcfce7; color: #166534; margin-top: 10px; }
-        .info   { padding: 10px; border-radius: 8px; background: #dbeafe; color: #1e40af; margin-top: 10px; }
-        #mapa {
-            height: 320px;
-            margin-top: 14px;
-            border-radius: 8px;
-        }
-        .historial { padding-left: 20px; font-size: .85rem; }
-        .historial li { margin-bottom: 4px; }
-        .btn-volver {
-            background: #4b5563;
-        }
-        .btn-volver:hover {
-            background: #374151;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Menú Principal</title>
+    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+    <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
 </head>
 <body>
-    <main class="tarjeta">
-        <h1>Mi ubicación</h1>
-        <p>Sesión: <strong>{{ session.get('nombre', 'Invitado') }}</strong></p>
+    <div data-role="page" id="menu-principal">
+        <div data-role="header" data-theme="b">
+            <h1>Menú Principal</h1>
+            <a href="{{ url_for('logout') }}" data-icon="power" class="ui-btn-right" data-ajax="false">Salir</a>
+        </div>
 
-        <button type="button" id="btn-capturar">Capturar mi ubicación</button>
-        <p id="mensaje" hidden></p>
-        <p id="datos" hidden></p>
+        <div role="main" class="ui-content">
+            <h2>Bienvenido(a), {{ nombre }}</h2>
+            <p>Selecciona la sección a la que deseas acceder:</p>
 
-        <div id="mapa"></div>
+            <div class="ui-grid-a">
+                <a href="{{ url_for('mapas') }}" class="ui-btn ui-corner-all ui-btn-b" data-ajax="false">🗺️ Mapas (iFrame y API)</a>
+                <a href="{{ url_for('presentacion') }}" class="ui-btn ui-corner-all" data-ajax="false">👤 Presentación (Página 2)</a>
+                <a href="{{ url_for('youtube') }}" class="ui-btn ui-corner-all" data-ajax="false">▶️ Video de YouTube</a>
+                <a href="{{ url_for('encuesta') }}" class="ui-btn ui-corner-all" data-ajax="false">📝 Encuesta de Satisfacción</a>
+                <a href="{{ url_for('mensajes') }}" class="ui-btn ui-corner-all" data-ajax="false">💬 Servicio de Mensajería</a>
+                <a href="{{ url_for('crud') }}" class="ui-btn ui-corner-all ui-btn-b" data-ajax="false">⚙️ Gestión (CRUD)</a>
+                <a href="{{ url_for('metrics') }}" class="ui-btn ui-corner-all ui-btn-b" data-ajax="false">📊 Métricas y Rastreo de Cookies</a>
+                <a href="{{ url_for('vista_ubicacion') }}" class="boton" style="margin-top: 10px; display: inline-block; text-align: center; text-decoration: none;">📍 Registrar mi Ubicación</a>
+            </div>
+        </div>
 
-        <h2>Últimas ubicaciones</h2>
-        <ol id="historial" class="historial"></ol>
-
-        <!-- Botón para regresar al menú principal -->
-        <a href="{{ url_for('menu') }}" class="boton btn-volver">← Volver al Menú Principal</a>
-    </main>
-
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Tu script de geolocalización -->
-    <script src="{{ url_for('static', filename='assets/ubicacion.js') }}"></script>
+        <div data-role="footer" data-position="fixed">
+            <h4>Panel General de Navegación</h4>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='assets/tracker.js') }}"></script>
 </body>
 </html>
