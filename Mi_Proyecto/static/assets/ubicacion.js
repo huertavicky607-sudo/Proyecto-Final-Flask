@@ -80,22 +80,26 @@ function mostrarDatos(lat, lng, precision) {
 }
 
 async function cargarHistorial() {
-    // Apunta a la ruta de Flask
-    const respuesta = await fetch('/api/ubicaciones');
-    const ubicaciones = await respuesta.json();
-    
-    capaGuardadas.clearLayers();
-    historial.innerHTML = '';
-    for (const u of ubicaciones) {
-        const texto = `${u.nombre} · ${u.creado_en}`;
+    try {
+        const respuesta = await fetch('/api/ubicaciones');
+        if (!respuesta.ok) return;
+        const ubicaciones = await respuesta.json();
+        
+        capaGuardadas.clearLayers();
+        historial.innerHTML = '';
+        for (const u of ubicaciones) {
+            const texto = `${u.nombre} · ${u.creado_en}`;
 
-        const etiqueta = document.createElement('span');
-        etiqueta.textContent = texto;
-        L.marker([u.latitud, u.longitud]).bindPopup(etiqueta).addTo(capaGuardadas);
+            const etiqueta = document.createElement('span');
+            etiqueta.textContent = texto;
+            L.marker([u.latitud, u.longitud]).bindPopup(etiqueta).addTo(capaGuardadas);
 
-        const li = document.createElement('li');
-        li.textContent = `${texto} → ${u.latitud.toFixed(5)}, ${u.longitud.toFixed(5)} (±${u.precision_m} m)`;
-        historial.append(li);
+            const li = document.createElement('li');
+            li.textContent = `${texto} → ${u.latitud.toFixed(5)}, ${u.longitud.toFixed(5)} (±${u.precision_m} m)`;
+            historial.append(li);
+        }
+    } catch (error) {
+        console.error("No se pudo cargar el historial:", error);
     }
 }
 
