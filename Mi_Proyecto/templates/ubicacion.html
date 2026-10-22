@@ -5,11 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi ubicación</title>
     <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <!-- Tus estilos generales del proyecto -->
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/app.css') }}">
     <style>
-        /* Estilos específicos para que la tarjeta de ubicación luzca impecable */
         body {
             margin: 0;
             min-height: 100vh;
@@ -78,12 +77,12 @@
         <h2>Últimas ubicaciones</h2>
         <ol id="historial" class="historial"></ol>
 
-        <!-- Botón para regresar al menú principal -->
         <a href="{{ url_for('menu') }}" class="boton btn-volver">← Volver al Menú Principal</a>
     </main>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet JS con integridad obligatoria -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
     <!-- Tu script de geolocalización -->
     <script src="{{ url_for('static', filename='assets/ubicacion.js') }}"></script>
 </body>
