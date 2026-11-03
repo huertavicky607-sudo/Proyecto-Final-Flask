@@ -8,69 +8,152 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/global.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/app.css') }}">
     <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
     <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
     <style>
-        /* Ajustes visuales para armonizar el CRUD con el resto de la plataforma */
+        /* Ajustes Glassmorphism para el Panel de Ventas (CRUD) */
         body, .ui-page {
-            background-color: #f9fafb !important;
+            background: transparent !important;
             font-family: 'DM Sans', sans-serif, -apple-system, sans-serif;
         }
-        .topbar {
-            background-color: #111827 !important;
-            color: #ffffff !important;
+
+        .crud-glass-card {
+            background: rgba(255, 255, 255, 0.65) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8) !important;
+            border-radius: 24px !important;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(14, 116, 144, 0.12),
+                        inset 0 1px 2px rgba(255, 255, 255, 0.9) !important;
+            margin-bottom: 25px;
         }
+
         .nav-card {
-            border-radius: 12px !important;
-            border: 1px solid #e5e7eb !important;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03) !important;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            background: rgba(255, 255, 255, 0.75) !important;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 18px !important;
+            border: 1px solid rgba(186, 230, 253, 0.8) !important;
+            box-shadow: 0 8px 20px rgba(14, 116, 144, 0.08) !important;
+            transition: all 0.25s ease;
         }
         .nav-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08) !important;
+            background: rgba(255, 255, 255, 0.95) !important;
+            border-color: #0ea5e9 !important;
+            box-shadow: 0 12px 25px rgba(14, 116, 144, 0.15) !important;
         }
+
+        .nav-card.accent {
+            background: rgba(224, 242, 254, 0.8) !important;
+            border-color: #7dd3fc !important;
+        }
+
+        .nav-card.dark {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
+            color: white !important;
+            border: none !important;
+        }
+
         .primary, button[type="submit"] {
-            background-color: #004b23 !important;
-            border-color: #004b23 !important;
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+            border: none !important;
             color: white !important;
             text-shadow: none !important;
             font-weight: bold !important;
+            border-radius: 50px !important;
+            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3) !important;
+        }
+
+        .summary-strip {
+            background: rgba(255, 255, 255, 0.6) !important;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 16px;
+            padding: 15px;
+        }
+
+        .table-wrap {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            padding: 15px;
+            overflow-x: auto;
         }
     </style>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 </head>
-<body>
-<div data-role="page" id="inicio">
-    <header data-role="header" class="topbar">
-        <div class="brand"><span class="brand-mark" style="background: #004b23; color: white;">SV</span><span>Sistema de Ventas</span></div>
-        <a href="{{ url_for('menu') }}" class="ui-btn ui-btn-inline ui-corner-all help-button" data-ajax="false">Menú Principal</a>
-        <a href="#ayuda" data-rel="dialog" class="ui-btn ui-btn-inline ui-corner-all help-button">Ayuda</a>
-    </header>
-    <main role="main" class="ui-content shell">
-        <section class="intro">
-            <div><p class="eyebrow" style="color: #004b23; font-weight: bold;">Panel operativo</p><h1>Controla tus ventas<br><em style="color: #004b23;">con claridad.</em></h1><p class="intro-copy">Administra clientes, catálogo y movimientos desde un solo lugar.</p></div>
-            <div class="pulse"><span class="pulse-dot" style="background: #004b23;"></span>Base de datos conectada</div>
-        </section>
-        <div id="notice" class="notice" role="status"></div>
-        <nav class="nav-grid" aria-label="Secciones">
-            <a href="#usuarios" class="nav-card"><span class="card-number">01</span><strong>Usuarios</strong><span>Clientes y contactos</span><b>Ir al registro &#8594;</b></a>
-            <a href="#productos" class="nav-card accent" style="background-color: #e8f5e9 !important;"><span class="card-number">02</span><strong>Productos</strong><span>Catálogo e inventario</span><b>Ir al catálogo &#8594;</b></a>
-            <a href="#ventas" class="nav-card dark" style="background-color: #111827 !important; color: white !important;"><span class="card-number" style="color: #9ca3af;">03</span><strong>Ventas</strong><span>Operaciones y totales</span><b style="color: #6ee7b7;">Ver movimientos &#8594;</b></a>
-        </nav>
-        <section class="summary-strip"><div><small>USUARIOS ACTIVOS</small><strong id="active-users">-</strong></div><div><small>PRODUCTOS EN CATÁLOGO</small><strong id="product-count">-</strong></div><div><small>VENTAS REGISTRADAS</small><strong id="sale-count">-</strong></div></section>
-    </main>
-</div>
+<body class="glass-bg" style="position: relative; overflow-x: hidden; margin: 0; padding: 0;">
 
-<div data-role="page" id="usuarios"><header data-role="header" class="section-header"><a href="#inicio" data-transition="slide" class="ui-btn ui-icon-carat-l ui-btn-icon-notext">Inicio</a><h1>Usuarios</h1><a href="#usuario-form" data-rel="dialog" class="ui-btn ui-btn-inline ui-corner-all" data-mode="new">+ Nuevo</a></header><main role="main" class="ui-content shell"><div class="section-heading"><p class="eyebrow">Directorio</p><h2>Personas registradas</h2><input class="query-input" data-query="usuarios" type="search" placeholder="Consultar por nombre, correo o teléfono..."></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Estado</th><th></th></tr></thead><tbody id="usuarios-list"></tbody></table></div></main></div>
-<div data-role="page" id="productos"><header data-role="header" class="section-header"><a href="#inicio" data-transition="slide" class="ui-btn ui-icon-carat-l ui-btn-icon-notext">Inicio</a><h1>Productos</h1><a href="#producto-form" data-rel="dialog" class="ui-btn ui-btn-inline ui-corner-all" data-mode="new">+ Nuevo</a></header><main role="main" class="ui-content shell"><div class="section-heading"><p class="eyebrow">Inventario</p><h2>Catálogo de productos</h2><input class="query-input" data-query="productos" type="search" placeholder="Consultar por nombre o descripción..."></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Producto</th><th>Descripción</th><th>Precio</th><th>Stock</th><th>Estado</th><th></th></tr></thead><tbody id="productos-list"></tbody></table></div></main></div>
-<div data-role="page" id="ventas"><header data-role="header" class="section-header"><a href="#inicio" data-transition="slide" class="ui-btn ui-icon-carat-l ui-btn-icon-notext">Inicio</a><h1>Ventas</h1><a href="#venta-form" data-rel="dialog" class="ui-btn ui-btn-inline ui-corner-all" data-mode="new">+ Nueva</a></header><main role="main" class="ui-content shell"><div class="section-heading"><p class="eyebrow">Actividad</p><h2>Historial de ventas</h2><input class="query-input" data-query="ventas" type="search" placeholder="Consultar por cliente o producto..."></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>Producto</th><th>Cant.</th><th>Subtotal</th><th>Impuesto</th><th>Total</th><th></th></tr></thead><tbody id="ventas-list"></tbody></table></div></main></div>
+    <!-- Burbujas decorativas flotantes -->
+    <div class="bg-bubble" style="width: 75px; height: 75px; top: 12%; left: 6%;"></div>
+    <div class="bg-bubble" style="width: 45px; height: 45px; top: 80%; left: 10%;"></div>
+    <div class="bg-bubble" style="width: 65px; height: 65px; top: 22%; right: 8%;"></div>
+    <div class="bg-bubble" style="width: 35px; height: 35px; top: 68%; right: 14%;"></div>
 
-<div data-role="page" id="usuario-form" data-close-btn="right"><header data-role="header"><h1 id="usuario-form-title">Nuevo usuario</h1></header><main role="main" class="ui-content form-content"><form id="usuario-form-data"><input type="hidden" name="id_usuario"><label>Nombre<input name="nombre" required maxlength="100"></label><label>Email<input type="email" name="email" required maxlength="150"></label><label>Teléfono<input name="telefono" maxlength="20"></label><label class="check-row"><input type="checkbox" name="activo" value="1" checked> Usuario activo</label><button type="submit" class="ui-btn ui-corner-all primary">Guardar usuario</button></form></main></div>
-<div data-role="page" id="producto-form" data-close-btn="right"><header data-role="header"><h1 id="producto-form-title">Nuevo producto</h1></header><main role="main" class="ui-content form-content"><form id="producto-form-data"><input type="hidden" name="id_producto"><label>Nombre<input name="nombre" required maxlength="150"></label><label>Descripción<textarea name="descripcion" maxlength="1000"></textarea></label><div class="two-fields"><label>Precio<input type="number" name="precio" min="0" step="0.01" required></label><label>Stock<input type="number" name="stock" min="0" step="1" required></label></div><label>Imagen (nombre del archivo)<input name="imagen" maxlength="255"></label><label class="check-row"><input type="checkbox" name="activo" value="1" checked> Producto activo</label><button type="submit" class="ui-btn ui-corner-all primary">Guardar producto</button></form></main></div>
-<div data-role="page" id="venta-form" data-close-btn="right"><header data-role="header"><h1 id="venta-form-title">Nueva venta</h1></header><main role="main" class="ui-content form-content"><form id="venta-form-data"><input type="hidden" name="id_venta"><label>Usuario<select name="id_usuario" id="sale-user" required></select></label><label>Producto<select name="id_producto" id="sale-product" required></select></label><div class="two-fields"><label>Cantidad<input type="number" name="cantidad" min="1" step="1" value="1" required></label><label>Impuesto (%)<input type="number" name="tasa_impuesto" min="0" step="0.01" value="16" required></label></div><p class="form-hint">El precio y los totales se calculan desde el producto y el servidor.</p><button type="submit" class="ui-btn ui-corner-all primary">Guardar venta</button></form></main></div>
-<div data-role="dialog" id="ayuda"><header data-role="header"><h1>Ayuda rápida</h1></header><main role="main" class="ui-content"><p>Usa las tarjetas para navegar. Los registros relacionados no se pueden eliminar mientras tengan ventas asociadas.</p><a href="#" data-rel="back" class="ui-btn ui-corner-all">Cerrar</a></main></div>
+    <!-- PÁGINA DE INICIO DEL CRUD -->
+    <div data-role="page" id="inicio" style="background: transparent !important; position: relative; z-index: 2;">
+        
+        <!-- Header Principal Estandarizado -->
+        <div data-role="header" data-theme="b" style="padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; min-height: 65px;">
+            <div style="display: flex; align-items: center;">
+                <div style="background: #1E40AF; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 1px solid #FBBF24; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                    <span style="font-size: 20px; line-height: 1;">⚡</span>
+                </div>
+                <span style="font-size: 22px; font-weight: bold; color: #FBBF24; letter-spacing: 0.5px;">ElectroRuta</span>
+            </div>
+            <div>
+                <a href="{{ url_for('menu') }}" class="ui-btn ui-corner-all ui-icon-home" data-ajax="false" style="background: transparent; border: none; color: #FBBF24; font-size: 14px;">Menú Principal</a>
+                <a href="#ayuda" data-rel="dialog" class="ui-btn ui-corner-all ui-icon-info" style="background: transparent; border: none; color: #FBBF24; font-size: 14px;">Ayuda</a>
+            </div>
+        </div>
 
-<script src="{{ url_for('static', filename='assets/app.js') }}"></script>
-</body>
-</html>
+        <main role="main" class="ui-content shell" style="padding: 20px 15px;">
+            <section class="intro crud-glass-card">
+                <div>
+                    <p class="eyebrow" style="color: #0284c7; font-weight: bold;">Panel operativo</p>
+                    <h1 style="color: #1e40af; margin: 10px 0;">Controla tus ventas<br><em style="color: #0369a1;">con claridad.</em></h1>
+                    <p class="intro-copy" style="color: #475569;">Administra clientes, catálogo y movimientos desde un solo lugar.</p>
+                </div>
+                <div class="pulse" style="background: rgba(2, 132, 199, 0.1); border: 1px solid #bae6fd; padding: 6px 14px; border-radius: 20px; color: #0369a1;">
+                    <span class="pulse-dot" style="background: #0284c7;"></span>Base de datos conectada
+                </div>
+            </section>
+
+            <div id="notice" class="notice" role="status"></div>
+
+            <nav class="nav-grid" aria-label="Secciones" style="margin-bottom: 25px;">
+                <a href="#usuarios" class="nav-card">
+                    <span class="card-number" style="color: #0284c7;">01</span>
+                    <strong style="color: #1e40af;">Usuarios</strong>
+                    <span style="color: #64748b;">Clientes y contactos</span>
+                    <b style="color: #0284c7;">Ir al registro &#8594;</b>
+                </a>
+                <a href="#productos" class="nav-card accent">
+                    <span class="card-number" style="color: #0369a1;">02</span>
+                    <strong style="color: #0369a1;">Productos</strong>
+                    <span style="color: #64748b;">Catálogo e inventario</span>
+                    <b style="color: #0284c7;">Ir al catálogo &#8594;</b>
+                </a>
+                <a href="#ventas" class="nav-card dark">
+                    <span class="card-number" style="color: #93c5fd;">03</span>
+                    <strong style="color: white;">Ventas</strong>
+                    <span style="color: #cbd5e1;">Operaciones y totales</span>
+                    <b style="color: #fef08a;">Ver movimientos &#8594;</b>
+                </a>
+            </nav>
+
+            <section class="summary-strip">
+                <div><small style="color: #64748b;">USUARIOS ACTIVOS</small><strong id="active-users" style="color: #1e40af;">-</strong></div>
+                <div><small style="color: #64748b;">PRODUCTOS EN CATÁLOGO</small><strong id="product-count" style="color: #1e40af;">-</strong></div>
+                <div><small style="color: #64748b;">VENTAS REGISTRADAS</small><strong id="sale-count" style="color: #1e40af;">-</strong></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- SECCIÓN USUARIOS -->
+    <div data-role="page" id="usuarios"
