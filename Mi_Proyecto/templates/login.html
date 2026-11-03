@@ -4,41 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Iniciar Sesión</title>
+    <!-- Favicon del rayito estilizado -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
     <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/global.css') }}">
     <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
     <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
 </head>
-<body>
-    <div data-role="page" id="login-page">
+<body class="glass-bg">
+    <div data-role="page" id="login-page" style="background: transparent !important;">
         <div data-role="header" data-theme="b">
             <!-- Botón para volver al menú principal en la esquina superior izquierda -->
             <a href="{{ url_for('menu') }}" data-icon="home" data-ajax="false">Menú</a>
             <h1>Iniciar Sesión</h1>
         </div>
 
-        <div role="main" class="ui-content" style="max-width: 500px; margin: 20px auto;">
-            {% if error %}
-                <p style="color: red; text-align: center; font-weight: bold;">{{ error }}</p>
-            {% endif %}
+        <div role="main" class="ui-content">
+            <div class="glass-login-container">
+                
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="color: var(--color-principal); margin: 0 0 5px 0;">ElectroRuta</h2>
+                    <p style="color: #64748b; font-size: 14px; margin: 0;">Ingresa tus credenciales para continuar</p>
+                </div>
 
-            <form method="POST" action="{{ url_for('login') }}" data-ajax="false">
-                <label for="correo">Correo electrónico:</label>
-                <input type="email" name="correo" id="correo" placeholder="ejemplo@correo.com" required>
+                {% if error %}
+                    <p style="color: red; text-align: center; font-weight: bold; margin-bottom: 15px;">{{ error }}</p>
+                {% endif %}
 
-                <label for="contrasena">Contraseña:</label>
-                <input type="password" name="password" id="contrasena" required>
+                <form method="POST" action="{{ url_for('login') }}" data-ajax="false">
+                    <label for="correo" style="font-weight: bold; color: #1e293b;">Correo electrónico:</label>
+                    <input type="email" name="correo" id="correo" placeholder="ejemplo@correo.com" class="glass-input" required>
 
-                <button type="submit" class="ui-btn ui-btn-b ui-corner-all">Entrar</button>
-            </form>
+                    <label for="contrasena" style="font-weight: bold; color: #1e293b;">Contraseña:</label>
+                    <input type="password" name="password" id="contrasena" class="glass-input" required>
 
-            <div style="text-align: center; margin-top: 20px;">
-                <p>¿No tienes cuenta?</p>
-                <a href="{{ url_for('registro') }}" class="ui-btn ui-corner-all" data-ajax="false">Crear cuenta nueva</a>
+                    <button type="submit" class="glass-btn">Entrar</button>
+                </form>
+
+                <div style="text-align: center; margin-top: 20px;">
+                    <p style="color: #64748b; margin-bottom: 10px;">¿No tienes cuenta?</p>
+                    <a href="{{ url_for('registro') }}" class="ui-btn ui-corner-all" data-ajax="false" style="background: rgba(255, 255, 255, 0.8); border: 1px solid #bae6fd; color: #0284c7; font-weight: bold;">Crear cuenta nueva</a>
+                </div>
+
             </div>
         </div>
 
-        <div data-role="footer" data-position="fixed">
+        <div data-role="footer" data-position="fixed" data-theme="b">
             <h4>Sistema de Autenticación</h4>
         </div>
     </div>
