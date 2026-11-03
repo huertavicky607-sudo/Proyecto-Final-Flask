@@ -14,39 +14,52 @@
 <body class="glass-bg">
     <div data-role="page" id="login-page" style="background: transparent !important;">
         <div data-role="header" data-theme="b">
-            <!-- Botón para volver al menú principal en la esquina superior izquierda -->
+            <!-- Botón para volver al menú principal -->
             <a href="{{ url_for('menu') }}" data-icon="home" data-ajax="false">Menú</a>
             <h1>Iniciar Sesión</h1>
         </div>
 
-        <div role="main" class="ui-content">
-            <div class="glass-login-container">
+        <div role="main" class="ui-content" style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
+            
+            <!-- Contenedor con las gotitas 3D alrededor -->
+            <div class="login-wrapper">
                 
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <h2 style="color: var(--color-principal); margin: 0 0 5px 0;">ElectroRuta</h2>
-                    <p style="color: #64748b; font-size: 14px; margin: 0;">Ingresa tus credenciales para continuar</p>
+                <!-- Gotitas de agua decorativas -->
+                <div class="water-drop" style="width: 55px; height: 55px; top: -25px; left: -35px;"></div>
+                <div class="water-drop" style="width: 30px; height: 30px; top: 40px; right: -30px;"></div>
+                <div class="water-drop" style="width: 25px; height: 25px; bottom: 80px; left: -25px;"></div>
+                <div class="water-drop" style="width: 40px; height: 40px; bottom: -20px; right: 30px;"></div>
+
+                <!-- Tarjeta principal de cristal -->
+                <div class="glass-login-container" style="margin: 0 auto;">
+                    
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h2 style="color: var(--color-principal); margin: 0 0 5px 0;">ElectroRuta</h2>
+                        <p style="color: #64748b; font-size: 14px; margin: 0;">Ingresa tus credenciales para continuar</p>
+                    </div>
+
+                    {% if error %}
+                        <p style="color: red; text-align: center; font-weight: bold; margin-bottom: 15px;">{{ error }}</p>
+                    {% endif %}
+
+                    <form method="POST" action="{{ url_for('login') }}" data-ajax="false">
+                        <label for="correo" style="font-weight: bold; color: #1e293b;">Correo electrónico:</label>
+                        <input type="email" name="correo" id="correo" placeholder="ejemplo@correo.com" class="glass-input" required>
+
+                        <label for="contrasena" style="font-weight: bold; color: #1e293b;">Contraseña:</label>
+                        <input type="password" name="password" id="contrasena" class="glass-input" required>
+
+                        <button type="submit" class="glass-btn">Entrar</button>
+                    </form>
+
+                    <div style="text-align: center; margin-top: 20px;">
+                        <p style="color: #64748b; margin-bottom: 10px;">¿No tienes cuenta?</p>
+                        <a href="{{ url_for('registro') }}" class="ui-btn ui-corner-all" data-ajax="false" style="background: rgba(255, 255, 255, 0.8); border: 1px solid #bae6fd; color: #0284c7; font-weight: bold;">Crear cuenta nueva</a>
+                    </div>
+
                 </div>
-
-                {% if error %}
-                    <p style="color: red; text-align: center; font-weight: bold; margin-bottom: 15px;">{{ error }}</p>
-                {% endif %}
-
-                <form method="POST" action="{{ url_for('login') }}" data-ajax="false">
-                    <label for="correo" style="font-weight: bold; color: #1e293b;">Correo electrónico:</label>
-                    <input type="email" name="correo" id="correo" placeholder="ejemplo@correo.com" class="glass-input" required>
-
-                    <label for="contrasena" style="font-weight: bold; color: #1e293b;">Contraseña:</label>
-                    <input type="password" name="password" id="contrasena" class="glass-input" required>
-
-                    <button type="submit" class="glass-btn">Entrar</button>
-                </form>
-
-                <div style="text-align: center; margin-top: 20px;">
-                    <p style="color: #64748b; margin-bottom: 10px;">¿No tienes cuenta?</p>
-                    <a href="{{ url_for('registro') }}" class="ui-btn ui-corner-all" data-ajax="false" style="background: rgba(255, 255, 255, 0.8); border: 1px solid #bae6fd; color: #0284c7; font-weight: bold;">Crear cuenta nueva</a>
-                </div>
-
             </div>
+
         </div>
 
         <div data-role="footer" data-position="fixed" data-theme="b">
