@@ -40,10 +40,10 @@
         <span style="font-size: 22px; font-weight: bold; color: #FBBF24; letter-spacing: 0.5px;">ElectroRuta</span>
     </div>
     <div>
-        {% if session.get('usuario_id') %}
-            <a href="{{ url_for('logout') }}" data-icon="power" class="ui-btn ui-corner-all ui-icon-power ui-btn-icon-notext" data-ajax="false" style="background: transparent; border: none;" title="Salir">Salir</a>
+       {% if session.get('usuario_id') %}
+            <a href="{{ url_for('logout') }}" data-icon="power" class="ui-btn ui-corner-all ui-icon-power" data-ajax="false" style="background: transparent; border: none; color: #FBBF24; font-size: 14px;">Salir</a>
         {% else %}
-            <a href="{{ url_for('login') }}" data-icon="user" class="ui-btn ui-corner-all ui-icon-user ui-btn-icon-notext" data-ajax="false" style="background: transparent; border: none;" title="Iniciar Sesión">Iniciar Sesión</a>
+            <a href="{{ url_for('login') }}" data-icon="user" class="ui-btn ui-corner-all ui-icon-user" data-ajax="false" style="background: transparent; border: none; color: #FBBF24; font-size: 14px;">Iniciar Sesión</a>
         {% endif %}
     </div>
 </div>
