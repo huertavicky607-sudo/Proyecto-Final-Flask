@@ -9,77 +9,107 @@
     <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
     <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
     <style>
-        /* Estilo personalizado para centrar y estilizar el panel del menú */
+        /* Estilos adaptados al concepto Glassmorphism para el Menú */
         .menu-container {
-            max-width: 650px;
-            margin: 30px auto;
-            padding: 20px;
+            max-width: 550px;
+            margin: 20px auto;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 30px;
+            box-shadow: 0 20px 40px rgba(14, 116, 144, 0.15),
+                        inset 0 1px 2px rgba(255, 255, 255, 0.9);
+            position: relative;
+            z-index: 2;
         }
         .menu-bienvenida {
             text-align: center;
             margin-bottom: 25px;
         }
-        /* Estilo elegante para los botones de las actividades */
+        /* Botones de navegación estilizados con efecto cristal suave */
         .menu-grid .ui-btn {
-            border-radius: 10px !important;
+            background: rgba(240, 249, 255, 0.7) !important;
+            border: 1px solid rgba(186, 230, 253, 0.8) !important;
+            color: #0369a1 !important;
+            border-radius: 14px !important;
             font-weight: bold;
             text-align: left;
             padding-left: 20px;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 12px;
+            box-shadow: 0 4px 10px rgba(14, 116, 144, 0.08);
+            text-shadow: none !important;
+            transition: all 0.2s ease;
+        }
+        .menu-grid .ui-btn:hover {
+            background: rgba(255, 255, 255, 0.95) !important;
+            border-color: #0ea5e9 !important;
+            transform: translateY(-2px);
         }
     </style>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 </head>
-<body>
-    <div data-role="header" data-theme="b" style="padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; min-height: 65px;">
-    <div style="display: flex; align-items: center;">
-        <div style="background: #1E40AF; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 1px solid #FBBF24; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-            <span style="font-size: 20px; line-height: 1;">⚡</span>
-        </div>
-        <span style="font-size: 22px; font-weight: bold; color: #FBBF24; letter-spacing: 0.5px;">ElectroRuta</span>
-    </div>
-    <div>
-       {% if session.get('usuario_id') %}
-            <a href="{{ url_for('logout') }}" data-icon="power" class="ui-btn ui-corner-all ui-icon-power" data-ajax="false" style="background: transparent; border: none; color: #FBBF24; font-size: 14px;">Salir</a>
-        {% else %}
-            <a href="{{ url_for('login') }}" data-icon="user" class="ui-btn ui-corner-all ui-icon-user" data-ajax="false" style="background: transparent; border: none; color: #FBBF24; font-size: 14px;">Iniciar Sesión</a>
-        {% endif %}
-    </div>
-</div>
+<body class="glass-bg" style="position: relative; overflow-x: hidden; margin: 0; padding: 0;">
 
-        <div role="main" class="ui-content">
+    <!-- Burbujas decorativas esparcidas por el fondo -->
+    <div class="bg-bubble" style="width: 70px; height: 70px; top: 10%; left: 8%;"></div>
+    <div class="bg-bubble" style="width: 45px; height: 45px; top: 80%; left: 12%;"></div>
+    <div class="bg-bubble" style="width: 60px; height: 60px; top: 20%; right: 10%;"></div>
+    <div class="bg-bubble" style="width: 35px; height: 35px; top: 70%; right: 15%;"></div>
+    <div class="bg-bubble" style="width: 30px; height: 30px; top: 45%; left: 5%;"></div>
+    <div class="bg-bubble" style="width: 50px; height: 50px; bottom: 8% right: 8%;"></div>
+
+    <div data-role="page" id="menu-page" style="background: transparent !important; position: relative; z-index: 2;">
+        
+        <div data-role="header" data-theme="b" style="padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; min-height: 65px;">
+            <div style="display: flex; align-items: center;">
+                <div style="background: #1E40AF; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 1px solid #FBBF24; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                    <span style="font-size: 20px; line-height: 1;">⚡</span>
+                </div>
+                <span style="font-size: 22px; font-weight: bold; color: #FBBF24; letter-spacing: 0.5px;">ElectroRuta</span>
+            </div>
+            <div>
+               {% if session.get('usuario_id') %}
+                    <a href="{{ url_for('logout') }}" data-icon="power" class="ui-btn ui-corner-all ui-icon-power" data-ajax="false" style="background: transparent; border: none; color: #FBBF24; font-size: 14px;">Salir</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" data-icon="user" class="ui-btn ui-corner-all ui-icon-user" data-ajax="false" style="background: transparent; border: none; color: #FBBF24; font-size: 14px;">Iniciar Sesión</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div role="main" class="ui-content" style="display: flex; justify-content: center; align-items: center; padding: 20px 10px;">
             <div class="menu-container">
                 <div class="menu-bienvenida">
                     {% if session.get('usuario_id') %}
-                        <h2>¡Hola, {{ nombre }}!</h2>
-                        <p><span style="background: #e5e7eb; padding: 4px 12px; border-radius: 20px; color: #374151; font-size: 0.9rem;">Rol: <strong>{{ rol }}</strong></span></p>
-                        <p style="color: #6b7280; margin-top: 5px;">Explora las actividades y herramientas disponibles:</p>
+                        <h2 style="color: #1e40af; margin-top: 0;">¡Hola, {{ nombre }}!</h2>
+                        <p><span style="background: rgba(2, 132, 199, 0.15); padding: 5px 14px; border-radius: 20px; color: #0369a1; font-size: 0.9rem; border: 1px solid rgba(2, 132, 199, 0.3);">Rol: <strong>{{ rol }}</strong></span></p>
+                        <p style="color: #475569; margin-top: 10px;">Explora las actividades y herramientas disponibles:</p>
                     {% else %}
-                        <h2>¡Bienvenido(a) a nuestro sitio!</h2>
-                        <p style="color: #6b7280;">Explora las secciones de abajo. Al interactuar con las actividades protegidas, el sistema te pedirá iniciar sesión.</p>
+                        <h2 style="color: #1e40af; margin-top: 0;">¡Bienvenido(a) a nuestro sitio!</h2>
+                        <p style="color: #475569;">Explora las secciones de abajo. Al interactuar con las actividades protegidas, el sistema te pedirá iniciar sesión.</p>
                     {% endif %}
                 </div>
 
                 <div class="menu-grid">
-                    <a href="{{ url_for('mapas') }}" class="ui-btn ui-corner-all ui-btn-b" data-ajax="false">🗺️ Mapas (iFrame y API)</a>
+                    <a href="{{ url_for('mapas') }}" class="ui-btn ui-corner-all" data-ajax="false">🗺️ Mapas (iFrame y API)</a>
                     <a href="{{ url_for('presentacion') }}" class="ui-btn ui-corner-all" data-ajax="false">👤 Presentación (Página 2)</a>
                     <a href="{{ url_for('youtube') }}" class="ui-btn ui-corner-all" data-ajax="false">▶️ Video de YouTube</a>
                     <a href="{{ url_for('encuesta') }}" class="ui-btn ui-corner-all" data-ajax="false">📝 Encuesta de Satisfacción</a>
                     <a href="{{ url_for('mensajes') }}" class="ui-btn ui-corner-all" data-ajax="false">💬 Servicio de Mensajería</a>
-                    <a href="{{ url_for('crud') }}" class="ui-btn ui-corner-all ui-btn-b" data-ajax="false">⚙️ Gestión (CRUD)</a>
+                    <a href="{{ url_for('crud') }}" class="ui-btn ui-corner-all" data-ajax="false">⚙️ Gestión (CRUD)</a>
                     <a href="{{ url_for('vista_ubicacion') }}" class="ui-btn ui-corner-all" data-ajax="false">📍 Registrar mi Ubicación</a>
                     <a href="{{ url_for('vista_fotos') }}" class="ui-btn ui-corner-all" data-ajax="false">📷 Galería de Fotos</a>
 
                     <!-- 🔒 BOTÓN EXCLUSIVO PARA ADMINISTRADOR (Métricas) -->
                     {% if session.get('rol') == 'admin' %}
-                        <a href="{{ url_for('metrics') }}" class="ui-btn ui-corner-all" data-ajax="false" style="background-color: #1e3a8a !important; color: white !important;">📊 Métricas del Sitio (Admin)</a>
+                        <a href="{{ url_for('metrics') }}" class="ui-btn ui-corner-all" data-ajax="false" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important; color: white !important; border: none !important;">📊 Métricas del Sitio (Admin)</a>
                     {% endif %}
                 </div>
             </div>
         </div>
 
-        <div data-role="footer" data-position="fixed">
+        <div data-role="footer" data-position="fixed" data-theme="b">
             <h4>Panel General de Navegación</h4>
         </div>
     </div>
