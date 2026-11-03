@@ -31,16 +31,18 @@
     </style>
 </head>
 <body>
-    <div data-role="header" data-theme="b" style="padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; min-height: 60px;">
+    <div data-role="header" data-theme="b" style="padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; min-height: 65px;">
     <div style="display: flex; align-items: center;">
-        <img src="{{ url_for('static', filename='images/logo-svg.svg') }}" alt="Logo ElectroRuta" style="width: 40px; height: 40px; object-fit: contain; margin-right: 12px;">
+        <div style="background: #1E40AF; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 1px solid #FBBF24;">
+            <img src="{{ url_for('static', filename='images/logo-svg.svg') }}" alt="Logo ElectroRuta" style="width: 28px; height: 28px; object-fit: contain; display: block;">
+        </div>
         <span style="font-size: 22px; font-weight: bold; color: #FBBF24; letter-spacing: 0.5px;">ElectroRuta</span>
     </div>
     <div>
         {% if session.get('usuario_id') %}
-            <a href="{{ url_for('logout') }}" data-icon="power" class="ui-btn ui-corner-all ui-icon-power ui-btn-icon-notext" data-ajax="false" style="background: transparent; border: none;">Salir</a>
+            <a href="{{ url_for('logout') }}" data-icon="power" class="ui-btn ui-corner-all ui-icon-power ui-btn-icon-notext" data-ajax="false" style="background: transparent; border: none;" title="Salir">Salir</a>
         {% else %}
-            <a href="{{ url_for('login') }}" data-icon="user" class="ui-btn ui-corner-all ui-icon-user ui-btn-icon-notext" data-ajax="false" style="background: transparent; border: none;">Iniciar Sesión</a>
+            <a href="{{ url_for('login') }}" data-icon="user" class="ui-btn ui-corner-all ui-icon-user ui-btn-icon-notext" data-ajax="false" style="background: transparent; border: none;" title="Iniciar Sesión">Iniciar Sesión</a>
         {% endif %}
     </div>
 </div>
