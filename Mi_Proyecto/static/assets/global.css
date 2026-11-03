@@ -184,3 +184,24 @@
         box-shadow: inset 2px 2px 5px rgba(14, 116, 144, 0.08), 
                     0 0 10px rgba(14, 165, 233, 0.3) !important;
     }
+
+/* --- Corrección precisa para la barra de búsqueda en jQuery Mobile --- */
+    .ui-input-search {
+        position: relative !important;
+        padding-left: 10px !important;
+    }
+
+    /* Empujamos el texto hacia la derecha para dejar libre el espacio de la lupa */
+    .ui-input-search input, .ui-filterable input {
+        padding-left: 35px !important; /* Espacio para que la lupa no encime al texto */
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: #0369a1 !important;
+    }
+
+    /* Aseguramos que el icono de la lupa quede bien centrado verticalmente a la izquierda */
+    .ui-input-search:after {
+        left: 12px !important;
+        right: auto !important;
+    }
