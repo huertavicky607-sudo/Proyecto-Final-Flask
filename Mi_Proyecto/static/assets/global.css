@@ -1,0 +1,61 @@
+/* --- Paleta de Colores Uniforme (ElectroRuta) --- */
+
+:root {
+  --color-principal: #1e40af; /* Azul Eléctrico */
+  --color-acento: #fbbf24;    /* Amarillo Ámbar */
+  --color-texto-oscuro: #111827;
+  --color-texto-claro: #f9fafb;
+}
+
+/* --- Ajustes Globales de jQuery Mobile --- */
+
+/* Barra Superior (Header) */
+.ui-header-b {
+  background-color: #111827 !important; /* Fondo muy oscuro, casi negro */
+  color: #ffffff !important;
+  border: none !important;
+}
+
+/* Botones Principales (primary, submit) */
+.ui-btn-b, .primary {
+  background-color: var(--color-principal) !important;
+  color: var(--color-texto-claro) !important;
+  border-radius: 8px !important;
+  font-weight: bold !important;
+  text-shadow: none !important;
+}
+
+/* Contenedores de Tarjetas (Formularios y Chat) */
+.login-container, .encuesta-container, .chat-container {
+  max-width: 500px;
+  margin: 30px auto;
+  padding: 30px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+/* Ajustes específicos para las preguntas de encuesta */
+.form-group label {
+  display: block;
+  font-weight: bold !important;
+  color: var(--color-texto-oscuro);
+  margin-bottom: 8px !important;
+}
+
+/* Estilo del Chat (Mensajería) */
+#caja-mensajes {
+  height: 320px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  margin-bottom: 20px;
+}
+
+.msg-item.propio {
+  background: var(--color-principal) !important;
+  color: #ffffff !important;
+  margin-left: auto;
+}
