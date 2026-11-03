@@ -127,19 +127,19 @@
             <div id="notice" class="notice" role="status"></div>
 
             <nav class="nav-grid" aria-label="Secciones" style="margin-bottom: 25px;">
-                <a href="#usuarios" class="nav-card">
+                <a href="#usuarios" class="nav-card" data-transition="slide">
                     <span class="card-number" style="color: #0284c7;">01</span>
                     <strong style="color: #1e40af;">Usuarios</strong>
                     <span style="color: #64748b;">Clientes y contactos</span>
                     <b style="color: #0284c7;">Ir al registro &#8594;</b>
                 </a>
-                <a href="#productos" class="nav-card accent">
+                <a href="#productos" class="nav-card accent" data-transition="slide">
                     <span class="card-number" style="color: #0369a1;">02</span>
                     <strong style="color: #0369a1;">Productos</strong>
                     <span style="color: #64748b;">Catálogo e inventario</span>
                     <b style="color: #0284c7;">Ir al catálogo &#8594;</b>
                 </a>
-                <a href="#ventas" class="nav-card dark">
+                <a href="#ventas" class="nav-card dark" data-transition="slide">
                     <span class="card-number" style="color: #93c5fd;">03</span>
                     <strong style="color: white;">Ventas</strong>
                     <span style="color: #cbd5e1;">Operaciones y totales</span>
@@ -156,4 +156,165 @@
     </div>
 
     <!-- SECCIÓN USUARIOS -->
-    <div data-role="page" id="usuarios"
+    <div data-role="page" id="usuarios" style="background: transparent !important; position: relative; z-index: 2;">
+        <header data-role="header" data-theme="b" class="section-header" style="padding: 10px 20px;">
+            <a href="#inicio" data-transition="slide" class="ui-btn ui-icon-carat-l ui-btn-icon-notext">Inicio</a>
+            <h1>Usuarios</h1>
+            <a href="#usuario-form" data-rel="dialog" class="ui-btn ui-btn-inline ui-corner-all" data-mode="new">+ Nuevo</a>
+        </header>
+        <main role="main" class="ui-content shell" style="padding: 20px 15px;">
+            <div class="crud-glass-card">
+                <div class="section-heading">
+                    <p class="eyebrow" style="color: #0284c7;">Directorio</p>
+                    <h2 style="color: #1e40af;">Personas registradas</h2>
+                    <input class="query-input glass-input" data-query="usuarios" type="search" placeholder="Consultar por nombre, correo o teléfono...">
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Teléfono</th>
+                                <th>Estado</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="usuarios-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- SECCIÓN PRODUCTOS -->
+    <div data-role="page" id="productos" style="background: transparent !important; position: relative; z-index: 2;">
+        <header data-role="header" data-theme="b" class="section-header" style="padding: 10px 20px;">
+            <a href="#inicio" data-transition="slide" class="ui-btn ui-icon-carat-l ui-btn-icon-notext">Inicio</a>
+            <h1>Productos</h1>
+            <a href="#producto-form" data-rel="dialog" class="ui-btn ui-btn-inline ui-corner-all" data-mode="new">+ Nuevo</a>
+        </header>
+        <main role="main" class="ui-content shell" style="padding: 20px 15px;">
+            <div class="crud-glass-card">
+                <div class="section-heading">
+                    <p class="eyebrow" style="color: #0284c7;">Inventario</p>
+                    <h2 style="color: #1e40af;">Catálogo de productos</h2>
+                    <input class="query-input glass-input" data-query="productos" type="search" placeholder="Consultar por nombre o descripción...">
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Descripción</th>
+                                <th>Precio</th>
+                                <th>Stock</th>
+                                <th>Estado</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="productos-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- SECCIÓN VENTAS -->
+    <div data-role="page" id="ventas" style="background: transparent !important; position: relative; z-index: 2;">
+        <header data-role="header" data-theme="b" class="section-header" style="padding: 10px 20px;">
+            <a href="#inicio" data-transition="slide" class="ui-btn ui-icon-carat-l ui-btn-icon-notext">Inicio</a>
+            <h1>Ventas</h1>
+            <a href="#venta-form" data-rel="dialog" class="ui-btn ui-btn-inline ui-corner-all" data-mode="new">+ Nueva</a>
+        </header>
+        <main role="main" class="ui-content shell" style="padding: 20px 15px;">
+            <div class="crud-glass-card">
+                <div class="section-heading">
+                    <p class="eyebrow" style="color: #0284c7;">Actividad</p>
+                    <h2 style="color: #1e40af;">Historial de ventas</h2>
+                    <input class="query-input glass-input" data-query="ventas" type="search" placeholder="Consultar por cliente o producto...">
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Producto</th>
+                                <th>Cant.</th>
+                                <th>Subtotal</th>
+                                <th>Impuesto</th>
+                                <th>Total</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="ventas-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- FORMULARIO USUARIOS -->
+    <div data-role="page" id="usuario-form" data-close-btn="right">
+        <header data-role="header" data-theme="b"><h1 id="usuario-form-title">Nuevo usuario</h1></header>
+        <main role="main" class="ui-content form-content">
+            <form id="usuario-form-data">
+                <input type="hidden" name="id_usuario">
+                <label>Nombre<input name="nombre" class="glass-input" required maxlength="100"></label>
+                <label>Email<input type="email" name="email" class="glass-input" required maxlength="150"></label>
+                <label>Teléfono<input name="telefono" class="glass-input" maxlength="20"></label>
+                <label class="check-row"><input type="checkbox" name="activo" value="1" checked> Usuario activo</label>
+                <button type="submit" class="ui-btn ui-corner-all primary">Guardar usuario</button>
+            </form>
+        </main>
+    </div>
+
+    <!-- FORMULARIO PRODUCTOS -->
+    <div data-role="page" id="producto-form" data-close-btn="right">
+        <header data-role="header" data-theme="b"><h1 id="producto-form-title">Nuevo producto</h1></header>
+        <main role="main" class="ui-content form-content">
+            <form id="producto-form-data">
+                <input type="hidden" name="id_producto">
+                <label>Nombre<input name="nombre" class="glass-input" required maxlength="150"></label>
+                <label>Descripción<textarea name="descripcion" class="glass-input" maxlength="1000"></textarea></label>
+                <div class="two-fields">
+                    <label>Precio<input type="number" name="precio" class="glass-input" min="0" step="0.01" required></label>
+                    <label>Stock<input type="number" name="stock" class="glass-input" min="0" step="1" required></label>
+                </div>
+                <label>Imagen (nombre del archivo)<input name="imagen" class="glass-input" maxlength="255"></label>
+                <label class="check-row"><input type="checkbox" name="activo" value="1" checked> Producto activo</label>
+                <button type="submit" class="ui-btn ui-corner-all primary">Guardar producto</button>
+            </form>
+        </main>
+    </div>
+
+    <!-- FORMULARIO VENTAS -->
+    <div data-role="page" id="venta-form" data-close-btn="right">
+        <header data-role="header" data-theme="b"><h1 id="venta-form-title">Nueva venta</h1></header>
+        <main role="main" class="ui-content form-content">
+            <form id="venta-form-data">
+                <input type="hidden" name="id_venta">
+                <label>Usuario<select name="id_usuario" id="sale-user" required></select></label>
+                <label>Producto<select name="id_producto" id="sale-product" required></select></label>
+                <div class="two-fields">
+                    <label>Cantidad<input type="number" name="cantidad" class="glass-input" min="1" step="1" value="1" required></label>
+                    <label>Impuesto (%)<input type="number" name="tasa_impuesto" class="glass-input" min="0" step="0.01" value="16" required></label>
+                </div>
+                <p class="form-hint">El precio y los totales se calculan desde el producto y el servidor.</p>
+                <button type="submit" class="ui-btn ui-corner-all primary">Guardar venta</button>
+            </form>
+        </main>
+    </div>
+
+    <!-- DIÁLOGO DE AYUDA -->
+    <div data-role="dialog" id="ayuda">
+        <header data-role="header" data-theme="b"><h1>Ayuda rápida</h1></header>
+        <main role="main" class="ui-content">
+            <p>Usa las tarjetas para navegar. Los registros relacionados no se pueden eliminar mientras tengan ventas asociadas.</p>
+            <a href="#" data-rel="back" class="ui-btn ui-corner-all">Cerrar</a>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='assets/app.js') }}"></script>
+</body>
+</html>
