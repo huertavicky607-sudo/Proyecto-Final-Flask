@@ -496,8 +496,12 @@ def listar_mensajes():
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            cursor.execute("SELECT id, usuario, texto, DATE_FORMAT(fecha, '%Y-%m-%dT%H:%i:%sZ') as fecha FROM mensajes WHERE id > %s ORDER BY id ASC", (desde,))
+            cursor.execute("SELECT id, usuario, texto, fecha FROM mensajes WHERE id > %s ORDER BY id ASC", (desde,))
             nuevos = cursor.fetchall()
+            # Aseguramos que la fecha se convierta a string ISO para que JavaScript la lea sin problemas
+            for m in nuevos:
+                if m.get('fecha'):
+                    m['fecha'] = str(m['fecha'])
         conn.close()
         return jsonify(nuevos), 200
     except Exception as e:
@@ -563,7 +567,7 @@ def vista_fotos():
                         conexion.commit()
                 finally:
                     pass
-                    
+                
         conexion.close()
         return redirect(url_for('vista_fotos'))
 
@@ -649,11 +653,11 @@ def api_crud():
             elif entity == 'ventas':
                 if action == 'list':
                     sql = """SELECT v.id_venta, v.id_usuario, v.id_producto, u.nombre AS usuario, p.nombre AS producto, 
-                                    v.cantidad, v.precio_unit, v.total_bruto, v.tasa_impuesto, v.total_impuesto, v.total_final 
-                             FROM ventas v 
-                             INNER JOIN usuarios u ON u.id_usuario = v.id_usuario 
-                             INNER JOIN productos p ON p.id_producto = v.id_producto 
-                             ORDER BY v.id_venta DESC"""
+                                     v.cantidad, v.precio_unit, v.total_bruto, v.tasa_impuesto, v.total_impuesto, v.total_final 
+                              FROM ventas v 
+                              INNER JOIN usuarios u ON u.id_usuario = v.id_usuario 
+                              INNER JOIN productos p ON p.id_producto = v.id_producto 
+                              ORDER BY v.id_venta DESC"""
                     cursor.execute(sql)
                     res = cursor.fetchall()
                     conn.close()
@@ -678,8 +682,8 @@ def api_crud():
 
                     if id_v:
                         sql = """UPDATE ventas SET id_usuario=%s, id_producto=%s, cantidad=%s, precio_unit=%s, 
-                                                   total_bruto=%s, tasa_impuesto=%s, total_impuesto=%s, total_final=%s 
-                                 WHERE id_venta=%s"""
+                                                 total_bruto=%s, tasa_impuesto=%s, total_impuesto=%s, total_final=%s 
+                               WHERE id_venta=%s"""
                         cursor.execute(sql, (id_u, id_p, cantidad, precio_unit, total_bruto, tasa_impuesto, total_impuesto, total_final, id_v))
                     else:
                         sql = """INSERT INTO ventas (id_usuario, id_producto, cantidad, precio_unit, total_bruto, tasa_impuesto, total_impuesto, total_final) 
