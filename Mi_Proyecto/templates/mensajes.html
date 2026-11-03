@@ -63,6 +63,7 @@
       margin-bottom: 6px !important;
     }
   </style>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 </head>
 <body class="glass-bg" style="position: relative; overflow-x: hidden; margin: 0; padding: 0;">
 
@@ -72,15 +73,27 @@
   <div class="bg-bubble" style="width: 40px; height: 40px; top: 30%; right: 15%;"></div>
 
   <div data-role="page" id="chat-page" style="background: transparent !important; position: relative; z-index: 2;">
-    <div data-role="header" data-theme="b">
-      <a href="{{ url_for('menu') }}" data-icon="home" data-ajax="false">Menú</a>
-      <h1>Mensajería</h1>
-      <span class="ui-btn-right" id="estado-chat" style="font-size: 11px; padding: 5px;">Conectando...</span>
+    
+    <!-- Barra Superior (Header) con el logo de ElectroRuta -->
+    <div data-role="header" data-theme="b" style="padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; min-height: 65px;">
+        <div style="display: flex; align-items: center;">
+            <div style="background: #1E40AF; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 1px solid #FBBF24; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                <span style="font-size: 20px; line-height: 1;">⚡</span>
+            </div>
+            <span style="font-size: 22px; font-weight: bold; color: #FBBF24; letter-spacing: 0.5px;">ElectroRuta</span>
+        </div>
+        <div>
+            <a href="{{ url_for('menu') }}" data-icon="home" class="ui-btn ui-corner-all ui-icon-home" data-ajax="false" style="background: transparent; border: none; color: #FBBF24; font-size: 14px;">Menú</a>
+        </div>
     </div>
 
     <div role="main" class="ui-content" style="padding: 15px;">
       <div class="chat-container">
-        <h2 style="text-align: center; color: #1e40af; margin-top: 0; margin-bottom: 20px;">Chat de la Comunidad</h2>
+        <h2 style="text-align: center; color: #1e40af; margin-top: 0; margin-bottom: 10px;">Chat de la Comunidad</h2>
+        
+        <div style="text-align: right; margin-bottom: 15px;">
+          <span id="estado-chat" style="font-size: 12px; color: #0284c7; font-weight: bold;">Conectando...</span>
+        </div>
 
         <div id="caja-mensajes">
           <p id="chat-vacio" style="text-align: center; color: #64748b; margin-top: 100px;">Cargando mensajes...</p>
