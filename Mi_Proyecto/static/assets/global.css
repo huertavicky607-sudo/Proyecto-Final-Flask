@@ -156,3 +156,31 @@
   pointer-events: none;
   z-index: -1; /* <-- Cambiado a -1 para que se queden siempre en el fondo detrás de todo */
 }
+
+/* --- Corrección para el doble recuadro de los inputs en jQuery Mobile --- */
+    .ui-input-text, .ui-input-search {
+        background: rgba(240, 249, 255, 0.6) !important;
+        border: 1px solid rgba(186, 230, 253, 0.8) !important;
+        border-radius: 12px !important;
+        padding: 0 8px !important;
+        box-shadow: inset 2px 2px 5px rgba(14, 116, 144, 0.08) !important;
+        margin-top: 8px !important;
+    }
+
+    /* Ocultar bordes y fondos internos que genera jQuery Mobile */
+    .ui-input-text input, .ui-input-search input, 
+    .ui-filterable input {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: #0369a1 !important;
+        padding: 10px !important;
+    }
+
+    /* Efecto al hacer foco (clic) en la búsqueda */
+    .ui-input-text.ui-focus, .ui-input-search.ui-focus {
+        border-color: #0ea5e9 !important;
+        background: rgba(255, 255, 255, 0.9) !important;
+        box-shadow: inset 2px 2px 5px rgba(14, 116, 144, 0.08), 
+                    0 0 10px rgba(14, 165, 233, 0.3) !important;
+    }
