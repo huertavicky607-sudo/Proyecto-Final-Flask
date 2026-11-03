@@ -11,7 +11,7 @@
     <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
     <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
 </head>
-<body class="glass-bg" style="position: relative; overflow-x: hidden;">
+<body class="glass-bg" style="position: relative; overflow-x: hidden; margin: 0; padding: 0;">
 
     <!-- Burbujas decorativas esparcidas por el fondo -->
     <div class="bg-bubble" style="width: 70px; height: 70px; top: 15%; left: 10%;"></div>
@@ -21,17 +21,18 @@
     <div class="bg-bubble" style="width: 25px; height: 25px; top: 45%; left: 6%;"></div>
     <div class="bg-bubble" style="width: 45px; height: 45px; bottom: 10%; right: 8%;"></div>
 
-    <div data-role="page" id="login-page" style="background: transparent !important; position: relative; z-index: 2;">
+    <div data-role="page" id="login-page" style="background: transparent !important; position: relative; z-index: 2; width: 100%;">
         <div data-role="header" data-theme="b">
             <!-- Botón para volver al menú principal -->
             <a href="{{ url_for('menu') }}" data-icon="home" data-ajax="false">Menú</a>
             <h1>Iniciar Sesión</h1>
         </div>
 
-        <div role="main" class="ui-content" style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
+        <!-- Contenedor principal forzado a centrarse perfectamente -->
+        <div role="main" class="ui-content" style="display: flex; justify-content: center; align-items: center; min-height: 80vh; padding: 0 !important; margin: 0 auto !important; width: 100%;">
             
             <!-- Contenedor con las gotitas 3D alrededor -->
-            <div class="login-wrapper">
+            <div class="login-wrapper" style="margin: 0 auto; display: flex; justify-content: center;">
                 
                 <!-- Gotitas pegadas a la tarjeta -->
                 <div class="water-drop" style="width: 55px; height: 55px; top: -25px; left: -35px;"></div>
