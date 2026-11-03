@@ -1,6 +1,6 @@
 import os
 import pymysql
-from flask import render_template, request, jsonify, session
+from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -8,13 +8,13 @@ app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'clave_secreta_desarrollo')
 
 # ----------------------------------------------------
-# CONFIGURACIÓN DE BASE DE DATOS (RAILWAY / RENDER)
+# CONFIGURACIÓN DE BASE DE DATOS (AIVEN)
 # ----------------------------------------------------
-DB_HOST = os.getenv('DB_HOST', 'localhost')
-DB_PORT = int(os.getenv('DB_PORT', 3306))
-DB_USER = os.getenv('DB_USER', 'root')
-DB_PASS = os.getenv('DB_PASS', '')
-DB_NAME = os.getenv('DB_NAME', 'railway')
+DB_HOST = os.getenv('DB_HOST', 'mysql-5b94a9d-huertavicky607-8d66.b.aivencloud.com')
+DB_PORT = int(os.getenv('DB_PORT', 10037))
+DB_USER = os.getenv('DB_USER', 'avnadmin')
+DB_PASS = os.getenv('DB_PASS', 'AVNS_-fx3bfc3-7WsWWifdbu')
+DB_NAME = os.getenv('DB_NAME', 'defaultdb')
 
 def get_db_connection():
     return pymysql.connect(
@@ -30,7 +30,25 @@ def init_db():
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            # 1. Tabla Encuesta UPVM
+            # 1. Tabla Usuarios con soporte de roles ('admin' o 'cliente')
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS usuarios (
+                    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
+                    nombre VARCHAR(100) NOT NULL,
+                    email VARCHAR(150) NOT NULL UNIQUE,
+                    telefono VARCHAR(20),
+                    activo TINYINT(1) NOT NULL DEFAULT 1,
+                    password VARCHAR(255) NOT NULL,
+                    rol VARCHAR(20) NOT NULL DEFAULT 'cliente',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            try:
+                cursor.execute("ALTER TABLE usuarios ADD COLUMN rol VARCHAR(20) DEFAULT 'cliente'")
+            except:
+                pass
+
+            # 2. Tabla Encuesta UPVM
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS respuestas (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -43,7 +61,7 @@ def init_db():
                     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-            # 2. Tabla Mensajería
+            # 3. Tabla Mensajería
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS mensajes (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -52,18 +70,7 @@ def init_db():
                     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-            # 3. Tablas para el CRUD de Ventas y Usuarios
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS usuarios (
-                    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
-                    nombre VARCHAR(100) NOT NULL,
-                    email VARCHAR(150) NOT NULL UNIQUE,
-                    telefono VARCHAR(20),
-                    activo TINYINT(1) NOT NULL DEFAULT 1,
-                    password VARCHAR(255) NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
+            # 4. Tablas para Productos y Ventas (CRUD)
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS productos (
                     id_producto INT AUTO_INCREMENT PRIMARY KEY,
@@ -92,7 +99,7 @@ def init_db():
                     FOREIGN KEY (id_producto) REFERENCES productos(id_producto)
                 )
             """)
-            # 4. Tabla para Seguimiento de Cookies y Eventos
+            # 5. Tabla para Seguimiento de Cookies y Eventos
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS eventos (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -105,8 +112,7 @@ def init_db():
                     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-            
-            # 5. Tabla para Ubicaciones (Módulo nuevo)
+            # 6. Tabla para Ubicaciones
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS ubicaciones (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -119,35 +125,40 @@ def init_db():
                     FOREIGN KEY (usuario_id) REFERENCES usuarios(id_usuario) ON DELETE SET NULL
                 )
             """)
-            
-            # Asegurar columnas si la tabla ya existía previamente sin ellas
-            try:
-                cursor.execute("ALTER TABLE eventos ADD COLUMN elemento VARCHAR(100) DEFAULT NULL")
-            except:
-                pass
-            try:
-                cursor.execute("ALTER TABLE eventos ADD COLUMN segundos INT DEFAULT 0")
-            except:
-                pass
+            # 7. Tabla para Fotos de Galería
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS fotos (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    usuario_id INT NULL,
+                    nombre VARCHAR(100),
+                    archivo VARCHAR(255),
+                    tipo VARCHAR(50),
+                    bytes INT,
+                    creado_en DATETIME
+                )
+            """)
 
         conn.commit()
         conn.close()
-        print("Estructura de Base de Datos inicializada y actualizada correctamente.")
+        print("Base de datos inicializada correctamente.")
     except Exception as e:
         print(f"Aviso de conexión DB: {e}")
 
 init_db()
 
 # ----------------------------------------------------
-# RUTAS DE AUTENTICACIÓN Y REGISTRO
+# RUTAS PÚBLICAS (MENÚ PRINCIPAL)
 # ----------------------------------------------------
-
 @app.route('/')
-def index():
-    if 'usuario_id' in session:
-        return redirect(url_for('menu'))
-    return redirect(url_for('login'))
+@app.route('/menu')
+def menu():
+    nombre_usuario = session.get('nombre', 'Visitante')
+    rol_usuario = session.get('rol', 'invitado')
+    return render_template('menu.html', nombre=nombre_usuario, rol=rol_usuario)
 
+# ----------------------------------------------------
+# AUTENTICACIÓN Y REGISTRO
+# ----------------------------------------------------
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
@@ -158,7 +169,7 @@ def login():
         try:
             conn = get_db_connection()
             with conn.cursor() as cursor:
-                cursor.execute("SELECT id_usuario, nombre, password FROM usuarios WHERE email = %s", (email,))
+                cursor.execute("SELECT id_usuario, nombre, password, rol FROM usuarios WHERE email = %s", (email,))
                 usuario = cursor.fetchone()
 
                 if usuario:
@@ -174,6 +185,7 @@ def login():
                         session.clear()
                         session['usuario_id'] = usuario['id_usuario']
                         session['nombre'] = usuario['nombre']
+                        session['rol'] = usuario['rol'] or 'cliente'
 
                         visitante_cookie = request.cookies.get('visitante_id')
                         if visitante_cookie:
@@ -215,7 +227,7 @@ def registro():
                 conn = get_db_connection()
                 with conn.cursor() as cursor:
                     cursor.execute(
-                        "INSERT INTO usuarios (nombre, email, telefono, password, activo) VALUES (%s, %s, %s, %s, 1)",
+                        "INSERT INTO usuarios (nombre, email, telefono, password, rol, activo) VALUES (%s, %s, %s, %s, 'cliente', 1)",
                         (nombre, email, telefono, hashed_password)
                     )
                 conn.commit()
@@ -229,7 +241,7 @@ def registro():
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('login'))
+    return redirect(url_for('menu'))
 
 # ----------------------------------------------------
 # API DE TRACKER DE COOKIES
@@ -264,11 +276,18 @@ def api_tracker():
         return jsonify({'error': str(e)}), 500
 
 # ----------------------------------------------------
-# API DE MÉTRICAS PARA EL PANEL DINÁMICO
+# MÓDULO DE MÉTRICAS (EXCLUSIVO PARA ADMIN)
 # ----------------------------------------------------
+@app.route('/metrics')
+def metrics():
+    if 'usuario_id' not in session or session.get('rol') != 'admin':
+        flash('Acceso restringido. Solo los administradores pueden ver las métricas.', 'error')
+        return redirect(url_for('menu'))
+    return render_template('metrics.html')
+
 @app.route('/api/metricas')
 def api_metricas():
-    if 'usuario_id' not in session:
+    if 'usuario_id' not in session or session.get('rol') != 'admin':
         return jsonify({'error': 'No autorizado'}), 401
 
     try:
@@ -361,36 +380,9 @@ def api_metricas():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/metrics')
-def metrics():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-    return render_template('metrics.html')
-
 # ----------------------------------------------------
-# MENÚ Y SECCIONES
+# SECCIONES PROTEGIDAS (REQUIEREN INICIO DE SESIÓN)
 # ----------------------------------------------------
-@app.route('/menu')
-def menu():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-    
-    nombre_usuario = session.get('nombre', '')
-    if not nombre_usuario:
-        try:
-            conn = get_db_connection()
-            with conn.cursor() as cursor:
-                cursor.execute("SELECT nombre FROM usuarios WHERE id_usuario = %s", (session['usuario_id'],))
-                res = cursor.fetchone()
-                if res:
-                    nombre_usuario = res['nombre']
-                    session['nombre'] = nombre_usuario
-            conn.close()
-        except:
-            nombre_usuario = "Usuario"
-
-    return render_template('menu.html', nombre=nombre_usuario)
-
 @app.route('/mapas')
 def mapas():
     if 'usuario_id' not in session:
@@ -409,9 +401,6 @@ def youtube():
         return redirect(url_for('login'))
     return render_template('youtube.html', video_id="vK9he9d-JN0")
 
-# ----------------------------------------------------
-# NUEVO MÓDULO: UBICACIÓN Y MAPAS
-# ----------------------------------------------------
 @app.route('/ubicacion')
 def vista_ubicacion():
     if 'usuario_id' not in session:
@@ -434,10 +423,7 @@ def guardar_ubicacion():
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            sql = """
-                INSERT INTO ubicaciones (usuario_id, nombre, latitud, longitud, precision_m) 
-                VALUES (%s, %s, %s, %s, %s)
-            """
+            sql = "INSERT INTO ubicaciones (usuario_id, nombre, latitud, longitud, precision_m) VALUES (%s, %s, %s, %s, %s)"
             cursor.execute(sql, (usuario_id, nombre, lat, lng, precision))
             conn.commit()
             nuevo_id = cursor.lastrowid
@@ -451,32 +437,20 @@ def obtener_ubicaciones():
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            cursor.execute("""
-                SELECT nombre, latitud, longitud, precision_m, creado_en 
-                FROM ubicaciones 
-                ORDER BY id DESC 
-                LIMIT 50
-            """)
+            cursor.execute("SELECT nombre, latitud, longitud, precision_m, creado_en FROM ubicaciones ORDER BY id DESC LIMIT 50")
             filas = cursor.fetchall()
         conn.close()
-
-        ubicaciones = []
-        for f in filas:
-            ubicaciones.append({
-                'nombre': f['nombre'],
-                'latitud': float(f['latitud']),
-                'longitud': float(f['longitud']),
-                'precision_m': int(f['precision_m']),
-                'creado_en': str(f['creado_en'])
-            })
-
+        ubicaciones = [{
+            'nombre': f['nombre'],
+            'latitud': float(f['latitud']),
+            'longitud': float(f['longitud']),
+            'precision_m': int(f['precision_m']),
+            'creado_en': str(f['creado_en'])
+        } for f in filas]
         return jsonify(ubicaciones), 200
     except Exception as e:
         return jsonify({'error': f'Error al obtener: {str(e)}'}), 500
 
-# ----------------------------------------------------
-# ENCUESTA UPVM
-# ----------------------------------------------------
 @app.route('/encuesta', methods=['GET', 'POST'])
 def encuesta():
     if 'usuario_id' not in session:
@@ -493,14 +467,13 @@ def encuesta():
         try:
             conn = get_db_connection()
             with conn.cursor() as cursor:
-                sql = """INSERT INTO respuestas (nombre, pregunta1, pregunta2, pregunta3, pregunta4, pregunta5) 
-                         VALUES (%s, %s, %s, %s, %s, %s)"""
+                sql = "INSERT INTO respuestas (nombre, pregunta1, pregunta2, pregunta3, pregunta4, pregunta5) VALUES (%s, %s, %s, %s, %s, %s)"
                 cursor.execute(sql, (nombre, p1, p2, p3, p4, p5))
             conn.commit()
             conn.close()
             return redirect(url_for('regalo'))
         except Exception as e:
-            flash(f'Error al guardar en la base de datos: {e}', 'error')
+            flash(f'Error al guardar: {e}', 'error')
 
     return render_template('encuesta.html')
 
@@ -510,9 +483,6 @@ def regalo():
         return redirect(url_for('login'))
     return render_template('regalo.html')
 
-# ----------------------------------------------------
-# SERVICIO DE MENSAJERÍA
-# ----------------------------------------------------
 @app.route('/mensajes')
 def mensajes():
     if 'usuario_id' not in session:
@@ -552,14 +522,58 @@ def crear_mensaje():
     except Exception as e:
         return jsonify({"error": "Error al guardar el mensaje."}), 500
 
-# ----------------------------------------------------
-# API REST PARA EL CRUD (USUARIOS, PRODUCTOS, VENTAS)
-# ----------------------------------------------------
 @app.route('/crud')
 def crud():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
     return render_template('crud.html')
+
+@app.route('/fotos', methods=['GET', 'POST'])
+def vista_fotos():
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+
+    conexion = get_db_connection()
+
+    if request.method == 'POST':
+        if 'foto' in request.files:
+            file = request.files['foto']
+            if file.filename != '':
+                filename = secure_filename(file.filename)
+                import time
+                nombre_base, ext = os.path.splitext(filename)
+                nombre_final = f"{session.get('nombre', 'invitado')}_{int(time.time())}{ext}"
+                
+                carpeta_uploads = os.path.join(app.root_path, 'static', 'uploads')
+                os.makedirs(carpeta_uploads, exist_ok=True)
+                
+                ruta_guardado = os.path.join(carpeta_uploads, nombre_final)
+                file.save(ruta_guardado)
+                
+                tamano_bytes = os.path.getsize(ruta_guardado)
+                tipo_archivo = file.content_type or 'image/jpeg'
+                nombre_usuario = session.get('nombre', 'Invitado')
+                
+                try:
+                    with conexion.cursor() as cursor:
+                        sql = """INSERT INTO fotos (usuario_id, nombre, archivo, tipo, bytes, creado_en) 
+                                 VALUES (%s, %s, %s, %s, %s, NOW())"""
+                        cursor.execute(sql, (session.get('usuario_id'), nombre_usuario, nombre_final, tipo_archivo, tamano_bytes))
+                        conexion.commit()
+                finally:
+                    pass
+                    
+        conexion.close()
+        return redirect(url_for('vista_fotos'))
+
+    try:
+        with conexion.cursor() as cursor:
+            cursor.execute("SELECT * FROM fotos ORDER BY id DESC")
+            lista_fotos = cursor.fetchall()
+    finally:
+        conexion.close()
+
+    return render_template('fotos.html', fotos=lista_fotos)
 
 @app.route('/api.php', methods=['GET', 'POST'])
 def api_crud():
@@ -576,7 +590,6 @@ def api_crud():
                     res = cursor.fetchall()
                     conn.close()
                     return jsonify({'data': res})
-                
                 elif action == 'save':
                     id_u = payload.get('id_usuario')
                     nombre = payload.get('nombre')
@@ -594,7 +607,6 @@ def api_crud():
                     conn.commit()
                     conn.close()
                     return jsonify({'message': 'Usuario guardado correctamente.'})
-
                 elif action == 'delete':
                     id_u = payload.get('id_usuario')
                     cursor.execute('DELETE FROM usuarios WHERE id_usuario=%s', (id_u,))
@@ -608,7 +620,6 @@ def api_crud():
                     res = cursor.fetchall()
                     conn.close()
                     return jsonify({'data': res})
-
                 elif action == 'save':
                     id_p = payload.get('id_producto')
                     nombre = payload.get('nombre')
@@ -627,7 +638,6 @@ def api_crud():
                     conn.commit()
                     conn.close()
                     return jsonify({'message': 'Producto guardado correctamente.'})
-
                 elif action == 'delete':
                     id_p = payload.get('id_producto')
                     cursor.execute('DELETE FROM productos WHERE id_producto=%s', (id_p,))
@@ -647,7 +657,6 @@ def api_crud():
                     res = cursor.fetchall()
                     conn.close()
                     return jsonify({'data': res})
-
                 elif action == 'save':
                     id_v = payload.get('id_venta')
                     id_u = payload.get('id_usuario')
@@ -679,14 +688,13 @@ def api_crud():
                     conn.commit()
                     conn.close()
                     return jsonify({'message': 'Venta guardada correctamente.'})
-
                 elif action == 'delete':
                     id_v = payload.get('id_venta')
                     cursor.execute('DELETE FROM ventas WHERE id_venta=%s', (id_v,))
                     conn.commit()
                     conn.close()
                     return jsonify({'message': 'Venta eliminada correctamente.'})
-
+                
         conn.close()
         return jsonify({'error': 'Operación no válida'}), 400
     except Exception as e:

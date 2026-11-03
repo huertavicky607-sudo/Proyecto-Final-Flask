@@ -8,22 +8,32 @@
   <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
   <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
   <style>
+    .chat-container {
+      max-width: 650px;
+      margin: 20px auto;
+      padding: 25px;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
     #caja-mensajes {
-      height: 350px;
+      height: 320px;
       overflow-y: auto;
-      border: 1px solid #ccc;
+      border: 1px solid #e5e7eb;
       border-radius: 8px;
       padding: 12px;
-      background: #fafafa;
-      margin-bottom: 15px;
+      background: #f9fafb;
+      margin-bottom: 20px;
     }
     .msg-item {
-      padding: 8px 12px;
-      border-radius: 8px;
-      background: #e9e9e9;
-      margin-bottom: 8px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: #e5e7eb;
+      margin-bottom: 10px;
       max-width: 80%;
       word-wrap: break-word;
+      color: #1f2937;
     }
     .msg-item.propio {
       background: #004b23;
@@ -33,7 +43,16 @@
     .msg-meta {
       font-size: 0.75em;
       opacity: 0.8;
-      margin-bottom: 3px;
+      margin-bottom: 4px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      font-weight: bold !important;
+      color: #1f2937;
+      margin-bottom: 6px !important;
     }
   </style>
 </head>
@@ -46,29 +65,33 @@
     </div>
 
     <div role="main" class="ui-content">
-      <h2>Chat de la Comunidad</h2>
+      <div class="chat-container">
+        <h2 style="text-align: center; color: #004b23; margin-top: 0; margin-bottom: 20px;">Chat de la Comunidad</h2>
 
-      <div id="caja-mensajes">
-        <p id="chat-vacio" style="text-align: center; color: #888;">Cargando mensajes...</p>
+        <div id="caja-mensajes">
+          <p id="chat-vacio" style="text-align: center; color: #888; margin-top: 120px;">Cargando mensajes...</p>
+        </div>
+
+        <form id="form-chat">
+          <div class="form-group">
+            <label for="chat-usuario">Tu Nombre:</label>
+            <input type="text" id="chat-usuario" value="{{ session.get('nombre', 'Invitado') }}" maxlength="30" required>
+          </div>
+
+          <div class="form-group">
+            <label for="chat-texto">Mensaje:</label>
+            <input type="text" id="chat-texto" placeholder="Escribe un mensaje..." maxlength="500" required autocomplete="off">
+          </div>
+
+          <div style="margin-top: 20px;">
+            <button type="submit" id="btn-enviar" class="ui-btn ui-btn-b ui-corner-all">Enviar Mensaje</button>
+          </div>
+        </form>
       </div>
-
-      <form id="form-chat">
-        <div class="ui-field-contain">
-          <label for="chat-usuario">Tu Nombre:</label>
-          <input type="text" id="chat-usuario" value="{{ session['usuario'] }}" maxlength="30" required>
-        </div>
-
-        <div class="ui-field-contain">
-          <label for="chat-texto">Mensaje:</label>
-          <input type="text" id="chat-texto" placeholder="Escribe un mensaje..." maxlength="500" required autocomplete="off">
-        </div>
-
-        <button type="submit" id="btn-enviar" class="ui-btn ui-btn-b ui-corner-all">Enviar Mensaje</button>
-      </form>
     </div>
 
     <div data-role="footer" data-position="fixed">
-      <h4>Chat en tiempo real conectado a Railway</h4>
+      <h4>Chat en tiempo real conectado a Aiven</h4>
     </div>
   </div>
 

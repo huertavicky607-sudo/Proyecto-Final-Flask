@@ -7,26 +7,67 @@
     <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
     <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
     <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+    <style>
+        /* Estilo personalizado para centrar y estilizar el panel del menú */
+        .menu-container {
+            max-width: 650px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        .menu-bienvenida {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        /* Estilo elegante para los botones de las actividades */
+        .menu-grid .ui-btn {
+            border-radius: 10px !important;
+            font-weight: bold;
+            text-align: left;
+            padding-left: 20px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+    </style>
 </head>
 <body>
     <div data-role="page" id="menu-principal">
         <div data-role="header" data-theme="b">
             <h1>Menú Principal</h1>
-            <a href="{{ url_for('logout') }}" data-icon="power" class="ui-btn-right" data-ajax="false">Salir</a>
+            {% if session.get('usuario_id') %}
+                <a href="{{ url_for('logout') }}" data-icon="power" class="ui-btn-right" data-ajax="false">Salir</a>
+            {% else %}
+                <a href="{{ url_for('login') }}" data-icon="user" class="ui-btn-right" data-ajax="false">Iniciar Sesión</a>
+            {% endif %}
         </div>
 
         <div role="main" class="ui-content">
-            <h2>Bienvenido(a), {{ nombre }}</h2>
-            <p>Selecciona la sección a la que deseas acceder:</p>
+            <div class="menu-container">
+                <div class="menu-bienvenida">
+                    {% if session.get('usuario_id') %}
+                        <h2>¡Hola, {{ nombre }}!</h2>
+                        <p><span style="background: #e5e7eb; padding: 4px 12px; border-radius: 20px; color: #374151; font-size: 0.9rem;">Rol: <strong>{{ rol }}</strong></span></p>
+                        <p style="color: #6b7280; margin-top: 5px;">Explora las actividades y herramientas disponibles:</p>
+                    {% else %}
+                        <h2>¡Bienvenido(a) a nuestro sitio!</h2>
+                        <p style="color: #6b7280;">Explora las secciones de abajo. Al interactuar con las actividades protegidas, el sistema te pedirá iniciar sesión.</p>
+                    {% endif %}
+                </div>
 
-            <div class="ui-grid-a">
-                <a href="{{ url_for('mapas') }}" class="ui-btn ui-corner-all ui-btn-b" data-ajax="false">🗺️ Mapas (iFrame y API)</a>
-                <a href="{{ url_for('presentacion') }}" class="ui-btn ui-corner-all" data-ajax="false">👤 Presentación (Página 2)</a>
-                <a href="{{ url_for('youtube') }}" class="ui-btn ui-corner-all" data-ajax="false">▶️ Video de YouTube</a>
-                <a href="{{ url_for('encuesta') }}" class="ui-btn ui-corner-all" data-ajax="false">📝 Encuesta de Satisfacción</a>
-                <a href="{{ url_for('mensajes') }}" class="ui-btn ui-corner-all" data-ajax="false">💬 Servicio de Mensajería</a>
-                <a href="{{ url_for('crud') }}" class="ui-btn ui-corner-all ui-btn-b" data-ajax="false">⚙️ Gestión (CRUD)</a>
-                <a href="{{ url_for('metrics') }}" class="ui-btn ui-corner-all ui-btn-b" data-ajax="false">📊 Métricas y Rastreo de Cookies</a>
+                <div class="menu-grid">
+                    <a href="{{ url_for('mapas') }}" class="ui-btn ui-corner-all ui-btn-b" data-ajax="false">🗺️ Mapas (iFrame y API)</a>
+                    <a href="{{ url_for('presentacion') }}" class="ui-btn ui-corner-all" data-ajax="false">👤 Presentación (Página 2)</a>
+                    <a href="{{ url_for('youtube') }}" class="ui-btn ui-corner-all" data-ajax="false">▶️ Video de YouTube</a>
+                    <a href="{{ url_for('encuesta') }}" class="ui-btn ui-corner-all" data-ajax="false">📝 Encuesta de Satisfacción</a>
+                    <a href="{{ url_for('mensajes') }}" class="ui-btn ui-corner-all" data-ajax="false">💬 Servicio de Mensajería</a>
+                    <a href="{{ url_for('crud') }}" class="ui-btn ui-corner-all ui-btn-b" data-ajax="false">⚙️ Gestión (CRUD)</a>
+                    <a href="{{ url_for('vista_ubicacion') }}" class="ui-btn ui-corner-all" data-ajax="false">📍 Registrar mi Ubicación</a>
+                    <a href="{{ url_for('vista_fotos') }}" class="ui-btn ui-corner-all" data-ajax="false">📷 Galería de Fotos</a>
+
+                    <!-- 🔒 BOTÓN EXCLUSIVO PARA ADMINISTRADOR (Métricas) -->
+                    {% if session.get('rol') == 'admin' %}
+                        <a href="{{ url_for('metrics') }}" class="ui-btn ui-corner-all" data-ajax="false" style="background-color: #1e3a8a !important; color: white !important;">📊 Métricas del Sitio (Admin)</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
 

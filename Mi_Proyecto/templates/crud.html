@@ -11,24 +11,52 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/app.css') }}">
     <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
     <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+    <style>
+        /* Ajustes visuales para armonizar el CRUD con el resto de la plataforma */
+        body, .ui-page {
+            background-color: #f9fafb !important;
+            font-family: 'DM Sans', sans-serif, -apple-system, sans-serif;
+        }
+        .topbar {
+            background-color: #111827 !important;
+            color: #ffffff !important;
+        }
+        .nav-card {
+            border-radius: 12px !important;
+            border: 1px solid #e5e7eb !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03) !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .nav-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08) !important;
+        }
+        .primary, button[type="submit"] {
+            background-color: #004b23 !important;
+            border-color: #004b23 !important;
+            color: white !important;
+            text-shadow: none !important;
+            font-weight: bold !important;
+        }
+    </style>
 </head>
 <body>
 <div data-role="page" id="inicio">
     <header data-role="header" class="topbar">
-        <div class="brand"><span class="brand-mark">SV</span><span>Sistema de Ventas</span></div>
+        <div class="brand"><span class="brand-mark" style="background: #004b23; color: white;">SV</span><span>Sistema de Ventas</span></div>
         <a href="{{ url_for('menu') }}" class="ui-btn ui-btn-inline ui-corner-all help-button" data-ajax="false">Menú Principal</a>
         <a href="#ayuda" data-rel="dialog" class="ui-btn ui-btn-inline ui-corner-all help-button">Ayuda</a>
     </header>
     <main role="main" class="ui-content shell">
         <section class="intro">
-            <div><p class="eyebrow">Panel operativo</p><h1>Controla tus ventas<br><em>con claridad.</em></h1><p class="intro-copy">Administra clientes, catálogo y movimientos desde un solo lugar.</p></div>
-            <div class="pulse"><span class="pulse-dot"></span>Base de datos conectada</div>
+            <div><p class="eyebrow" style="color: #004b23; font-weight: bold;">Panel operativo</p><h1>Controla tus ventas<br><em style="color: #004b23;">con claridad.</em></h1><p class="intro-copy">Administra clientes, catálogo y movimientos desde un solo lugar.</p></div>
+            <div class="pulse"><span class="pulse-dot" style="background: #004b23;"></span>Base de datos conectada</div>
         </section>
         <div id="notice" class="notice" role="status"></div>
         <nav class="nav-grid" aria-label="Secciones">
             <a href="#usuarios" class="nav-card"><span class="card-number">01</span><strong>Usuarios</strong><span>Clientes y contactos</span><b>Ir al registro &#8594;</b></a>
-            <a href="#productos" class="nav-card accent"><span class="card-number">02</span><strong>Productos</strong><span>Catálogo e inventario</span><b>Ir al catálogo &#8594;</b></a>
-            <a href="#ventas" class="nav-card dark"><span class="card-number">03</span><strong>Ventas</strong><span>Operaciones y totales</span><b>Ver movimientos &#8594;</b></a>
+            <a href="#productos" class="nav-card accent" style="background-color: #e8f5e9 !important;"><span class="card-number">02</span><strong>Productos</strong><span>Catálogo e inventario</span><b>Ir al catálogo &#8594;</b></a>
+            <a href="#ventas" class="nav-card dark" style="background-color: #111827 !important; color: white !important;"><span class="card-number" style="color: #9ca3af;">03</span><strong>Ventas</strong><span>Operaciones y totales</span><b style="color: #6ee7b7;">Ver movimientos &#8594;</b></a>
         </nav>
         <section class="summary-strip"><div><small>USUARIOS ACTIVOS</small><strong id="active-users">-</strong></div><div><small>PRODUCTOS EN CATÁLOGO</small><strong id="product-count">-</strong></div><div><small>VENTAS REGISTRADAS</small><strong id="sale-count">-</strong></div></section>
     </main>

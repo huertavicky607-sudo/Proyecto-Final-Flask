@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subir foto y Galería</title>
+    <!-- Estilos generales del proyecto -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/app.css') }}">
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 16px;
+            font-family: system-ui, sans-serif;
+            background: #eef2f7;
+            color: #1f2937;
+        }
+        .tarjeta {
+            width: 100%;
+            max-width: 560px;
+            padding: 28px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, .08);
+        }
+        h1 { margin-top: 0; font-size: 1.5rem; }
+        h2 { margin-top: 24px; font-size: 1.2rem; }
+        .btn-grupo {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        button, .boton, input[type="file"] {
+            display: inline-block;
+            width: 100%;
+            padding: 11px;
+            border: 0;
+            border-radius: 8px;
+            background: #2563eb;
+            color: #fff;
+            font-size: 1rem;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover { background: #1d4ed8; }
+        button:disabled { background: #94a3b8; cursor: not-allowed; }
+        .btn-secundario { background: #4b5563; }
+        .btn-secundario:hover { background: #374151; }
+        
+        #video {
+            width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+            background: #000;
+            display: none;
+        }
+        .subtext {
+            margin-top: 14px;
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+        .galeria {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 15px;
+        }
+        .foto-item {
+            text-align: center;
+        }
+        .galeria img {
+            width: 100%;
+            aspect-ratio: 1 / 1; /* Fuerza a que siempre sea un cuadrado perfecto */
+            object-fit: cover;   /* Evita que la foto se deforme al recortarla */
+            border-radius: 14px; /* Esquinas redondeadas idénticas a tu ejemplo */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .foto-item span {
+            font-size: 0.8rem;
+            color: #374151;
+            margin-top: 6px;
+            display: block;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <main class="tarjeta">
+        <h1>Subir foto</h1>
+        <p>Sesión: <strong>{{ session.get('nombre', 'Invitado') }}</strong></p>
+
+        <!-- Controles para la cámara en tiempo real -->
+        <div class="btn-grupo">
+            <button type="button" id="btn-activar">Activar cámara</button>
+            <button type="button" id="btn-capturar" class="btn-secundario" disabled>Tomar foto</button>
+        </div>
+        
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+
+        <p class="subtext">o elige una foto de tu equipo</p>
+
+        <!-- Formulario para subir archivos -->
+        <form action="{{ url_for('vista_fotos') }}" method="POST" enctype="multipart/form-data">
+            <input type="file" name="foto" accept="image/*" style="background: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db;">
+            <button type="submit" style="margin-top: 8px;">Subir foto</button>
+        </form>
+
+        <h2>Galería</h2>
+        <div class="galeria">
+    {% for foto in fotos %}
+    <div class="foto-item">
+        <!-- Ajusta la ruta 'uploads/' según dónde guardes tus archivos de imagen -->
+        <img src="{{ url_for('static', filename='uploads/' + foto.archivo) }}" alt="Foto de galería">
+        <span>{{ foto.nombre }}</span>
+    </div>
+    {% endfor %}
+</div>
+
+        <a href="{{ url_for('menu') }}" class="boton btn-secundario" style="margin-top: 24px; text-decoration: none;" data-ajax="false">← Volver al Menú Principal</a>
+    </main>
+
+    <script>
+        const btnActivar = document.getElementById('btn-activar');
+        const btnCapturar = document.getElementById('btn-capturar');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const inputFile = document.querySelector('input[type="file"]');
+
+        let streamCamara = null;
+
+        // Activar la cámara web en tiempo real
+        btnActivar.addEventListener('click', async () => {
+            try {
+                streamCamara = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                video.srcObject = streamCamara;
+                video.style.display = 'block';
+                btnCapturar.disabled = false;
+                btnActivar.textContent = 'Cámara activa';
+                btnActivar.disabled = true;
+            } catch (err) {
+                alert('No se pudo acceder a la cámara: ' + err.message);
+            }
+        });
+
+        // Tomar la foto desde el video activo
+        btnCapturar.addEventListener('click', () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            canvas.toBlob(blob => {
+                const file = new File([blob], "captura_camara.jpg", { type: "image/jpeg" });
+                const container = new DataTransfer();
+                container.items.add(file);
+                inputFile.files = container.files;
+                alert('¡Foto capturada con éxito y cargada en el formulario!');
+            }, 'image/jpeg');
+        });
+    </script>
+</body>
+</html>
