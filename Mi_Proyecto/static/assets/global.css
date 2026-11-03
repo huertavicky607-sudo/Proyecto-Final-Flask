@@ -123,3 +123,24 @@
   box-shadow: 0 12px 25px rgba(2, 132, 199, 0.5),
               inset 0 2px 3px rgba(255, 255, 255, 0.6);
 }
+
+/* --- Gotitas de Agua 3D (Efecto Líquido) --- */
+.water-drop {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9), rgba(2, 132, 199, 0.2) 60%, rgba(14, 116, 144, 0.4));
+  box-shadow: 0 8px 20px rgba(14, 116, 144, 0.25), 
+              inset 0 3px 4px rgba(255, 255, 255, 0.9), 
+              inset -3px -3px 6px rgba(2, 132, 199, 0.5);
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Contenedor relativo para posicionar las gotitas alrededor */
+.login-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 20px auto;
+}
