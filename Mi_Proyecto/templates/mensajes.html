@@ -10,35 +10,42 @@
   <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
   <style>
     .chat-container {
-      max-width: 650px;
+      max-width: 600px;
       margin: 20px auto;
-      padding: 25px;
-      background: #ffffff;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      padding: 30px;
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: 30px;
+      box-shadow: 0 20px 40px rgba(14, 116, 144, 0.15),
+                  inset 0 1px 2px rgba(255, 255, 255, 0.9);
+      position: relative;
+      z-index: 2;
     }
     #caja-mensajes {
-      height: 320px;
+      height: 300px;
       overflow-y: auto;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      padding: 12px;
-      background: #f9fafb;
+      border: 1px solid rgba(186, 230, 253, 0.8);
+      border-radius: 12px;
+      padding: 15px;
+      background: rgba(240, 249, 255, 0.6);
       margin-bottom: 20px;
+      box-shadow: inset 2px 2px 5px rgba(14, 116, 144, 0.05);
     }
     .msg-item {
       padding: 10px 14px;
-      border-radius: 10px;
-      background: #e5e7eb;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.8);
       margin-bottom: 10px;
       max-width: 80%;
       word-wrap: break-word;
-      color: #1f2937;
+      color: #1e293b;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.03);
     }
     .msg-item.propio {
-      background: #004b23;
-      color: #ffffff;
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+      color: #ffffff !important;
       margin-left: auto;
     }
     .msg-meta {
@@ -52,46 +59,52 @@
     .form-group label {
       display: block;
       font-weight: bold !important;
-      color: #1f2937;
+      color: #1e293b;
       margin-bottom: 6px !important;
     }
   </style>
 </head>
-<body>
-  <div data-role="page" id="chat-page">
+<body class="glass-bg" style="position: relative; overflow-x: hidden; margin: 0; padding: 0;">
+
+  <!-- Burbujas decorativas en el fondo -->
+  <div class="bg-bubble" style="width: 70px; height: 70px; top: 15%; left: 10%;"></div>
+  <div class="bg-bubble" style="width: 50px; height: 50px; top: 70%; right: 12%;"></div>
+  <div class="bg-bubble" style="width: 40px; height: 40px; top: 30%; right: 15%;"></div>
+
+  <div data-role="page" id="chat-page" style="background: transparent !important; position: relative; z-index: 2;">
     <div data-role="header" data-theme="b">
       <a href="{{ url_for('menu') }}" data-icon="home" data-ajax="false">Menú</a>
       <h1>Mensajería</h1>
       <span class="ui-btn-right" id="estado-chat" style="font-size: 11px; padding: 5px;">Conectando...</span>
     </div>
 
-    <div role="main" class="ui-content">
+    <div role="main" class="ui-content" style="padding: 15px;">
       <div class="chat-container">
-        <h2 style="text-align: center; color: #004b23; margin-top: 0; margin-bottom: 20px;">Chat de la Comunidad</h2>
+        <h2 style="text-align: center; color: #1e40af; margin-top: 0; margin-bottom: 20px;">Chat de la Comunidad</h2>
 
         <div id="caja-mensajes">
-          <p id="chat-vacio" style="text-align: center; color: #888; margin-top: 120px;">Cargando mensajes...</p>
+          <p id="chat-vacio" style="text-align: center; color: #64748b; margin-top: 100px;">Cargando mensajes...</p>
         </div>
 
         <form id="form-chat">
           <div class="form-group">
             <label for="chat-usuario">Tu Nombre:</label>
-            <input type="text" id="chat-usuario" value="{{ session.get('nombre', 'Invitado') }}" maxlength="30" required>
+            <input type="text" id="chat-usuario" value="{{ session.get('nombre', 'Invitado') }}" maxlength="30" class="glass-input" required>
           </div>
 
           <div class="form-group">
             <label for="chat-texto">Mensaje:</label>
-            <input type="text" id="chat-texto" placeholder="Escribe un mensaje..." maxlength="500" required autocomplete="off">
+            <input type="text" id="chat-texto" placeholder="Escribe un mensaje..." maxlength="500" class="glass-input" required autocomplete="off">
           </div>
 
           <div style="margin-top: 20px;">
-            <button type="submit" id="btn-enviar" class="ui-btn ui-btn-b ui-corner-all">Enviar Mensaje</button>
+            <button type="submit" id="btn-enviar" class="glass-btn">Enviar Mensaje</button>
           </div>
         </form>
       </div>
     </div>
 
-    <div data-role="footer" data-position="fixed">
+    <div data-role="footer" data-position="fixed" data-theme="b">
       <h4>Chat en tiempo real conectado a Aiven</h4>
     </div>
   </div>
