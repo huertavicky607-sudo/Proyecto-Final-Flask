@@ -4,7 +4,7 @@
     var labels = { usuarios: 'usuario', productos: 'producto', ventas: 'venta' };
 
     function request(entity, action, data) {
-        return $.ajax({ url: 'api.php?entity=' + entity + '&action=' + action, method: 'POST', contentType: 'application/json', data: data ? JSON.stringify(data) : undefined }).then(function (response) { return response; }).catch(function (xhr) { var message = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : 'No se pudo conectar con el servidor.'; showNotice(message, false); return $.Deferred().reject().promise(); });
+        return $.ajax({ url: '/api.php?entity=' + entity + '&action=' + action, method: 'POST', contentType: 'application/json', data: data ? JSON.stringify(data) : undefined }).then(function (response) { return response; }).catch(function (xhr) { var message = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : 'No se pudo conectar con el servidor.'; showNotice(message, false); return $.Deferred().reject().promise(); });
     }
     function escapeHtml(value) { return $('<div>').text(value == null ? '' : value).html(); }
     function money(value) { return '$' + Number(value || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 }); }
@@ -13,7 +13,7 @@
     function actionButtons(entity, row, id) { return '<span class="actions"><button class="action-btn edit" data-entity="' + entity + '" data-id="' + id + '">Editar</button><button class="action-btn delete" data-entity="' + entity + '" data-id="' + id + '">Borrar</button></span>'; }
 
     function load(entity) {
-        return $.getJSON('api.php?entity=' + entity + '&action=list').then(function (response) { state[entity] = response.data || []; render(entity); updateSummary(); if (entity === 'usuarios' || entity === 'productos') updateSaleOptions(); });
+        return $.getJSON('/api.php?entity=' + entity + '&action=list').then(function (response) { state[entity] = response.data || []; render(entity); updateSummary(); if (entity === 'usuarios' || entity === 'productos') updateSaleOptions(); });
     }
     
     function render(entity) {
@@ -46,7 +46,7 @@
     $(document).on('click', '.edit', function () { var entity = $(this).data('entity'); var id = Number($(this).data('id')); var key = entity === 'usuarios' ? 'id_usuario' : entity === 'productos' ? 'id_producto' : 'id_venta'; openForm(entity, state[entity].filter(function (item) { return Number(item[key]) === id; })[0]); });
     $(document).on('click', '.delete', function () { var button = $(this); if (!window.confirm('¿Eliminar este registro?')) return; var entity = button.data('entity'); var key = entity === 'usuarios' ? 'id_usuario' : entity === 'productos' ? 'id_producto' : 'id_venta'; var data = {}; data[key] = Number(button.data('id')); request(entity, 'delete', data).then(function (result) { showNotice(result.message, true); load(entity); }); });
     
-    // CAPTURA DIRECTA DEL BOTÓN DE GUARDAR (Evita que el diálogo bloquee la petición)
+    // Captura directa y segura de los botones de guardar en los formularios
     $(document).on('click', '#usuario-form-data button, #producto-form-data button, #venta-form-data button, #usuario-form-data input[type="submit"], #producto-form-data input[type="submit"], #venta-form-data input[type="submit"]', function (event) {
         event.preventDefault();
         var btn = $(this);
@@ -93,7 +93,6 @@
         request(entity, 'save', data).then(function (result) {
             if (!result) return;
             showNotice(result.message || 'Guardado exitosamente', true);
-            // Regresamos a la pantalla principal y recargamos los datos
             window.location.href = '#inicio';
             load(entity);
         });
