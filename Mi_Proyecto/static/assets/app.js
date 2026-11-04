@@ -46,21 +46,15 @@
     $(document).on('click', '.edit', function () { var entity = $(this).data('entity'); var id = Number($(this).data('id')); var key = entity === 'usuarios' ? 'id_usuario' : entity === 'productos' ? 'id_producto' : 'id_venta'; openForm(entity, state[entity].filter(function (item) { return Number(item[key]) === id; })[0]); });
     $(document).on('click', '.delete', function () { var button = $(this); if (!window.confirm('¿Eliminar este registro?')) return; var entity = button.data('entity'); var key = entity === 'usuarios' ? 'id_usuario' : entity === 'productos' ? 'id_producto' : 'id_venta'; var data = {}; data[key] = Number(button.data('id')); request(entity, 'delete', data).then(function (result) { showNotice(result.message, true); load(entity); }); });
     
-    // Captura directa del botón para evitar bloqueos de jQuery Mobile
-    $(document).on('click', '#usuario-form-data button[type="submit"], #producto-form-data button[type="submit"], #venta-form-data button[type="submit"], #usuario-form-data input[type="submit"], #producto-form-data input[type="submit"], #venta-form-data input[type="submit"], .form-save-btn, button', function (event) {
-        var btn = $(this);
-        var form = btn.closest('form');
-        if (!form.length) return;
-        
-        var formId = form.attr('id') || '';
-        if (formId.indexOf('form') === -1) return;
-        
+    // Envío limpio y directo de formularios
+    $(document).on('submit', '#usuario-form-data, #producto-form-data, #venta-form-data', function (event) {
         event.preventDefault();
-        
+        var form = $(this);
+        var formId = form.attr('id');
         var entity = formId.split('-')[0];
         entity = entity === 'usuario' ? 'usuarios' : entity === 'producto' ? 'productos' : 'ventas';
-        var data = {};
         
+        var data = {};
         form.serializeArray().forEach(function (item) {
             data[item.name] = item.value;
         });
@@ -70,13 +64,7 @@
             data.id_producto = $('#sale-product').val();
             data.cantidad = form.find('[name="cantidad"]').val() || 1;
             data.tasa_impuesto = form.find('[name="tasa_impuesto"]').val() || 16;
-        }
 
-        form.find('input[type=checkbox]').each(function () {
-            data[this.name] = this.checked ? 1 : 0;
-        });
-
-        if (entity === 'ventas') {
             var idProd = Number(data.id_producto);
             var prod = state.productos.filter(function (p) { return Number(p.id_producto) === idProd; })[0];
             var precio = prod ? Number(prod.precio) : 0;
@@ -95,10 +83,14 @@
             data.total_final = total;
         }
 
+        form.find('input[type=checkbox]').each(function () {
+            data[this.name] = this.checked ? 1 : 0;
+        });
+
         request(entity, 'save', data).then(function (result) {
             if (!result) return;
             showNotice(result.message || 'Guardado exitosamente', true);
-            window.history.back();
+            $.mobile.changePage('#inicio', { reverse: true });
             load(entity);
         });
     });
