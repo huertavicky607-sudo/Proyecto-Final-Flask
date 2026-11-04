@@ -15,16 +15,26 @@
     function load(entity) {
         return $.getJSON('api.php?entity=' + entity + '&action=list').then(function (response) { state[entity] = response.data || []; render(entity); updateSummary(); if (entity === 'usuarios' || entity === 'productos') updateSaleOptions(); });
     }
+    
     function render(entity) {
         var query = String($('.query-input[data-query="' + entity + '"]').val() || '').toLowerCase().trim();
         var filtered = state[entity].filter(function (row) { return !query || Object.keys(row).some(function (key) { return String(row[key] == null ? '' : row[key]).toLowerCase().indexOf(query) > -1; }); });
+        
         var rows = filtered.map(function (row) {
             if (entity === 'usuarios') return '<tr><td>' + escapeHtml(row.nombre) + '</td><td>' + escapeHtml(row.email) + '</td><td>' + escapeHtml(row.telefono) + '</td><td>' + badge(row.activo) + '</td><td>' + actionButtons(entity, row, row.id_usuario) + '</td></tr>';
             if (entity === 'productos') return '<tr><td>' + escapeHtml(row.nombre) + '</td><td>' + escapeHtml(row.descripcion) + '</td><td>' + money(row.precio) + '</td><td>' + row.stock + '</td><td>' + badge(row.activo) + '</td><td>' + actionButtons(entity, row, row.id_producto) + '</td></tr>';
-            return '<tr><td>' + escapeHtml(row.usuario) + '</td><td>' + escapeHtml(row.producto) + '</td><td>' + row.cantidad + '</td><td>' + money(row.total_bruto) + '</td><td>' + money(row.total_impuesto) + '</td><td><strong>' + money(row.total_final) + '</strong></td><td>' + actionButtons(entity, row, row.id_venta) + '</td></tr>';
+            
+            // Corrección flexible para los campos de ventas (lee indistintamente de cómo los mande el servidor)
+            var sub = row.subtotal !== undefined ? row.subtotal : (row.total_bruto !== undefined ? row.total_bruto : 0);
+            var imp = row.impuesto !== undefined ? row.impuesto : (row.total_impuesto !== undefined ? row.total_impuesto : 0);
+            var tot = row.total !== undefined ? row.total : (row.total_final !== undefined ? row.total_final : 0);
+
+            return '<tr><td>' + escapeHtml(row.usuario) + '</td><td>' + escapeHtml(row.producto) + '</td><td>' + row.cantidad + '</td><td>' + money(sub) + '</td><td>' + money(imp) + '</td><td><strong>' + money(tot) + '</strong></td><td>' + actionButtons(entity, row, row.id_venta) + '</td></tr>';
         }).join('');
+        
         $('#' + entity + '-list').html(rows || '<tr><td colspan="8">No hay registros todavía.</td></tr>');
     }
+
     function updateSummary() { $('#active-users').text(state.usuarios.filter(function (item) { return Number(item.activo); }).length); $('#product-count').text(state.productos.length); $('#sale-count').text(state.ventas.length); }
     function updateSaleOptions() { $('#sale-user').html(state.usuarios.filter(function (x) { return Number(x.activo); }).map(function (x) { return '<option value="' + x.id_usuario + '">' + escapeHtml(x.nombre) + '</option>'; }).join('')); $('#sale-product').html(state.productos.filter(function (x) { return Number(x.activo); }).map(function (x) { return '<option value="' + x.id_producto + '">' + escapeHtml(x.nombre) + ' - ' + money(x.precio) + '</option>'; }).join('')); }
     function resetForm(form) { form[0].reset(); form.find('input[type=hidden]').val(''); form.find('input[type=checkbox]').prop('checked', true); }
