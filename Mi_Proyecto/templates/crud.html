@@ -13,12 +13,10 @@
     <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
     <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
     <style>
-        /* Ajustes Glassmorphism para el Panel de Ventas (CRUD) */
         body, .ui-page {
             background: transparent !important;
             font-family: 'DM Sans', sans-serif, -apple-system, sans-serif;
         }
-
         .crud-glass-card {
             background: rgba(255, 255, 255, 0.65) !important;
             backdrop-filter: blur(12px);
@@ -26,15 +24,12 @@
             border: 1px solid rgba(255, 255, 255, 0.8) !important;
             border-radius: 24px !important;
             padding: 25px;
-            box-shadow: 0 20px 40px rgba(14, 116, 144, 0.12),
-                        inset 0 1px 2px rgba(255, 255, 255, 0.9) !important;
+            box-shadow: 0 20px 40px rgba(14, 116, 144, 0.12), inset 0 1px 2px rgba(255, 255, 255, 0.9) !important;
             margin-bottom: 25px;
         }
-
         .nav-card {
             background: rgba(255, 255, 255, 0.75) !important;
             backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
             border-radius: 18px !important;
             border: 1px solid rgba(186, 230, 253, 0.8) !important;
             box-shadow: 0 8px 20px rgba(14, 116, 144, 0.08) !important;
@@ -44,20 +39,9 @@
             transform: translateY(-3px);
             background: rgba(255, 255, 255, 0.95) !important;
             border-color: #0ea5e9 !important;
-            box-shadow: 0 12px 25px rgba(14, 116, 144, 0.15) !important;
         }
-
-        .nav-card.accent {
-            background: rgba(224, 242, 254, 0.8) !important;
-            border-color: #7dd3fc !important;
-        }
-
-        .nav-card.dark {
-            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
-            color: white !important;
-            border: none !important;
-        }
-
+        .nav-card.accent { background: rgba(224, 242, 254, 0.8) !important; border-color: #7dd3fc !important; }
+        .nav-card.dark { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important; color: white !important; border: none !important; }
         .primary, button[type="submit"] {
             background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
             border: none !important;
@@ -67,7 +51,6 @@
             border-radius: 50px !important;
             box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3) !important;
         }
-
         .summary-strip {
             background: rgba(255, 255, 255, 0.6) !important;
             backdrop-filter: blur(10px);
@@ -75,7 +58,6 @@
             border-radius: 16px;
             padding: 15px;
         }
-
         .table-wrap {
             background: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(10px);
@@ -89,7 +71,6 @@
 </head>
 <body class="glass-bg" style="position: relative; overflow-x: hidden; margin: 0; padding: 0;">
 
-    <!-- Burbujas decorativas flotantes -->
     <div class="bg-bubble" style="width: 75px; height: 75px; top: 12%; left: 6%;"></div>
     <div class="bg-bubble" style="width: 45px; height: 45px; top: 80%; left: 10%;"></div>
     <div class="bg-bubble" style="width: 65px; height: 65px; top: 22%; right: 8%;"></div>
@@ -97,14 +78,12 @@
 
     <!-- PÁGINA DE INICIO DEL CRUD -->
     <div data-role="page" id="inicio" style="background: transparent !important; position: relative; z-index: 2;">
-        
-        <!-- Header Principal Estandarizado -->
         <div data-role="header" data-theme="b" style="padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; min-height: 65px;">
             <div style="display: flex; align-items: center;">
-                <div style="background: #1E40AF; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 1px solid #FBBF24; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                <div style="background: #1E40AF; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 1px solid #FBBF24;">
                     <span style="font-size: 20px; line-height: 1;">⚡</span>
                 </div>
-                <span style="font-size: 22px; font-weight: bold; color: #FBBF24; letter-spacing: 0.5px;">ElectroRuta</span>
+                <span style="font-size: 22px; font-weight: bold; color: #FBBF24;">ElectroRuta</span>
             </div>
             <div>
                 <a href="{{ url_for('menu') }}" class="ui-btn ui-corner-all ui-icon-home" data-ajax="false" style="background: transparent; border: none; color: #FBBF24; font-size: 14px;">Menú Principal</a>
