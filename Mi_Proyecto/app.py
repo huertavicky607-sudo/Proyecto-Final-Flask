@@ -31,7 +31,6 @@ def init_db():
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            # 1. Tabla Usuarios con soporte de roles ('admin' o 'cliente')
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS usuarios (
                     id_usuario INT AUTO_INCREMENT PRIMARY KEY,
@@ -49,7 +48,6 @@ def init_db():
             except:
                 pass
 
-            # 2. Tabla Encuesta UPVM
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS respuestas (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -62,7 +60,6 @@ def init_db():
                     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-            # 3. Tabla Mensajería
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS mensajes (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -71,7 +68,6 @@ def init_db():
                     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-            # 4. Tablas para Productos y Ventas (CRUD)
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS productos (
                     id_producto INT AUTO_INCREMENT PRIMARY KEY,
@@ -100,7 +96,6 @@ def init_db():
                     FOREIGN KEY (id_producto) REFERENCES productos(id_producto)
                 )
             """)
-            # 5. Tabla para Seguimiento de Cookies y Eventos
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS eventos (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -113,7 +108,6 @@ def init_db():
                     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-            # 6. Tabla para Ubicaciones
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS ubicaciones (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -126,7 +120,6 @@ def init_db():
                     FOREIGN KEY (usuario_id) REFERENCES usuarios(id_usuario) ON DELETE SET NULL
                 )
             """)
-            # 7. Tabla para Fotos de Galería
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS fotos (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -138,7 +131,6 @@ def init_db():
                     creado_en DATETIME
                 )
             """)
-
         conn.commit()
         conn.close()
         print("Base de datos inicializada correctamente.")
@@ -147,9 +139,6 @@ def init_db():
 
 init_db()
 
-# ----------------------------------------------------
-# RUTAS PÚBLICAS (MENÚ PRINCIPAL)
-# ----------------------------------------------------
 @app.route('/')
 @app.route('/menu')
 def menu():
@@ -157,9 +146,6 @@ def menu():
     rol_usuario = session.get('rol', 'invitado')
     return render_template('menu.html', nombre=nombre_usuario, rol=rol_usuario)
 
-# ----------------------------------------------------
-# AUTENTICACIÓN Y REGISTRO
-# ----------------------------------------------------
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
@@ -244,9 +230,6 @@ def logout():
     session.clear()
     return redirect(url_for('menu'))
 
-# ----------------------------------------------------
-# API DE TRACKER DE COOKIES
-# ----------------------------------------------------
 @app.post('/api/tracker')
 def api_tracker():
     datos = request.get_json(silent=True) or {}
@@ -276,9 +259,6 @@ def api_tracker():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ----------------------------------------------------
-# MÓDULO DE MÉTRICAS (EXCLUSIVO PARA ADMIN)
-# ----------------------------------------------------
 @app.route('/metrics')
 def metrics():
     if 'usuario_id' not in session or session.get('rol') != 'admin':
@@ -381,9 +361,6 @@ def api_metricas():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ----------------------------------------------------
-# SECCIONES PROTEGIDAS (REQUIEREN INICIO DE SESIÓN)
-# ----------------------------------------------------
 @app.route('/mapas')
 def mapas():
     if 'usuario_id' not in session:
@@ -498,7 +475,6 @@ def listar_mensajes():
         with conn.cursor() as cursor:
             cursor.execute("SELECT id, usuario, texto, fecha FROM mensajes WHERE id > %s ORDER BY id ASC", (desde,))
             nuevos = cursor.fetchall()
-            # Aseguramos que la fecha se convierta a string ISO para que JavaScript la lea sin problemas
             for m in nuevos:
                 if m.get('fecha'):
                     m['fecha'] = str(m['fecha'])
@@ -653,11 +629,11 @@ def api_crud():
             elif entity == 'ventas':
                 if action == 'list':
                     sql = """SELECT v.id_venta, v.id_usuario, v.id_producto, u.nombre AS usuario, p.nombre AS producto, 
-                                     v.cantidad, v.precio_unit, v.total_bruto, v.tasa_impuesto, v.total_impuesto, v.total_final 
-                              FROM ventas v 
-                              INNER JOIN usuarios u ON u.id_usuario = v.id_usuario 
-                              INNER JOIN productos p ON p.id_producto = v.id_producto 
-                              ORDER BY v.id_venta DESC"""
+                                    v.cantidad, v.precio_unit, v.total_bruto, v.tasa_impuesto, v.total_impuesto, v.total_final 
+                             FROM ventas v 
+                             INNER JOIN usuarios u ON u.id_usuario = v.id_usuario 
+                             INNER JOIN productos p ON p.id_producto = v.id_producto 
+                             ORDER BY v.id_venta DESC"""
                     cursor.execute(sql)
                     res = cursor.fetchall()
                     conn.close()
