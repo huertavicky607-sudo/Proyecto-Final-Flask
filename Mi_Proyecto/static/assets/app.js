@@ -46,17 +46,25 @@
     $(document).on('click', '.edit', function () { var entity = $(this).data('entity'); var id = Number($(this).data('id')); var key = entity === 'usuarios' ? 'id_usuario' : entity === 'productos' ? 'id_producto' : 'id_venta'; openForm(entity, state[entity].filter(function (item) { return Number(item[key]) === id; })[0]); });
     $(document).on('click', '.delete', function () { var button = $(this); if (!window.confirm('¿Eliminar este registro?')) return; var entity = button.data('entity'); var key = entity === 'usuarios' ? 'id_usuario' : entity === 'productos' ? 'id_producto' : 'id_venta'; var data = {}; data[key] = Number(button.data('id')); request(entity, 'delete', data).then(function (result) { showNotice(result.message, true); load(entity); }); });
     
-    $('#usuario-form-data, #producto-form-data, #venta-form-data').on('submit', function (event) {
+    // Captura directa del botón para evitar bloqueos de jQuery Mobile
+    $(document).on('click', '#usuario-form-data button[type="submit"], #producto-form-data button[type="submit"], #venta-form-data button[type="submit"], #usuario-form-data input[type="submit"], #producto-form-data input[type="submit"], #venta-form-data input[type="submit"], .form-save-btn, button', function (event) {
+        var btn = $(this);
+        var form = btn.closest('form');
+        if (!form.length) return;
+        
+        var formId = form.attr('id') || '';
+        if (formId.indexOf('form') === -1) return;
+        
         event.preventDefault();
-        var form = $(this);
-        var entity = form.attr('id').split('-')[0];
+        
+        var entity = formId.split('-')[0];
         entity = entity === 'usuario' ? 'usuarios' : entity === 'producto' ? 'productos' : 'ventas';
         var data = {};
+        
         form.serializeArray().forEach(function (item) {
             data[item.name] = item.value;
         });
 
-        // FUERZA LA LECTURA CORRECTA DE LOS SELECTORES EN VENTAS (Evita que se quede trabado en el primer usuario)
         if (entity === 'ventas') {
             data.id_usuario = $('#sale-user').val();
             data.id_producto = $('#sale-product').val();
@@ -68,7 +76,6 @@
             data[this.name] = this.checked ? 1 : 0;
         });
 
-        // Cálculo matemático automático en el frontend para ventas
         if (entity === 'ventas') {
             var idProd = Number(data.id_producto);
             var prod = state.productos.filter(function (p) { return Number(p.id_producto) === idProd; })[0];
@@ -89,8 +96,9 @@
         }
 
         request(entity, 'save', data).then(function (result) {
-            showNotice(result.message, true);
-            $.mobile.changePage('#' + (entity === 'usuarios' ? 'usuarios' : entity === 'productos' ? 'productos' : 'ventas'));
+            if (!result) return;
+            showNotice(result.message || 'Guardado exitosamente', true);
+            window.history.back();
             load(entity);
         });
     });
