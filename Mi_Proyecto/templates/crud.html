@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Panel de Ventas (CRUD)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS para modales y estructura robusta -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/global.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/app.css') }}">
+    <style>
+        body { background: transparent !important; font-family: 'DM Sans', sans-serif; color: #1e293b; }
+        .crud-glass-card {
+            background: rgba(255, 255, 255, 0.75) !important;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.9) !important;
+            border-radius: 24px !important;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(14, 116, 144, 0.12);
+            margin-bottom: 25px;
+        }
+        .nav-card {
+            background: rgba(255, 255, 255, 0.8) !important;
+            backdrop-filter: blur(8px);
+            border-radius: 18px !important;
+            border: 1px solid rgba(186, 230, 253, 0.8) !important;
+            padding: 20px;
+            display: block;
+            text-decoration: none;
+            transition: all 0.25s ease;
+            color: inherit;
+        }
+        .nav-card:hover { transform: translateY(-3px); background: #ffffff !important; border-color: #0ea5e9 !important; }
+        .nav-card.accent { background: rgba(224, 242, 254, 0.8) !important; }
+        .nav-card.dark { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important; color: white !important; }
+        .primary-btn {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            border: none; color: white; font-weight: bold; border-radius: 50px; padding: 10px 25px;
+        }
+        .primary-btn:hover { background: #0369a1; color: white; }
+        .badge-active { background: #dcfce7; color: #15803d; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .badge-inactive { background: #fee2e2; color: #b91c1c; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .notice { display: none; padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; font-weight: 500; }
+        .notice.ok { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; display: block; }
+        .notice.error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; display: block; }
+    </style>
+</head>
+<body class="glass-bg position-relative min-vh-100">
+
+    <div class="container py-4">
+        <!-- HEADER -->
+        <div class="d-flex align-items-center justify-content-between crud-glass-card mb-4 py-3">
+            <div class="d-flex align-items-center">
+                <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 40px; height: 40px;">⚡</div>
+                <h4 class="m-0 fw-bold text-warning">ElectroRuta</h4>
+            </div>
+            <div>
+                <a href="{{ url_for('menu') }}" class="btn btn-outline-primary btn-sm me-2">Menú Principal</a>
+            </div>
+        </div>
+
+        <div id="notice" class="notice"></div>
+
+        <!-- TARJETAS DE NAVEGACIÓN -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="nav-card" onclick="switchTab('usuarios')" style="cursor: pointer;">
+                    <span class="text-primary fw-bold">01</span>
+                    <h5 class="text-primary fw-bold mt-1">Usuarios</h5>
+                    <p class="text-muted small m-0">Clientes y contactos</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="nav-card accent" onclick="switchTab('productos')" style="cursor: pointer;">
+                    <span class="text-info fw-bold">02</span>
+                    <h5 class="text-info fw-bold mt-1">Productos</h5>
+                    <p class="text-muted small m-0">Catálogo e inventario</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="nav-card dark" onclick="switchTab('ventas')" style="cursor: pointer;">
+                    <span class="text-warning fw-bold">03</span>
+                    <h5 class="fw-bold mt-1">Ventas</h5>
+                    <p class="text-white-50 small m-0">Operaciones y totales</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESUMEN -->
+        <div class="crud-glass-card d-flex justify-content-around text-center py-3">
+            <div><small class="text-muted d-block">USUARIOS ACTIVOS</small><strong id="active-users" class="fs-5 text-primary">-</strong></div>
+            <div><small class="text-muted d-block">PRODUCTOS</small><strong id="product-count" class="fs-5 text-primary">-</strong></div>
+            <div><small class="text-muted d-block">VENTAS</small><strong id="sale-count" class="fs-5 text-primary">-</strong></div>
+        </div>
+
+        <!-- CONTENEDOR DE SECCIONES (DINÁMICO) -->
+        <div id="section-container"></div>
+    </div>
+
+    <!-- MODAL ÚNICO PARA FORMULARIOS (CREAR / EDITAR) -->
+    <div class="modal fade" id="dataModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content crud-glass-card border-0 shadow-lg">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold text-primary" id="modalTitle">Registro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-content-body px-3 pb-3">
+                    <form id="dynamicForm">
+                        <input type="hidden" id="recordId" name="id">
+                        <div id="formFields"></div>
+                        <div class="mt-4 text-end">
+                            <button type="submit" class="btn primary-btn w-100 shadow">Guardar Cambios</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='assets/app.js') }}"></script>
+</body>
+</html>
