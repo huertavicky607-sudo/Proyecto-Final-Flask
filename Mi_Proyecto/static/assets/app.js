@@ -46,10 +46,13 @@
     $(document).on('click', '.edit', function () { var entity = $(this).data('entity'); var id = Number($(this).data('id')); var key = entity === 'usuarios' ? 'id_usuario' : entity === 'productos' ? 'id_producto' : 'id_venta'; openForm(entity, state[entity].filter(function (item) { return Number(item[key]) === id; })[0]); });
     $(document).on('click', '.delete', function () { var button = $(this); if (!window.confirm('¿Eliminar este registro?')) return; var entity = button.data('entity'); var key = entity === 'usuarios' ? 'id_usuario' : entity === 'productos' ? 'id_producto' : 'id_venta'; var data = {}; data[key] = Number(button.data('id')); request(entity, 'delete', data).then(function (result) { showNotice(result.message, true); load(entity); }); });
     
-    // Envío limpio y directo de formularios
-    $(document).on('submit', '#usuario-form-data, #producto-form-data, #venta-form-data', function (event) {
+    // CAPTURA DIRECTA DEL BOTÓN DE GUARDAR (Evita que el diálogo bloquee la petición)
+    $(document).on('click', '#usuario-form-data button, #producto-form-data button, #venta-form-data button, #usuario-form-data input[type="submit"], #producto-form-data input[type="submit"], #venta-form-data input[type="submit"]', function (event) {
         event.preventDefault();
-        var form = $(this);
+        var btn = $(this);
+        var form = btn.closest('form');
+        if (!form.length) return;
+
         var formId = form.attr('id');
         var entity = formId.split('-')[0];
         entity = entity === 'usuario' ? 'usuarios' : entity === 'producto' ? 'productos' : 'ventas';
@@ -90,7 +93,8 @@
         request(entity, 'save', data).then(function (result) {
             if (!result) return;
             showNotice(result.message || 'Guardado exitosamente', true);
-            $.mobile.changePage('#inicio', { reverse: true });
+            // Regresamos a la pantalla principal y recargamos los datos
+            window.location.href = '#inicio';
             load(entity);
         });
     });
