@@ -24,7 +24,6 @@
             if (entity === 'usuarios') return '<tr><td>' + escapeHtml(row.nombre) + '</td><td>' + escapeHtml(row.email) + '</td><td>' + escapeHtml(row.telefono) + '</td><td>' + badge(row.activo) + '</td><td>' + actionButtons(entity, row, row.id_usuario) + '</td></tr>';
             if (entity === 'productos') return '<tr><td>' + escapeHtml(row.nombre) + '</td><td>' + escapeHtml(row.descripcion) + '</td><td>' + money(row.precio) + '</td><td>' + row.stock + '</td><td>' + badge(row.activo) + '</td><td>' + actionButtons(entity, row, row.id_producto) + '</td></tr>';
             
-            // Corrección flexible para los campos de ventas (lee indistintamente de cómo los mande el servidor)
             var sub = row.subtotal !== undefined ? row.subtotal : (row.total_bruto !== undefined ? row.total_bruto : 0);
             var imp = row.impuesto !== undefined ? row.impuesto : (row.total_impuesto !== undefined ? row.total_impuesto : 0);
             var tot = row.total !== undefined ? row.total : (row.total_final !== undefined ? row.total_final : 0);
@@ -46,5 +45,44 @@
     $(document).on('click', '[data-mode="new"]', function () { openForm($(this).attr('href').indexOf('usuario') > -1 ? 'usuarios' : $(this).attr('href').indexOf('producto') > -1 ? 'productos' : 'ventas'); });
     $(document).on('click', '.edit', function () { var entity = $(this).data('entity'); var id = Number($(this).data('id')); var key = entity === 'usuarios' ? 'id_usuario' : entity === 'productos' ? 'id_producto' : 'id_venta'; openForm(entity, state[entity].filter(function (item) { return Number(item[key]) === id; })[0]); });
     $(document).on('click', '.delete', function () { var button = $(this); if (!window.confirm('¿Eliminar este registro?')) return; var entity = button.data('entity'); var key = entity === 'usuarios' ? 'id_usuario' : entity === 'productos' ? 'id_producto' : 'id_venta'; var data = {}; data[key] = Number(button.data('id')); request(entity, 'delete', data).then(function (result) { showNotice(result.message, true); load(entity); }); });
-    $('#usuario-form-data, #producto-form-data, #venta-form-data').on('submit', function (event) { event.preventDefault(); var form = $(this); var entity = form.attr('id').split('-')[0]; entity = entity === 'usuario' ? 'usuarios' : entity === 'producto' ? 'productos' : 'ventas'; var data = {}; form.serializeArray().forEach(function (item) { data[item.name] = item.value; }); form.find('input[type=checkbox]').each(function () { data[this.name] = this.checked ? 1 : 0; }); request(entity, 'save', data).then(function (result) { showNotice(result.message, true); $.mobile.changePage('#' + (entity === 'usuarios' ? 'usuarios' : entity === 'productos' ? 'productos' : 'ventas')); load(entity); }); });
+    
+    $('#usuario-form-data, #producto-form-data, #venta-form-data').on('submit', function (event) {
+        event.preventDefault();
+        var form = $(this);
+        var entity = form.attr('id').split('-')[0];
+        entity = entity === 'usuario' ? 'usuarios' : entity === 'producto' ? 'productos' : 'ventas';
+        var data = {};
+        form.serializeArray().forEach(function (item) {
+            data[item.name] = item.value;
+        });
+        form.find('input[type=checkbox]').each(function () {
+            data[this.name] = this.checked ? 1 : 0;
+        });
+
+        // Cálculo matemático automático en el frontend para ventas
+        if (entity === 'ventas') {
+            var idProd = Number(data.id_producto);
+            var prod = state.productos.filter(function (p) { return Number(p.id_producto) === idProd; })[0];
+            var precio = prod ? Number(prod.precio) : 0;
+            var cantidad = Number(data.cantidad) || 1;
+            var tasa = Number(data.tasa_impuesto) || 0;
+
+            var subtotal = precio * cantidad;
+            var impuesto = subtotal * (tasa / 100);
+            var total = subtotal + impuesto;
+
+            data.subtotal = subtotal;
+            data.impuesto = impuesto;
+            data.total = total;
+            data.total_bruto = subtotal;
+            data.total_impuesto = impuesto;
+            data.total_final = total;
+        }
+
+        request(entity, 'save', data).then(function (result) {
+            showNotice(result.message, true);
+            $.mobile.changePage('#' + (entity === 'usuarios' ? 'usuarios' : entity === 'productos' ? 'productos' : 'ventas'));
+            load(entity);
+        });
+    });
 }(jQuery));
