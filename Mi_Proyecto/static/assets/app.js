@@ -55,6 +55,15 @@
         form.serializeArray().forEach(function (item) {
             data[item.name] = item.value;
         });
+
+        // FUERZA LA LECTURA CORRECTA DE LOS SELECTORES EN VENTAS (Evita que se quede trabado en el primer usuario)
+        if (entity === 'ventas') {
+            data.id_usuario = $('#sale-user').val();
+            data.id_producto = $('#sale-product').val();
+            data.cantidad = form.find('[name="cantidad"]').val() || 1;
+            data.tasa_impuesto = form.find('[name="tasa_impuesto"]').val() || 16;
+        }
+
         form.find('input[type=checkbox]').each(function () {
             data[this.name] = this.checked ? 1 : 0;
         });
