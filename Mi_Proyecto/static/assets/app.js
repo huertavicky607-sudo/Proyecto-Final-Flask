@@ -31,6 +31,7 @@ function showNotice(msg, ok) {
     let notice = document.getElementById('notice');
     notice.className = `notice ${ok ? 'ok' : 'error'}`;
     notice.innerText = msg;
+    notice.style.display = 'block';
     setTimeout(() => { notice.style.display = 'none'; }, 4000);
 }
 
@@ -82,20 +83,20 @@ function renderTable(entity, customData = null) {
         return;
     }
 
-    tbody.innerHTML = data.map(row => {
+    tbody.innerHTML = data.map((row, index) => {
         let id = row.id_usuario || row.id_producto || row.id_venta;
         let badge = Number(row.activo) ? '<span class="badge-active">Activo</span>' : '<span class="badge-inactive">Inactivo</span>';
 
         if (entity === 'usuarios') {
             return `<tr>
                 <td><b>${row.nombre || ''}</b></td><td>${row.email || ''}</td><td>${row.telefono || ''}</td><td>${badge}</td>
-                <td class="text-end"><button class="btn btn-sm btn-outline-primary me-1" onclick="openModal('usuarios', ${id})">Editar</button><button class="btn btn-sm btn-outline-danger" onclick="deleteRecord('usuarios', ${id})">Borrar</button></td>
+                <td class="text-end"><button class="btn btn-sm btn-outline-primary me-1" onclick="openModal('usuarios', ${id})">Editar</button><button class="btn btn-sm btn-outline-danger btn-delete" data-id="${id}" data-entity="usuarios">Borrar</button></td>
             </tr>`;
         }
         if (entity === 'productos') {
             return `<tr>
                 <td><b>${row.nombre || ''}</b></td><td>${row.descripcion || ''}</td><td>$${Number(row.precio || 0).toFixed(2)}</td><td>${row.stock || 0}</td><td>${badge}</td>
-                <td class="text-end"><button class="btn btn-sm btn-outline-primary me-1" onclick="openModal('productos', ${id})">Editar</button><button class="btn btn-sm btn-outline-danger" onclick="deleteRecord('productos', ${id})">Borrar</button></td>
+                <td class="text-end"><button class="btn btn-sm btn-outline-primary me-1" onclick="openModal('productos', ${id})">Editar</button><button class="btn btn-sm btn-outline-danger btn-delete" data-id="${id}" data-entity="productos">Borrar</button></td>
             </tr>`;
         }
         if (entity === 'ventas') {
@@ -104,7 +105,7 @@ function renderTable(entity, customData = null) {
             let tot = row.total ?? row.total_final ?? 0;
             return `<tr>
                 <td><b>${row.usuario || 'N/D'}</b></td><td>${row.producto || 'N/D'}</td><td>${row.cantidad || 1}</td><td>$${Number(sub).toFixed(2)}</td><td>$${Number(imp).toFixed(2)}</td><td><strong>$${Number(tot).toFixed(2)}</strong></td>
-                <td class="text-end"><button class="btn btn-sm btn-outline-danger" onclick="deleteRecord('ventas', ${id})">Borrar</button></td>
+                <td class="text-end"><button class="btn btn-sm btn-outline-danger btn-delete" data-id="${id}" data-entity="ventas">Borrar</button></td>
             </tr>`;
         }
     }).join('');
@@ -164,7 +165,6 @@ document.getElementById('dynamicForm').addEventListener('submit', async function
     let data = {};
     formData.forEach((val, key) => data[key] = val);
 
-    // Manejar checkboxes de estado
     let checkboxes = this.querySelectorAll('input[type=checkbox]');
     checkboxes.forEach(cb => { data[cb.name] = cb.checked ? 1 : 0; });
 
@@ -172,7 +172,6 @@ document.getElementById('dynamicForm').addEventListener('submit', async function
     if (data.id) data[idKey] = data.id;
     delete data.id;
 
-    // Cálculo matemático automático en ventas
     if (currentEntity === 'ventas') {
         let prod = state.productos.find(p => Number(p.id_producto) === Number(data.id_producto));
         let precio = prod ? Number(prod.precio) : 0;
@@ -206,12 +205,19 @@ document.getElementById('dynamicForm').addEventListener('submit', async function
     }
 });
 
-// Eliminar registro
-async function deleteRecord(entity, id) {
+// Manejo seguro del evento de borrado mediante delegación de clics
+document.addEventListener('click', async function(e) {
+    let btn = e.target.closest('.btn-delete');
+    if (!btn) return;
+
+    let entity = btn.getAttribute('data-entity');
+    let id = btn.getAttribute('data-id');
+
     if (!confirm('¿Estás segura de eliminar este registro?')) return;
+
     let idKey = entity === 'usuarios' ? 'id_usuario' : entity === 'productos' ? 'id_producto' : 'id_venta';
     let data = {};
-    data[idKey] = id;
+    data[idKey] = Number(id);
 
     try {
         let res = await fetch(`/api.php?entity=${entity}&action=delete`, {
@@ -227,6 +233,6 @@ async function deleteRecord(entity, id) {
             showNotice(result.error || 'No se pudo eliminar', false);
         }
     } catch (err) {
-        showNotice('Error de conexión', false);
+        showNotice('Error de conexión con el servidor', false);
     }
-}
+});
