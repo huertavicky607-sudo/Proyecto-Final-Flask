@@ -11,10 +11,10 @@ app.secret_key = os.getenv('SECRET_KEY', 'clave_secreta_desarrollo')
 # ----------------------------------------------------
 # CONFIGURACIÓN DE BASE DE DATOS (AIVEN)
 # ----------------------------------------------------
-DB_HOST = os.getenv('DB_HOST', 'mysql-5b94a9d-huertavicky607-8d66.b.aivencloud.com')
-DB_PORT = int(os.getenv('DB_PORT', 10037))
+DB_HOST = os.getenv('DB_HOST', 'mysql-3e9d9e2a-zunigavirginiayadira-4b8a.g.aivencloud.com')
+DB_PORT = int(os.getenv('DB_PORT', 23189))
 DB_USER = os.getenv('DB_USER', 'avnadmin')
-DB_PASS = os.getenv('DB_PASS', 'AVNS_-fx3bfc3-7WsWWifdbu')
+DB_PASS = os.getenv('DB_PASS', 'AVNS_kej1VzzpPgz38UW9hBe')
 DB_NAME = os.getenv('DB_NAME', 'defaultdb')
 
 def get_db_connection():
