@@ -61,6 +61,28 @@
             transform: translateY(-4px);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
         }
+        /* Controla el tamaño de las tarjetas para que no se estiren de más */
+        .cards-productos-relacionados {
+            grid-template-columns: repeat(auto-fill, minmax(260px, 300px));
+            justify-content: start; /* Alinea los cuadritos a la izquierda */
+        }
+
+/* Hace que el contenedor de la imagen sea un cuadrito fijo */
+        .card-producto-relacionado .image-product {
+            height: 260px;
+            background-color: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+/* Muestra la imagen completa sin recortarla */
+        .card-producto-relacionado .image-product img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Usa 'cover' si prefieres que llene el cuadro, o 'contain' para ver la prenda completa */
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
