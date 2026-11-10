@@ -2,123 +2,222 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Menú Principal</title>
-    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='assets/global.css') }}">
-    <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
-    <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ElectroRuta | Catálogo y Herramientas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/starwish.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
-        /* Estilos adaptados al concepto Glassmorphism para el Menú */
-       .menu-container {
-            width: 100%;
-            max-width: 550px;
-            min-height: 480px; /* <--- Altura mínima fija para que siempre midan lo mismo */
-            margin: 20px auto;
-            padding: 30px;
-            background: rgba(255, 255, 255, 0.65);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            border-radius: 30px;
-            box-shadow: 0 20px 40px rgba(14, 116, 144, 0.15),
-                        inset 0 1px 2px rgba(255, 255, 255, 0.9);
-            position: relative;
-            z-index: 2;
-            box-sizing: border-box;
+        /* Ajustes ligeros para integrar el menú de herramientas y el catálogo dinámico */
+        .header { flex-wrap: wrap; gap: 15px; }
+        .header .menu-nav { flex-wrap: wrap; gap: 8px; }
+        .header .menu-nav li a { font-size: 14px; padding: 8px 14px; }
+        .badge-rol {
+            font-size: 12px;
+            background: #0ea5e9;
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+        .catalogo-header {
             display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .menu-bienvenida {
-            text-align: center;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 40px;
             margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
-        /* Botones de navegación estilizados con efecto cristal suave */
-        .menu-grid .ui-btn {
-            background: rgba(240, 249, 255, 0.7) !important;
-            border: 1px solid rgba(186, 230, 253, 0.8) !important;
-            color: #0369a1 !important;
-            border-radius: 14px !important;
-            font-weight: bold;
-            text-align: left;
-            padding-left: 20px;
-            margin-bottom: 12px;
-            box-shadow: 0 4px 10px rgba(14, 116, 144, 0.08);
-            text-shadow: none !important;
-            transition: all 0.2s ease;
+        .catalogo-header h2 { font-size: 28px; color: #0f172a; }
+        .btn-admin-crud {
+            background-color: #0f172a;
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 500px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
-        .menu-grid .ui-btn:hover {
-            background: rgba(255, 255, 255, 0.95) !important;
-            border-color: #0ea5e9 !important;
-            transform: translateY(-2px);
+        .btn-admin-crud:hover { opacity: 0.9; }
+        .empty-catalog {
+            text-align: center;
+            padding: 60px 20px;
+            background: #f8fafc;
+            border-radius: 20px;
+            color: #475569;
+            margin-bottom: 40px;
+        }
+        .card-producto-relacionado {
+            background: #fff;
+            border: 1px solid #f1f5f9;
+            border-radius: 20px;
+            padding: 15px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .card-producto-relacionado:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
         }
     </style>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 </head>
-<body class="glass-bg" style="position: relative; overflow-x: hidden; margin: 0; padding: 0;">
+<body>
 
-    <!-- Burbujas decorativas esparcidas por el fondo -->
-    <div class="bg-bubble" style="width: 70px; height: 70px; top: 10%; left: 8%;"></div>
-    <div class="bg-bubble" style="width: 45px; height: 45px; top: 80%; left: 12%;"></div>
-    <div class="bg-bubble" style="width: 60px; height: 60px; top: 20%; right: 10%;"></div>
-    <div class="bg-bubble" style="width: 35px; height: 35px; top: 70%; right: 15%;"></div>
-    <div class="bg-bubble" style="width: 30px; height: 30px; top: 45%; left: 5%;"></div>
-    <div class="bg-bubble" style="width: 50px; height: 50px; bottom: 8% right: 8%;"></div>
+    <!-- MENÚ SUPERIOR -->
+    <header>
+        <div class="header container">
+            <h1 class="logo" style="font-size: 24px; color: #0f172a;">
+                <i class="fa-solid fa-bolt" style="color: #0ea5e9;"></i> ElectroRuta
+            </h1>
 
-    <div data-role="page" id="menu-page" style="background: transparent !important; position: relative; z-index: 2;">
-        
-        <div data-role="header" data-theme="b" style="padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; min-height: 65px;">
-            <div style="display: flex; align-items: center;">
-                <div style="background: #1E40AF; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 1px solid #FBBF24; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                    <span style="font-size: 20px; line-height: 1;">⚡</span>
+            <nav>
+                <ul class="menu-nav">
+                    <li><a href="{{ url_for('menu') }}" style="background-color: #f2f5f9; font-weight: 600;">Catálogo</a></li>
+                    <li><a href="{{ url_for('mapas') }}">Mapas API</a></li>
+                    <li><a href="{{ url_for('vista_ubicacion') }}">Ubicación</a></li>
+                    <li><a href="{{ url_for('youtube') }}">Video / Iframe</a></li>
+                    <li><a href="{{ url_for('encuesta') }}">Encuesta</a></li>
+                    <li><a href="{{ url_for('vista_fotos') }}">Fotos</a></li>
+                    <li><a href="{{ url_for('mensajes') }}">Mensajes</a></li>
+                    {% if rol == 'admin' %}
+                        <li><a href="{{ url_for('crud') }}" style="color: #0284c7; font-weight: 600;">Admin CRUD</a></li>
+                        <li><a href="{{ url_for('metrics') }}" style="color: #d97706; font-weight: 600;">Métricas</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="menu-hamburger">
+                    <i class="fa-solid fa-bars"></i>
                 </div>
-                <span style="font-size: 22px; font-weight: bold; color: #FBBF24; letter-spacing: 0.5px;">ElectroRuta</span>
-            </div>
-            <div>
-               {% if session.get('usuario_id') %}
-                    <a href="{{ url_for('logout') }}" data-icon="power" class="ui-btn ui-corner-all ui-icon-power" data-ajax="false" style="background: transparent; border: none; color: #FBBF24; font-size: 14px;">Salir</a>
+
+                {% if session.get('usuario_id') %}
+                    <span class="badge-rol">{{ nombre }} ({{ rol }})</span>
+                    <a href="{{ url_for('logout') }}" title="Cerrar sesión" style="color: #ef4444; font-size: 18px;">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </a>
                 {% else %}
-                    <a href="{{ url_for('login') }}" data-icon="user" class="ui-btn ui-corner-all ui-icon-user" data-ajax="false" style="background: transparent; border: none; color: #FBBF24; font-size: 14px;">Iniciar Sesión</a>
+                    <a href="{{ url_for('login') }}" class="btn-admin-crud" style="padding: 8px 16px;">Iniciar Sesión</a>
                 {% endif %}
             </div>
         </div>
+    </header>
 
-        <div role="main" class="ui-content" style="display: flex; justify-content: center; align-items: center; padding: 20px 10px;">
-            <div class="menu-container">
-                <div class="menu-bienvenida">
-                    {% if session.get('usuario_id') %}
-                        <h2 style="color: #1e40af; margin-top: 0;">¡Hola, {{ nombre }}!</h2>
-                        <p><span style="background: rgba(2, 132, 199, 0.15); padding: 5px 14px; border-radius: 20px; color: #0369a1; font-size: 0.9rem; border: 1px solid rgba(2, 132, 199, 0.3);">Rol: <strong>{{ rol }}</strong></span></p>
-                        <p style="color: #475569; margin-top: 10px;">Explora las actividades y herramientas disponibles:</p>
-                    {% else %}
-                        <h2 style="color: #1e40af; margin-top: 0;">¡Bienvenido(a) a nuestro sitio!</h2>
-                        <p style="color: #475569;">Explora las secciones de abajo. Al interactuar con las actividades protegidas, el sistema te pedirá iniciar sesión.</p>
-                    {% endif %}
-                </div>
-
-                <div class="menu-grid">
-                    <a href="{{ url_for('mapas') }}" class="ui-btn ui-corner-all" data-ajax="false">🗺️ Mapas (iFrame y API)</a>
-                    <a href="{{ url_for('presentacion') }}" class="ui-btn ui-corner-all" data-ajax="false">👤 Presentación (Página 2)</a>
-                    <a href="{{ url_for('youtube') }}" class="ui-btn ui-corner-all" data-ajax="false">▶️ Video de YouTube</a>
-                    <a href="{{ url_for('encuesta') }}" class="ui-btn ui-corner-all" data-ajax="false">📝 Encuesta de Satisfacción</a>
-                    <a href="{{ url_for('mensajes') }}" class="ui-btn ui-corner-all" data-ajax="false">💬 Servicio de Mensajería</a>
-                    <a href="{{ url_for('crud') }}" class="ui-btn ui-corner-all" data-ajax="false">⚙️ Gestión (CRUD)</a>
-                    <a href="{{ url_for('vista_ubicacion') }}" class="ui-btn ui-corner-all" data-ajax="false">📍 Registrar mi Ubicación</a>
-                    <a href="{{ url_for('vista_fotos') }}" class="ui-btn ui-corner-all" data-ajax="false">📷 Galería de Fotos</a>
-
-                    <!-- 🔒 BOTÓN EXCLUSIVO PARA ADMINISTRADOR (Métricas) -->
-                    {% if session.get('rol') == 'admin' %}
-                        <a href="{{ url_for('metrics') }}" class="ui-btn ui-corner-all" data-ajax="false" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important; color: white !important; border: none !important;">📊 Métricas del Sitio (Admin)</a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <div data-role="footer" data-position="fixed" data-theme="b">
-            <h4>Panel General de Navegación</h4>
+    <!-- MENÚ RESPONSIVE PARA CELULAR -->
+    <div class="menu-responsive">
+        <h1 class="logo-responsive">ElectroRuta</h1>
+        <p>Hola, <strong>{{ nombre }}</strong>. Accede a todas las herramientas del sistema.</p>
+        <nav>
+            <ul class="menu-nav-responsive">
+                <li><a href="{{ url_for('menu') }}">Catálogo</a></li>
+                <li><a href="{{ url_for('mapas') }}">Mapas API</a></li>
+                <li><a href="{{ url_for('vista_ubicacion') }}">Ubicación</a></li>
+                <li><a href="{{ url_for('youtube') }}">Video / Iframe</a></li>
+                <li><a href="{{ url_for('encuesta') }}">Encuesta</a></li>
+                <li><a href="{{ url_for('vista_fotos') }}">Fotos</a></li>
+                <li><a href="{{ url_for('mensajes') }}">Mensajes</a></li>
+                {% if rol == 'admin' %}
+                    <li><a href="{{ url_for('crud') }}">Admin CRUD</a></li>
+                    <li><a href="{{ url_for('metrics') }}">Métricas</a></li>
+                {% endif %}
+                {% if session.get('usuario_id') %}
+                    <li><a href="{{ url_for('logout') }}" style="color: #ef4444;">Cerrar Sesión</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('login') }}">Iniciar Sesión</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        <div class="btn-close-responsive">
+            <i class="fa-solid fa-xmark"></i>
         </div>
     </div>
-    <script src="{{ url_for('static', filename='assets/tracker.js') }}"></script>
+    <div id="overlay"></div>
+
+    <!-- CATÁLOGO PRINCIPAL -->
+    <main class="container">
+        <div class="catalogo-header">
+            <div>
+                <h2>Catálogo de Productos</h2>
+                <p style="color: #64748b; font-size: 15px;">Explora nuestros artículos disponibles en tiempo real.</p>
+            </div>
+            {% if session.get('usuario_id') %}
+                <a href="{{ url_for('crud') }}" class="btn-admin-crud">
+                    <i class="fa-solid fa-sliders"></i> Gestionar Productos / Ventas
+                </a>
+            {% endif %}
+        </div>
+
+        {% if productos and productos|length > 0 %}
+            <div class="cards-productos-relacionados" style="margin-bottom: 60px;">
+                {% for prod in productos %}
+                <div class="card-producto-relacionado">
+                    <div class="image-product">
+                        <img src="{{ prod.imagen if prod.imagen else 'https://placehold.co/400x400/f1f5f9/334155?text=ElectroRuta' }}" 
+                             alt="{{ prod.nombre }}"
+                             onerror="this.src='https://placehold.co/400x400/f1f5f9/334155?text=Sin+Imagen'">
+                        <div class="button-group">
+                            <a href="{{ url_for('crud') }}" class="btn-add-to-bag" style="text-decoration: none;">
+                                <i class="fa-solid fa-bag-shopping"></i> Comprar / Ver en CRUD
+                            </a>
+                        </div>
+                    </div>
+                    <div class="info-product">
+                        <div class="container-title">
+                            <h4>{{ prod.nombre }}</h4>
+                            <p>{{ prod.descripcion or 'Artículo disponible en catálogo' }}</p>
+                        </div>
+                        <div class="container-price">
+                            <span>${{ "%.2f"|format(prod.precio) }}</span>
+                            <p style="font-size: 13px;">
+                                <i class="fa-solid fa-box"></i> Stock: {{ prod.stock }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-catalog">
+                <i class="fa-solid fa-box-open" style="font-size: 40px; color: #94a3b8; margin-bottom: 15px;"></i>
+                <h3>Aún no hay productos registrados en el catálogo</h3>
+                <p style="margin: 10px 0 20px;">Entra al panel CRUD para agregar tus primeros productos y verlos aquí automáticamente.</p>
+                <a href="{{ url_for('crud') }}" class="btn-admin-crud">Ir a agregar productos</a>
+            </div>
+        {% endif %}
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="container footer">
+            <h1 class="logo" style="font-size: 24px;">ElectroRuta</h1>
+            <div class="container-social">
+                <a href="{{ url_for('youtube') }}" class="youtube">
+                    <i class="fa-brands fa-youtube"></i>
+                    <span>Multimedia</span>
+                </a>
+                <a href="{{ url_for('mapas') }}" class="facebook">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <span>Rutas y Mapas</span>
+                </a>
+            </div>
+            <div class="user-footer">
+                <ul>
+                    <li><a href="{{ url_for('menu') }}">Catálogo</a></li>
+                    <li><a href="{{ url_for('encuesta') }}">Encuesta UPVM</a></li>
+                    <li><a href="{{ url_for('mensajes') }}">Chat en vivo</a></li>
+                </ul>
+            </div>
+            <div class="container-policies">
+                <ul>
+                    <li><a href="{{ url_for('vista_fotos') }}">Galería de Fotos</a></li>
+                    <li><a href="{{ url_for('vista_ubicacion') }}">Geolocalización</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/starwish.js') }}"></script>
 </body>
 </html>
