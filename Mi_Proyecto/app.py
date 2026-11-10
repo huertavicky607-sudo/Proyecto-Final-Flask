@@ -144,7 +144,17 @@ init_db()
 def menu():
     nombre_usuario = session.get('nombre', 'Visitante')
     rol_usuario = session.get('rol', 'invitado')
-    return render_template('menu.html', nombre=nombre_usuario, rol=rol_usuario)
+    productos = []
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM productos WHERE activo = 1 ORDER BY id_producto DESC")
+            productos = cursor.fetchall()
+        conn.close()
+    except Exception as e:
+        print(f"Error al cargar catálogo: {e}")
+
+    return render_template('menu.html', nombre=nombre_usuario, rol=rol_usuario, productos=productos)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
