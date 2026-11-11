@@ -115,7 +115,6 @@
 
     <script src="{{ url_for('static', filename='index.js') }}"></script>
     <script>
-        // Script adicional para procesar la venta real vía API del CRUD
         const precioBase = parseFloat(document.getElementById('precio-unitario').dataset.precio);
         const countProd = document.getElementById('count-product');
         const totalTxt = document.getElementById('total-final-txt');
@@ -123,7 +122,7 @@
 
         function actualizarTotal() {
             let cant = parseInt(countProd.textContent);
-            let total = (precioBase * cant * 1.16).toFixed(2); // con 16% impuesto
+            let total = (precioBase * cant * 1.16).toFixed(2);
             totalTxt.textContent = `$${total}`;
         }
 
@@ -134,7 +133,6 @@
             let cantidad = parseInt(countProd.textContent);
             let idProducto = btnComprar.dataset.id;
 
-            // Enviar la venta al backend mediante fetch
             fetch('/api.php?entity=ventas&action=save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
