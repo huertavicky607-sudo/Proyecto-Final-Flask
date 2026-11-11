@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ producto.nombre }} | Starwish</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+    <header>
+        <div class="header container">
+            <h1 class="logo">Starwish</h1>
+            <nav>
+                <ul class="menu-nav">
+                    <li><a href="{{ url_for('menu') }}">Catálogo</a></li>
+                    <li><a href="{{ url_for('mapas') }}">Mapas API</a></li>
+                    <li><a href="{{ url_for('vista_ubicacion') }}">Ubicación</a></li>
+                    <li><a href="{{ url_for('youtube') }}">Video</a></li>
+                    <li><a href="{{ url_for('encuesta') }}">Encuesta</a></li>
+                    <li><a href="{{ url_for('vista_fotos') }}">Fotos</a></li>
+                    <li><a href="{{ url_for('mensajes') }}">Mensajes</a></li>
+                </ul>
+            </nav>
+            <div class="carrito">
+                <img src="https://api.iconify.design/lucide:shopping-bag.svg" alt="carrito" style="width:24px;height:24px;">
+                <div class="count-products-cart" id="cart-counter">0</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container" style="margin-top: 40px;">
+        <div class="container-details-product">
+            <!-- Imagen Principal -->
+            <div style="flex: 1.2;">
+                <div class="imagen-producto" style="height: 500px; background: #f8fafc; display: flex; align-items: center; justify-content: center; border-radius: 20px;">
+                    <img src="{{ producto.imagen if producto.imagen else 'https://placehold.co/500x500/f1f5f9/334155?text=Starwish' }}" 
+                         alt="{{ producto.nombre }}" 
+                         style="max-height: 100%; object-fit: contain;"
+                         onerror="this.src='https://placehold.co/500x500/f1f5f9/334155?text=Sin+Imagen'">
+                </div>
+            </div>
+
+            <!-- Aside con Detalles, Colores, Tallas y Compra -->
+            <div class="aside-details-product">
+                <div class="header-details-product">
+                    <h2>{{ producto.nombre }}</h2>
+                    <div class="row">
+                        <div class="calification">
+                            <i class="fa-solid fa-star" style="color: #eab308;"></i>
+                            <p>4.9 - <span>Stock disponible: <strong id="stock-disponible">{{ producto.stock }}</strong></span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-details-product">
+                    <div class="container-acordeon">
+                        <button class="acordeon-button active">
+                            Descripción <i class="fa-solid fa-minus"></i>
+                        </button>
+                        <div class="acordeon-content" style="height: auto; padding: 20px;">
+                            <p>{{ producto.descripcion or 'Sin descripción detallada.' }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card de Pago y Compra Interactiva -->
+                <div class="card-payment" style="position: relative; top: 0; height: auto;">
+                    <div class="header">
+                        <p class="price" id="precio-unitario" data-precio="{{ producto.precio }}">${{ "%.2f"|format(producto.precio) }}</p>
+                        <p class="count-reviews"><i class="fa-solid fa-bolt" style="color: #0ea5e9;"></i> Envío Rápido</p>
+                    </div>
+
+                    <!-- Selección de Colores -->
+                    <div class="colors">
+                        <p>Color: <span id="value-color">{{ colores[0] if colores else 'Estándar' }}</span></p>
+                        <div class="row-colors">
+                            {% for col in colores %}
+                                <div class="container-color {% if loop.first %}selected{% endif %}" data-color="{{ col }}" style="background-color: #333; text-align:center; color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center;">{{ col }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Selección de Tallas -->
+                    <div class="sizes">
+                        <p>Talla: <span id="value-size">{{ tallas[0] if tallas else 'Única' }}</span></p>
+                        <div class="container-sizes">
+                            {% for tal in tallas %}
+                                <button class="btn-size {% if loop.first %}selected{% endif %}">{{ tal }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Cantidad y Botón Comprar -->
+                    <div class="quantity" style="margin-top: 20px;">
+                        <div class="container-add-quantity">
+                            <div class="add-quantity">
+                                <button class="btn-minus" id="btn-decrement"><i class="fa-solid fa-minus"></i></button>
+                                <span id="count-product">1</span>
+                                <button class="btn-plus" id="btn-increment"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <button class="btn-add-to-cart" id="btn-comprar-ahora" data-id="{{ producto.id_producto }}">
+                                <i class="fa-solid fa-bag-shopping"></i> Comprar Ahora
+                            </button>
+                        </div>
+                        <div class="total" style="margin-top: 15px;">
+                            <span>Total Final (IVA inc.)</span>
+                            <div class="price-total" id="total-final-txt">${{ "%.2f"|format(producto.precio) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='index.js') }}"></script>
+    <script>
+        // Script adicional para procesar la venta real vía API del CRUD
+        const precioBase = parseFloat(document.getElementById('precio-unitario').dataset.precio);
+        const countProd = document.getElementById('count-product');
+        const totalTxt = document.getElementById('total-final-txt');
+        const btnComprar = document.getElementById('btn-comprar-ahora');
+
+        function actualizarTotal() {
+            let cant = parseInt(countProd.textContent);
+            let total = (precioBase * cant * 1.16).toFixed(2); // con 16% impuesto
+            totalTxt.textContent = `$${total}`;
+        }
+
+        document.getElementById('btn-increment').addEventListener('click', actualizarTotal);
+        document.getElementById('btn-decrement').addEventListener('click', actualizarTotal);
+
+        btnComprar.addEventListener('click', () => {
+            let cantidad = parseInt(countProd.textContent);
+            let idProducto = btnComprar.dataset.id;
+
+            // Enviar la venta al backend mediante fetch
+            fetch('/api.php?entity=ventas&action=save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id_producto: idProducto,
+                    id_usuario: "{{ session.get('usuario_id') }}",
+                    cantidad: cantidad,
+                    tasa_impuesto: 16.0
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert('¡Compra realizada con éxito! Registrada en el sistema.');
+                window.location.href = "{{ url_for('menu') }}";
+            })
+            .catch(err => {
+                alert('Error al procesar la compra.');
+            });
+        });
+    </script>
+</body>
+</html>
