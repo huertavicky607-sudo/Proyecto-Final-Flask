@@ -77,9 +77,20 @@ def init_db():
                     stock INT NOT NULL DEFAULT 0,
                     imagen VARCHAR(255),
                     activo TINYINT(1) NOT NULL DEFAULT 1,
+                    colores VARCHAR(255) DEFAULT 'negro,blanco,naranja,celeste,marron',
+                    tallas VARCHAR(255) DEFAULT 'XS,S,M,L,XL,2XL,3XL',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+            try:
+                cursor.execute("ALTER TABLE productos ADD COLUMN colores VARCHAR(255) DEFAULT 'negro,blanco,naranja,celeste,marron'")
+            except:
+                pass
+            try:
+                cursor.execute("ALTER TABLE productos ADD COLUMN tallas VARCHAR(255) DEFAULT 'XS,S,M,L,XL,2XL,3XL'")
+            except:
+                pass
+
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS ventas (
                     id_venta INT AUTO_INCREMENT PRIMARY KEY,
@@ -155,6 +166,41 @@ def menu():
         print(f"Error al cargar catálogo: {e}")
 
     return render_template('menu.html', nombre=nombre_usuario, rol=rol_usuario, productos=productos)
+
+@app.route('/producto/<int:id_producto>')
+def detalle_producto(id_producto):
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+        
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM productos WHERE id_producto = %s AND activo = 1", (id_producto,))
+            producto = cursor.fetchone()
+            
+            if not producto:
+                conn.close()
+                flash('El producto no está disponible.', 'error')
+                return redirect(url_for('menu'))
+                
+            cursor.execute("SELECT * FROM productos WHERE id_producto != %s AND activo = 1 LIMIT 4", (id_producto,))
+            relacionados = cursor.fetchall()
+            
+        conn.close()
+        
+        lista_colores = [c.strip() for c in (producto.get('colores') or 'negro,blanco').split(',')]
+        lista_tallas = [t.strip() for t in (producto.get('tallas') or 'S,M,L').split(',')]
+        
+        return render_template('detalle_producto.html', 
+                               producto=producto, 
+                               colores=lista_colores, 
+                               tallas=lista_tallas, 
+                               relacionados=relacionados,
+                               nombre=session.get('nombre'),
+                               rol=session.get('rol'))
+    except Exception as e:
+        flash(f'Error al cargar el producto: {e}', 'error')
+        return redirect(url_for('menu'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -515,8 +561,9 @@ def crear_mensaje():
 
 @app.route('/crud')
 def crud():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
+    if 'usuario_id' not in session or session.get('rol') != 'admin':
+        flash('Acceso restringido al panel de administración.', 'error')
+        return redirect(url_for('menu'))
     return render_template('crud.html')
 
 @app.route('/fotos', methods=['GET', 'POST'])
@@ -532,7 +579,7 @@ def vista_fotos():
             if file.filename != '':
                 filename = secure_filename(file.filename)
                 import time
-                nombre_base, ext = os.path.splitext(filename)
+                _, ext = os.path.splitext(filename)
                 nombre_final = f"{session.get('nombre', 'invitado')}_{int(time.time())}{ext}"
                 
                 carpeta_uploads = os.path.join(app.root_path, 'static', 'uploads')
@@ -577,7 +624,7 @@ def api_crud():
         with conn.cursor() as cursor:
             if entity == 'usuarios':
                 if action == 'list':
-                    cursor.execute('SELECT id_usuario, nombre, email, telefono, activo FROM usuarios ORDER BY id_usuario DESC')
+                    cursor.execute('SELECT id_usuario, nombre, email, telefono, activo, rol FROM usuarios ORDER BY id_usuario DESC')
                     res = cursor.fetchall()
                     conn.close()
                     return jsonify({'data': res})
@@ -607,7 +654,7 @@ def api_crud():
 
             elif entity == 'productos':
                 if action == 'list':
-                    cursor.execute('SELECT id_producto, nombre, descripcion, precio, stock, imagen, activo FROM productos ORDER BY id_producto DESC')
+                    cursor.execute('SELECT id_producto, nombre, descripcion, precio, stock, imagen, activo, colores, tallas FROM productos ORDER BY id_producto DESC')
                     res = cursor.fetchall()
                     conn.close()
                     return jsonify({'data': res})
@@ -619,13 +666,15 @@ def api_crud():
                     stock = int(payload.get('stock', 0))
                     imagen = payload.get('imagen')
                     activo = int(payload.get('activo', 1))
+                    colores = payload.get('colores', 'negro,blanco,naranja,celeste,marron')
+                    tallas = payload.get('tallas', 'XS,S,M,L,XL,2XL,3XL')
 
                     if id_p:
-                        cursor.execute('UPDATE productos SET nombre=%s, descripcion=%s, precio=%s, stock=%s, imagen=%s, activo=%s WHERE id_producto=%s',
-                                       (nombre, descripcion, precio, stock, imagen, activo, id_p))
+                        cursor.execute('UPDATE productos SET nombre=%s, descripcion=%s, precio=%s, stock=%s, imagen=%s, activo=%s, colores=%s, tallas=%s WHERE id_producto=%s',
+                                       (nombre, descripcion, precio, stock, imagen, activo, colores, tallas, id_p))
                     else:
-                        cursor.execute('INSERT INTO productos (nombre, descripcion, precio, stock, imagen, activo) VALUES (%s, %s, %s, %s, %s, %s)',
-                                       (nombre, descripcion, precio, stock, imagen, activo))
+                        cursor.execute('INSERT INTO productos (nombre, descripcion, precio, stock, imagen, activo, colores, tallas) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)',
+                                       (nombre, descripcion, precio, stock, imagen, activo, colores, tallas))
                     conn.commit()
                     conn.close()
                     return jsonify({'message': 'Producto guardado correctamente.'})
