@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ElectroRuta | Catálogo y Herramientas</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='starwish.css') }}">
+    <title>Starwish | Catálogo y Herramientas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
-        /* Ajustes ligeros para integrar el menú de herramientas y el catálogo dinámico */
         .header { flex-wrap: wrap; gap: 15px; }
         .header .menu-nav { flex-wrap: wrap; gap: 8px; }
         .header .menu-nav li a { font-size: 14px; padding: 8px 14px; }
@@ -61,26 +60,26 @@
             transform: translateY(-4px);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
         }
-        /* Controla el tamaño de las tarjetas para que no se estiren de más */
         .cards-productos-relacionados {
+            display: grid;
             grid-template-columns: repeat(auto-fill, minmax(260px, 300px));
-            justify-content: start; /* Alinea los cuadritos a la izquierda */
+            gap: 30px;
+            justify-content: start;
         }
-
-/* Hace que el contenedor de la imagen sea un cuadrito fijo */
         .card-producto-relacionado .image-product {
             height: 260px;
             background-color: #f8fafc;
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
         }
-
-/* Muestra la imagen completa sin recortarla */
         .card-producto-relacionado .image-product img {
             width: 100%;
             height: 100%;
-            object-fit: contain; /* Usa 'cover' si prefieres que llene el cuadro, o 'contain' para ver la prenda completa */
+            object-fit: contain;
             padding: 10px;
         }
     </style>
@@ -91,7 +90,7 @@
     <header>
         <div class="header container">
             <h1 class="logo" style="font-size: 24px; color: #0f172a;">
-                <i class="fa-solid fa-bolt" style="color: #0ea5e9;"></i> ElectroRuta
+                <i class="fa-solid fa-bolt" style="color: #0ea5e9;"></i> Starwish
             </h1>
 
             <nav>
@@ -129,7 +128,7 @@
 
     <!-- MENÚ RESPONSIVE PARA CELULAR -->
     <div class="menu-responsive">
-        <h1 class="logo-responsive">ElectroRuta</h1>
+        <h1 class="logo-responsive">Starwish</h1>
         <p>Hola, <strong>{{ nombre }}</strong>. Accede a todas las herramientas del sistema.</p>
         <nav>
             <ul class="menu-nav-responsive">
@@ -164,7 +163,7 @@
                 <h2>Catálogo de Productos</h2>
                 <p style="color: #64748b; font-size: 15px;">Explora nuestros artículos disponibles en tiempo real.</p>
             </div>
-            {% if session.get('usuario_id') %}
+            {% if rol == 'admin' %}
                 <a href="{{ url_for('crud') }}" class="btn-admin-crud">
                     <i class="fa-solid fa-sliders"></i> Gestionar Productos / Ventas
                 </a>
@@ -176,70 +175,13 @@
                 {% for prod in productos %}
                 <div class="card-producto-relacionado">
                     <div class="image-product">
-                        <img src="{{ prod.imagen if prod.imagen else 'https://placehold.co/400x400/f1f5f9/334155?text=ElectroRuta' }}" 
+                        <img src="{{ prod.imagen if prod.imagen else 'https://placehold.co/400x400/f1f5f9/334155?text=Starwish' }}" 
                              alt="{{ prod.nombre }}"
                              onerror="this.src='https://placehold.co/400x400/f1f5f9/334155?text=Sin+Imagen'">
                         <div class="button-group">
-                            <a href="{{ url_for('crud') }}" class="btn-add-to-bag" style="text-decoration: none;">
-                                <i class="fa-solid fa-bag-shopping"></i> Comprar / Ver en CRUD
+                            <a href="{{ url_for('detalle_producto', id_producto=prod.id_producto) }}" class="btn-add-to-bag" style="text-decoration: none;">
+                                <i class="fa-solid fa-bag-shopping"></i> Ver y Comprar
                             </a>
                         </div>
                     </div>
-                    <div class="info-product">
-                        <div class="container-title">
-                            <h4>{{ prod.nombre }}</h4>
-                            <p>{{ prod.descripcion or 'Artículo disponible en catálogo' }}</p>
-                        </div>
-                        <div class="container-price">
-                            <span>${{ "%.2f"|format(prod.precio) }}</span>
-                            <p style="font-size: 13px;">
-                                <i class="fa-solid fa-box"></i> Stock: {{ prod.stock }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="empty-catalog">
-                <i class="fa-solid fa-box-open" style="font-size: 40px; color: #94a3b8; margin-bottom: 15px;"></i>
-                <h3>Aún no hay productos registrados en el catálogo</h3>
-                <p style="margin: 10px 0 20px;">Entra al panel CRUD para agregar tus primeros productos y verlos aquí automáticamente.</p>
-                <a href="{{ url_for('crud') }}" class="btn-admin-crud">Ir a agregar productos</a>
-            </div>
-        {% endif %}
-    </main>
-
-    <!-- FOOTER -->
-    <footer>
-        <div class="container footer">
-            <h1 class="logo" style="font-size: 24px;">ElectroRuta</h1>
-            <div class="container-social">
-                <a href="{{ url_for('youtube') }}" class="youtube">
-                    <i class="fa-brands fa-youtube"></i>
-                    <span>Multimedia</span>
-                </a>
-                <a href="{{ url_for('mapas') }}" class="facebook">
-                    <i class="fa-solid fa-map-location-dot"></i>
-                    <span>Rutas y Mapas</span>
-                </a>
-            </div>
-            <div class="user-footer">
-                <ul>
-                    <li><a href="{{ url_for('menu') }}">Catálogo</a></li>
-                    <li><a href="{{ url_for('encuesta') }}">Encuesta UPVM</a></li>
-                    <li><a href="{{ url_for('mensajes') }}">Chat en vivo</a></li>
-                </ul>
-            </div>
-            <div class="container-policies">
-                <ul>
-                    <li><a href="{{ url_for('vista_fotos') }}">Galería de Fotos</a></li>
-                    <li><a href="{{ url_for('vista_ubicacion') }}">Geolocalización</a></li>
-                </ul>
-            </div>
-        </div>
-    </footer>
-
-    <script src="{{ url_for('static', filename='index.js') }}"></script>
-</body>
-</html>
+                    <div class="info-
