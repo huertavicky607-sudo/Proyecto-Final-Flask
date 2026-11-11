@@ -184,4 +184,60 @@
                             </a>
                         </div>
                     </div>
-                    <div class="info-
+                    <div class="info-product">
+                        <div class="container-title">
+                            <h4>{{ prod.nombre }}</h4>
+                            <p>{{ prod.descripcion or 'Artículo disponible en catálogo' }}</p>
+                        </div>
+                        <div class="container-price">
+                            <span>${{ "%.2f"|format(prod.precio) }}</span>
+                            <p style="font-size: 13px;">
+                                <i class="fa-solid fa-box"></i> Stock: {{ prod.stock }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-catalog">
+                <i class="fa-solid fa-box-open" style="font-size: 40px; color: #94a3b8; margin-bottom: 15px;"></i>
+                <h3>Aún no hay productos registrados en el catálogo</h3>
+                <p style="margin: 10px 0 20px;">Los administradores pueden agregar productos desde su panel exclusivo.</p>
+            </div>
+        {% endif %}
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="container footer">
+            <h1 class="logo" style="font-size: 24px;">Starwish</h1>
+            <div class="container-social">
+                <a href="{{ url_for('youtube') }}" class="youtube">
+                    <i class="fa-brands fa-youtube"></i>
+                    <span>Multimedia</span>
+                </a>
+                <a href="{{ url_for('mapas') }}" class="facebook">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <span>Rutas y Mapas</span>
+                </a>
+            </div>
+            <div class="user-footer">
+                <ul>
+                    <li><a href="{{ url_for('menu') }}">Catálogo</a></li>
+                    <li><a href="{{ url_for('encuesta') }}">Encuesta UPVM</a></li>
+                    <li><a href="{{ url_for('mensajes') }}">Chat en vivo</a></li>
+                </ul>
+            </div>
+            <div class="container-policies">
+                <ul>
+                    <li><a href="{{ url_for('vista_fotos') }}">Galería de Fotos</a></li>
+                    <li><a href="{{ url_for('vista_ubicacion') }}">Geolocalización</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='index.js') }}"></script>
+</body>
+</html>
