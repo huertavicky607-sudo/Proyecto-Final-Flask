@@ -178,11 +178,11 @@
                         <img src="{{ prod.imagen if prod.imagen else 'https://placehold.co/400x400/f1f5f9/334155?text=Starwish' }}" 
                              alt="{{ prod.nombre }}"
                              onerror="this.src='https://placehold.co/400x400/f1f5f9/334155?text=Sin+Imagen'">
-                        <div class="button-group">
-                            <a href="{{ url_for('detalle_producto', id_producto=prod.id_producto) }}" class="btn-add-to-bag" style="text-decoration: none;">
-                                <i class="fa-solid fa-bag-shopping"></i> Ver y Comprar
-                            </a>
-                        </div>
+                        <div class="button-group" style="z-index: 10; pointer-events: auto;">
+                        <a href="{{ url_for('detalle_producto', id_producto=prod.id_producto) }}" class="btn-add-to-bag" style="text-decoration: none; cursor: pointer; user-select: none;">
+                        <i class="fa-solid fa-bag-shopping"></i> Ver y Comprar
+                        </a>
+                    </div>
                     </div>
                     <div class="info-product">
                         <div class="container-title">
