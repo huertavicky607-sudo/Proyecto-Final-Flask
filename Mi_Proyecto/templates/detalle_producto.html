@@ -22,7 +22,7 @@
                     <li><a href="{{ url_for('mensajes') }}">Mensajes</a></li>
                 </ul>
             </nav>
-            <!-- CARRITO CORREGIDO CON TU SVG -->
+            <!-- CARRITO CON TU SVG -->
             <div class="carrito" style="display: flex; align-items: center; position: relative; cursor: pointer;">
                 <img src="{{ url_for('static', filename='cart.svg') }}" alt="carrito" style="width: 28px; height: 28px;">
                 <div class="count-products-cart" id="cart-counter">0</div>
@@ -114,12 +114,11 @@
         </div>
     </main>
 
-   <script>
+    <script>
         const precioBase = parseFloat(document.getElementById('precio-unitario').dataset.precio);
         const countProd = document.getElementById('count-product');
         const totalTxt = document.getElementById('total-final-txt');
         const btnComprar = document.getElementById('btn-comprar-ahora');
-        const imagenProducto = document.querySelector('.imagen-producto img');
 
         let cantidadActual = 1;
 
@@ -150,31 +149,6 @@
             elemento.style.borderColor = '#0f172a';
             elemento.classList.add('selected');
             document.getElementById('value-color').textContent = color;
-
-            if (imagenProducto) {
-                switch(color.toLowerCase()) {
-                    case 'blanco':
-                        // Invertir y dar brillo controlado para simular tela blanca conservando detalles
-                        imagenProducto.style.filter = 'invert(0.9) grayscale(1) brightness(1.4)';
-                        break;
-                    case 'negro':
-                        // Oscurecer conservando sombras y contornos (en lugar de volverse 100% negro plano)
-                        imagenProducto.style.filter = 'brightness(0.35) contrast(1.2) grayscale(0.5)';
-                        break;
-                    case 'naranja':
-                        imagenProducto.style.filter = 'sepia(1) hue-rotate(-20deg) saturate(4) brightness(1.1)';
-                        break;
-                    case 'celeste':
-                        imagenProducto.style.filter = 'hue-rotate(160deg) saturate(2.5) brightness(1.1)';
-                        break;
-                    case 'marrón':
-                    case 'marron':
-                        imagenProducto.style.filter = 'sepia(0.8) saturate(2) brightness(0.7)';
-                        break;
-                    default:
-                        imagenProducto.style.filter = 'none'; // Color original (vino)
-                }
-            }
         }
 
         function seleccionarTalla(elemento, talla) {
