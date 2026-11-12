@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ producto.nombre }} | Starwish</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='starwish.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
     <header>
         <div class="header container">
-            <h1 class="logo">Starwish</h1>
+            <h1 class="logo" style="color: #0f172a;"><i class="fa-solid fa-bolt" style="color: #0ea5e9;"></i> Starwish</h1>
             <nav>
                 <ul class="menu-nav">
                     <li><a href="{{ url_for('menu') }}">Catálogo</a></li>
@@ -71,41 +71,41 @@
                         <p class="count-reviews"><i class="fa-solid fa-bolt" style="color: #0ea5e9;"></i> Envío Rápido</p>
                     </div>
 
-                    <!-- Selección de Colores -->
+                    <!-- Selección de Colores Dinámica -->
                     <div class="colors">
                         <p>Color: <span id="value-color">{{ colores[0] if colores else 'Estándar' }}</span></p>
                         <div class="row-colors">
                             {% for col in colores %}
-                                <div class="container-color {% if loop.first %}selected{% endif %}" data-color="{{ col }}" style="background-color: #333; text-align:center; color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center;">{{ col }}</div>
+                                <div class="container-color {% if loop.first %}selected{% endif %}" data-color="{{ col }}" onclick="seleccionarColor(this, '{{ col }}')" style="cursor:pointer; padding:6px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; display:inline-block; margin-right:5px;">{{ col }}</div>
                             {% endfor %}
                         </div>
                     </div>
 
-                    <!-- Selección de Tallas -->
-                    <div class="sizes">
+                    <!-- Selección de Tallas Dinámica -->
+                    <div class="sizes" style="margin-top: 15px;">
                         <p>Talla: <span id="value-size">{{ tallas[0] if tallas else 'Única' }}</span></p>
-                        <div class="container-sizes">
+                        <div class="container-sizes" style="display:flex; gap:8px; margin-top:5px;">
                             {% for tal in tallas %}
-                                <button class="btn-size {% if loop.first %}selected{% endif %}">{{ tal }}</button>
+                                <button type="button" class="btn-size {% if loop.first %}selected{% endif %}" onclick="seleccionarTalla(this, '{{ tal }}')" style="padding:6px 12px; border:1px solid #cbd5e1; background:#fff; border-radius:6px; cursor:pointer;">{{ tal }}</button>
                             {% endfor %}
                         </div>
                     </div>
 
                     <!-- Cantidad y Botón Comprar -->
-                    <div class="quantity" style="margin-top: 20px;">
-                        <div class="container-add-quantity">
-                            <div class="add-quantity">
-                                <button class="btn-minus" id="btn-decrement"><i class="fa-solid fa-minus"></i></button>
-                                <span id="count-product">1</span>
-                                <button class="btn-plus" id="btn-increment"><i class="fa-solid fa-plus"></i></button>
+                    <div class="quantity" style="margin-top: 25px;">
+                        <div class="container-add-quantity" style="display: flex; gap: 15px; align-items: center;">
+                            <div class="add-quantity" style="display:flex; align-items:center; border:1px solid #cbd5e1; border-radius:8px; overflow:hidden;">
+                                <button type="button" id="btn-decrement" style="padding:8px 12px; background:#f1f5f9; border:none; cursor:pointer;"><i class="fa-solid fa-minus"></i></button>
+                                <span id="count-product" style="padding:0 15px; font-weight:600;">1</span>
+                                <button type="button" id="btn-increment" style="padding:8px 12px; background:#f1f5f9; border:none; cursor:pointer;"><i class="fa-solid fa-plus"></i></button>
                             </div>
-                            <button class="btn-add-to-cart" id="btn-comprar-ahora" data-id="{{ producto.id_producto }}">
+                            <button type="button" class="btn-add-to-cart" id="btn-comprar-ahora" data-id="{{ producto.id_producto }}" style="flex:1; background:#0f172a; color:#fff; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:600;">
                                 <i class="fa-solid fa-bag-shopping"></i> Comprar Ahora
                             </button>
                         </div>
-                        <div class="total" style="margin-top: 15px;">
-                            <span>Total Final (IVA inc.)</span>
-                            <div class="price-total" id="total-final-txt">${{ "%.2f"|format(producto.precio) }}</div>
+                        <div class="total" style="margin-top: 15px; display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:14px; color:#64748b;">Total Final (IVA inc.)</span>
+                            <div class="price-total" id="total-final-txt" style="font-size:18px; font-weight:bold; color:#0f172a;">${{ "%.2f"|format(producto.precio) }}</div>
                         </div>
                     </div>
                 </div>
@@ -113,25 +113,49 @@
         </div>
     </main>
 
-    <script src="{{ url_for('static', filename='index.js') }}"></script>
     <script>
         const precioBase = parseFloat(document.getElementById('precio-unitario').dataset.precio);
         const countProd = document.getElementById('count-product');
         const totalTxt = document.getElementById('total-final-txt');
         const btnComprar = document.getElementById('btn-comprar-ahora');
 
+        let cantidadActual = 1;
+
         function actualizarTotal() {
-            let cant = parseInt(countProd.textContent);
-            let total = (precioBase * cant * 1.16).toFixed(2);
+            let total = (precioBase * cantidadActual * 1.16).toFixed(2);
             totalTxt.textContent = `$${total}`;
         }
 
-        document.getElementById('btn-increment').addEventListener('click', actualizarTotal);
-        document.getElementById('btn-decrement').addEventListener('click', actualizarTotal);
+        document.getElementById('btn-increment').addEventListener('click', () => {
+            cantidadActual++;
+            countProd.textContent = cantidadActual;
+            actualizarTotal();
+        });
+
+        document.getElementById('btn-decrement').addEventListener('click', () => {
+            if (cantidadActual > 1) {
+                cantidadActual--;
+                countProd.textContent = cantidadActual;
+                actualizarTotal();
+            }
+        });
+
+        function seleccionarColor(elemento, color) {
+            document.querySelectorAll('.row-colors .container-color').forEach(el => el.style.borderColor = '#cbd5e1');
+            elemento.style.borderColor = '#0f172a';
+            document.getElementById('value-color').textContent = color;
+        }
+
+        function seleccionarTalla(elemento, talla) {
+            document.querySelectorAll('.container-sizes .btn-size').forEach(el => el.style.background = '#fff');
+            elemento.style.background = '#f1f5f9';
+            document.getElementById('value-size').textContent = talla;
+        }
 
         btnComprar.addEventListener('click', () => {
-            let cantidad = parseInt(countProd.textContent);
             let idProducto = btnComprar.dataset.id;
+            let colorSeleccionado = document.getElementById('value-color').textContent;
+            let tallaSeleccionada = document.getElementById('value-size').textContent;
 
             fetch('/api.php?entity=ventas&action=save', {
                 method: 'POST',
@@ -139,13 +163,13 @@
                 body: JSON.stringify({
                     id_producto: idProducto,
                     id_usuario: "{{ session.get('usuario_id') }}",
-                    cantidad: cantidad,
+                    cantidad: cantidadActual,
                     tasa_impuesto: 16.0
                 })
             })
             .then(res => res.json())
             .then(data => {
-                alert('¡Compra realizada con éxito! Registrada en el sistema.');
+                alert(`¡Compra realizada con éxito! (${cantidadActual} unidad(es), Color: ${colorSeleccionado}, Talla: ${tallaSeleccionada})`);
                 window.location.href = "{{ url_for('menu') }}";
             })
             .catch(err => {
