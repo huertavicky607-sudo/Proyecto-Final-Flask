@@ -1250,5 +1250,13 @@ display: none;
     .container-review{
         max-width: 100%;
     }
+
+    /* Agregalo aquí */
+    @media (hover: none), (pointer: coarse) {
+        .card-producto-relacionado .image-product .button-group {
+            translate: 0 !important;
+        }
+    }
 }
+
 
