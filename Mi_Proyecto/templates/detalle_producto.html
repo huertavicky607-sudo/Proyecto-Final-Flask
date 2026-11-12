@@ -6,11 +6,46 @@
     <title>{{ producto.nombre }} | Starwish</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='starwish.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- Ajustes mínimos; todo lo demás sale de starwish.css -->
+    <style>
+        .imagen-principal {
+            height: clamp(260px, 50vw, 420px);
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        .imagen-principal img { max-height: 100%; object-fit: contain; }
+
+        /* La tarjeta crece según su contenido (en el CSS tiene altura fija) */
+        .card-payment { height: auto; gap: 20px; padding-top: 24px; padding-bottom: 24px; }
+        .btn-add-to-cart { padding: 14px 10px; }
+        .btn-add-to-cart:disabled { opacity: .6; cursor: wait; }
+
+        /* Colores: permitir varias filas y borde sutil para el blanco */
+        .row-colors { flex-wrap: wrap; }
+        .row-colors .container-color { min-width: 48px; border: 1px solid rgba(15, 23, 42, .15); }
+
+        /* Menú lateral móvil: fijo a la pantalla */
+        @media (max-width: 990px) {
+            .menu-responsive { position: fixed; top: 0; left: 0; box-shadow: 0 10px 30px #00000030; }
+        }
+    </style>
 </head>
 <body>
+    <div id="overlay"></div>
+
     <header>
         <div class="header container">
+            <!-- Botón hamburguesa (solo se ve en móvil por el CSS) -->
+            <div class="menu-hamburger" id="btn-hamburger"><i class="fa-solid fa-bars"></i></div>
+
             <h1 class="logo" style="color: #0f172a;"><i class="fa-solid fa-bolt" style="color: #0ea5e9;"></i> Starwish</h1>
+
             <nav>
                 <ul class="menu-nav">
                     <li><a href="{{ url_for('menu') }}">Catálogo</a></li>
@@ -22,27 +57,43 @@
                     <li><a href="{{ url_for('mensajes') }}">Mensajes</a></li>
                 </ul>
             </nav>
-            <!-- CARRITO CON TU SVG -->
-            <div class="carrito" style="display: flex; align-items: center; position: relative; cursor: pointer;">
-                <img src="{{ url_for('static', filename='cart.svg') }}" alt="carrito" style="width: 28px; height: 28px;">
+
+            <div class="carrito">
+                <img src="{{ url_for('static', filename='cart.svg') }}" alt="carrito">
                 <div class="count-products-cart" id="cart-counter">0</div>
+            </div>
+
+            <!-- Menú lateral para celular -->
+            <div class="menu-responsive" id="menu-responsive">
+                <div class="logo-responsive">
+                    <h1 style="color: #0f172a; font-size: 26px;"><i class="fa-solid fa-bolt" style="color: #0ea5e9;"></i> Starwish</h1>
+                </div>
+                <i class="fa-solid fa-xmark btn-close-responsive" id="btn-close-menu"></i>
+                <nav>
+                    <ul class="menu-nav-responsive">
+                        <li><a href="{{ url_for('menu') }}">Catálogo</a></li>
+                        <li><a href="{{ url_for('mapas') }}">Mapas API</a></li>
+                        <li><a href="{{ url_for('vista_ubicacion') }}">Ubicación</a></li>
+                        <li><a href="{{ url_for('youtube') }}">Video</a></li>
+                        <li><a href="{{ url_for('encuesta') }}">Encuesta</a></li>
+                        <li><a href="{{ url_for('vista_fotos') }}">Fotos</a></li>
+                        <li><a href="{{ url_for('mensajes') }}">Mensajes</a></li>
+                    </ul>
+                </nav>
             </div>
         </div>
     </header>
 
     <main class="container" style="margin-top: 40px;">
-        <div class="container-details-product">
-            <!-- Imagen Principal -->
-            <div style="flex: 1.2;">
-                <div class="imagen-producto" style="height: 500px; background: #f8fafc; display: flex; align-items: center; justify-content: center; border-radius: 20px;">
-                    <img src="{{ producto.imagen if producto.imagen else 'https://placehold.co/500x500/f1f5f9/334155?text=Starwish' }}" 
-                         alt="{{ producto.nombre }}" 
-                         style="max-height: 100%; object-fit: contain;"
-                         onerror="this.src='https://placehold.co/500x500/f1f5f9/334155?text=Sin+Imagen'">
-                </div>
-            </div>
+        <!-- Imagen principal -->
+        <div class="imagen-principal">
+            <img src="{{ producto.imagen if producto.imagen else 'https://placehold.co/500x500/f1f5f9/334155?text=Starwish' }}"
+                 alt="{{ producto.nombre }}"
+                 onerror="this.src='https://placehold.co/500x500/f1f5f9/334155?text=Sin+Imagen'">
+        </div>
 
-            <!-- Aside con Detalles, Colores, Tallas y Compra -->
+        <div class="container-details-product">
+            <!-- Columna izquierda: título y descripción -->
             <div class="aside-details-product">
                 <div class="header-details-product">
                     <h2>{{ producto.nombre }}</h2>
@@ -64,49 +115,74 @@
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Card de Pago y Compra Interactiva -->
-                <div class="card-payment" style="position: relative; top: 0; height: auto;">
+            <!-- Columna derecha: tarjeta de compra -->
+            <div class="container-card-payment">
+                <div class="card-payment">
                     <div class="header">
                         <p class="price" id="precio-unitario" data-precio="{{ producto.precio }}">${{ "%.2f"|format(producto.precio) }}</p>
                         <p class="count-reviews"><i class="fa-solid fa-bolt" style="color: #0ea5e9;"></i> Envío Rápido</p>
                     </div>
 
-                    <!-- Selección de Colores Dinámica -->
+                    <!-- Colores -->
+                    {% set mapa_colores = {
+                        'negro': '#000000', 'blanco': '#eaeaea', 'naranja': '#fb923c',
+                        'celeste': '#449dd1', 'marron': '#826251', 'marrón': '#826251',
+                        'rojo': '#dc2626', 'vino': '#7f1d1d', 'azul': '#2563eb',
+                        'verde': '#16a34a', 'gris': '#9ca3af', 'rosa': '#f472b6',
+                        'amarillo': '#facc15', 'morado': '#7c3aed', 'beige': '#d6c3a5'
+                    } %}
                     <div class="colors">
                         <p>Color: <span id="value-color">{{ colores[0] if colores else 'Estándar' }}</span></p>
                         <div class="row-colors">
                             {% for col in colores %}
-                                <div class="container-color {% if loop.first %}selected{% endif %}" data-color="{{ col }}" onclick="seleccionarColor(this, '{{ col }}')" style="cursor:pointer; padding:6px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; display:inline-block; margin-right:5px;">{{ col }}</div>
+                                <div class="container-color {% if loop.first %}selected{% endif %}"
+                                     data-color="{{ col }}"
+                                     title="{{ col }}"
+                                     style="background-color: {{ mapa_colores.get((col|string)|lower|trim, '#cbd5e1') }};"></div>
                             {% endfor %}
                         </div>
                     </div>
 
-                    <!-- Selección de Tallas Dinámica -->
-                    <div class="sizes" style="margin-top: 15px;">
+                    <!-- Tallas -->
+                    <div class="sizes">
                         <p>Talla: <span id="value-size">{{ tallas[0] if tallas else 'Única' }}</span></p>
-                        <div class="container-sizes" style="display:flex; gap:8px; margin-top:5px;">
+                        <div class="container-sizes">
                             {% for tal in tallas %}
-                                <button type="button" class="btn-size {% if loop.first %}selected{% endif %}" onclick="seleccionarTalla(this, '{{ tal }}')" style="padding:6px 12px; border:1px solid #cbd5e1; background:#fff; border-radius:6px; cursor:pointer;">{{ tal }}</button>
+                                <button type="button" class="btn-size {% if loop.first %}selected{% endif %}" data-talla="{{ tal }}">{{ tal }}</button>
                             {% endfor %}
                         </div>
                     </div>
 
-                    <!-- Cantidad y Botón Comprar -->
-                    <div class="quantity" style="margin-top: 25px;">
-                        <div class="container-add-quantity" style="display: flex; gap: 15px; align-items: center;">
-                            <div class="add-quantity" style="display:flex; align-items:center; border:1px solid #cbd5e1; border-radius:8px; overflow:hidden;">
-                                <button type="button" id="btn-decrement" style="padding:8px 12px; background:#f1f5f9; border:none; cursor:pointer;"><i class="fa-solid fa-minus"></i></button>
-                                <span id="count-product" style="padding:0 15px; font-weight:600;">1</span>
-                                <button type="button" id="btn-increment" style="padding:8px 12px; background:#f1f5f9; border:none; cursor:pointer;"><i class="fa-solid fa-plus"></i></button>
+                    <!-- Cantidad, botón y totales -->
+                    <div class="quantity">
+                        <div class="container-add-quantity">
+                            <div class="add-quantity">
+                                <button type="button" class="btn-minus" id="btn-decrement" disabled aria-label="Quitar uno"><i class="fa-solid fa-minus"></i></button>
+                                <span id="count-product">1</span>
+                                <button type="button" class="btn-plus" id="btn-increment" aria-label="Agregar uno"><i class="fa-solid fa-plus"></i></button>
                             </div>
-                            <button type="button" class="btn-add-to-cart" id="btn-comprar-ahora" data-id="{{ producto.id_producto }}" style="flex:1; background:#0f172a; color:#fff; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:600;">
+                            <button type="button" class="btn-add-to-cart" id="btn-comprar-ahora" data-id="{{ producto.id_producto }}">
                                 <i class="fa-solid fa-bag-shopping"></i> Comprar Ahora
                             </button>
                         </div>
-                        <div class="total" style="margin-top: 15px; display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-size:14px; color:#64748b;">Total Final (IVA inc.)</span>
-                            <div class="price-total" id="total-final-txt" style="font-size:18px; font-weight:bold; color:#0f172a;">${{ "%.2f"|format(producto.precio) }}</div>
+
+                        <div>
+                            <div class="info-quantity">
+                                <div class="price-tax">
+                                    <p id="txt-subtotal-label">${{ "%.2f"|format(producto.precio) }} x 1</p>
+                                    <p>Impuesto estimado (16%)</p>
+                                </div>
+                                <div class="value">
+                                    <p id="txt-subtotal">${{ "%.2f"|format(producto.precio) }}</p>
+                                    <p id="txt-iva">$0.00</p>
+                                </div>
+                            </div>
+                            <div class="total">
+                                <p>Total (IVA inc.)</p>
+                                <p id="total-final-txt">${{ "%.2f"|format(producto.precio) }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -115,56 +191,74 @@
     </main>
 
     <script>
+        // ---------- Menú móvil ----------
+        const menuResponsive = document.getElementById('menu-responsive');
+        const overlay = document.getElementById('overlay');
+
+        function abrirMenu()  { menuResponsive.classList.add('active');    overlay.style.display = 'block'; }
+        function cerrarMenu() { menuResponsive.classList.remove('active'); overlay.style.display = 'none'; }
+
+        document.getElementById('btn-hamburger').addEventListener('click', abrirMenu);
+        document.getElementById('btn-close-menu').addEventListener('click', cerrarMenu);
+        overlay.addEventListener('click', cerrarMenu);
+
+        // ---------- Compra ----------
+        const TASA_IVA = 0.16;
         const precioBase = parseFloat(document.getElementById('precio-unitario').dataset.precio);
-        const countProd = document.getElementById('count-product');
-        const totalTxt = document.getElementById('total-final-txt');
+        const stockMax = parseInt(document.getElementById('stock-disponible').textContent, 10) || Infinity;
+
+        const countProd  = document.getElementById('count-product');
         const btnComprar = document.getElementById('btn-comprar-ahora');
+        const btnMas     = document.getElementById('btn-increment');
+        const btnMenos   = document.getElementById('btn-decrement');
+        const valorColor = document.getElementById('value-color');
+        const valorTalla = document.getElementById('value-size');
 
         let cantidadActual = 1;
 
+        const dinero = n => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
         function actualizarTotal() {
-            let total = (precioBase * cantidadActual * 1.16).toFixed(2);
-            totalTxt.textContent = `$${total}`;
-        }
-
-        document.getElementById('btn-increment').addEventListener('click', () => {
-            cantidadActual++;
+            const subtotal = precioBase * cantidadActual;
+            const iva = subtotal * TASA_IVA;
+            document.getElementById('txt-subtotal-label').textContent = `${dinero(precioBase)} x ${cantidadActual}`;
+            document.getElementById('txt-subtotal').textContent = dinero(subtotal);
+            document.getElementById('txt-iva').textContent = dinero(iva);
+            document.getElementById('total-final-txt').textContent = dinero(subtotal + iva);
             countProd.textContent = cantidadActual;
-            actualizarTotal();
-        });
-
-        document.getElementById('btn-decrement').addEventListener('click', () => {
-            if (cantidadActual > 1) {
-                cantidadActual--;
-                countProd.textContent = cantidadActual;
-                actualizarTotal();
-            }
-        });
-
-        function seleccionarColor(elemento, color) {
-            document.querySelectorAll('.row-colors .container-color').forEach(el => {
-                el.style.borderColor = '#cbd5e1';
-                el.classList.remove('selected');
-            });
-            elemento.style.borderColor = '#0f172a';
-            elemento.classList.add('selected');
-            document.getElementById('value-color').textContent = color;
+            btnMenos.disabled = cantidadActual <= 1;
+            btnMas.disabled = cantidadActual >= stockMax;
         }
 
-        function seleccionarTalla(elemento, talla) {
-            document.querySelectorAll('.container-sizes .btn-size').forEach(el => {
-                el.style.background = '#fff';
-                el.classList.remove('selected');
+        btnMas.addEventListener('click', () => {
+            if (cantidadActual < stockMax) { cantidadActual++; actualizarTotal(); }
+        });
+        btnMenos.addEventListener('click', () => {
+            if (cantidadActual > 1) { cantidadActual--; actualizarTotal(); }
+        });
+
+        document.querySelectorAll('.row-colors .container-color').forEach(el => {
+            el.addEventListener('click', () => {
+                document.querySelectorAll('.row-colors .container-color').forEach(c => c.classList.remove('selected'));
+                el.classList.add('selected');
+                valorColor.textContent = el.dataset.color;
             });
-            elemento.style.background = '#f1f5f9';
-            elemento.classList.add('selected');
-            document.getElementById('value-size').textContent = talla;
-        }
+        });
+
+        document.querySelectorAll('.container-sizes .btn-size').forEach(el => {
+            el.addEventListener('click', () => {
+                document.querySelectorAll('.container-sizes .btn-size').forEach(b => b.classList.remove('selected'));
+                el.classList.add('selected');
+                valorTalla.textContent = el.dataset.talla;
+            });
+        });
 
         btnComprar.addEventListener('click', () => {
-            let idProducto = btnComprar.dataset.id;
-            let colorSeleccionado = document.getElementById('value-color').textContent;
-            let tallaSeleccionada = document.getElementById('value-size').textContent;
+            const idProducto = btnComprar.dataset.id;
+            const colorSeleccionado = valorColor.textContent;
+            const tallaSeleccionada = valorTalla.textContent;
+
+            btnComprar.disabled = true;
 
             fetch('/api.php?entity=ventas&action=save', {
                 method: 'POST',
@@ -182,9 +276,12 @@
                 window.location.href = "{{ url_for('menu') }}";
             })
             .catch(err => {
+                btnComprar.disabled = false;
                 alert('Error al procesar la compra.');
             });
         });
+
+        actualizarTotal();
     </script>
 </body>
 </html>
