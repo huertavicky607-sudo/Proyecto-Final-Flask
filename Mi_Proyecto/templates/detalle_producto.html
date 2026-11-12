@@ -22,8 +22,9 @@
                     <li><a href="{{ url_for('mensajes') }}">Mensajes</a></li>
                 </ul>
             </nav>
-            <div class="carrito">
-                <img src="https://api.iconify.design/lucide:shopping-bag.svg" alt="carrito" style="width:24px;height:24px;">
+            <!-- CARRITO CORREGIDO CON TU SVG -->
+            <div class="carrito" style="display: flex; align-items: center; position: relative; cursor: pointer;">
+                <img src="{{ url_for('static', filename='cart.svg') }}" alt="carrito" style="width: 28px; height: 28px;">
                 <div class="count-products-cart" id="cart-counter">0</div>
             </div>
         </div>
@@ -113,11 +114,12 @@
         </div>
     </main>
 
-    <script>
+   <script>
         const precioBase = parseFloat(document.getElementById('precio-unitario').dataset.precio);
         const countProd = document.getElementById('count-product');
         const totalTxt = document.getElementById('total-final-txt');
         const btnComprar = document.getElementById('btn-comprar-ahora');
+        const imagenProducto = document.querySelector('.imagen-producto img');
 
         let cantidadActual = 1;
 
@@ -141,14 +143,46 @@
         });
 
         function seleccionarColor(elemento, color) {
-            document.querySelectorAll('.row-colors .container-color').forEach(el => el.style.borderColor = '#cbd5e1');
+            document.querySelectorAll('.row-colors .container-color').forEach(el => {
+                el.style.borderColor = '#cbd5e1';
+                el.classList.remove('selected');
+            });
             elemento.style.borderColor = '#0f172a';
+            elemento.classList.add('selected');
             document.getElementById('value-color').textContent = color;
+
+            // CAMBIO DINÁMICO DE COLOR DE LA IMAGEN SEGÚN EL BOTÓN SELECCIONADO
+            if (imagenProducto) {
+                switch(color.toLowerCase()) {
+                    case 'blanco':
+                        imagenProducto.style.filter = 'brightness(1.8) grayscale(1)';
+                        break;
+                    case 'negro':
+                        imagenProducto.style.filter = 'brightness(0.3) contrast(1.5)';
+                        break;
+                    case 'naranja':
+                        imagenProducto.style.filter = 'sepia(1) hue-rotate(-30deg) saturate(3)';
+                        break;
+                    case 'celeste':
+                        imagenProducto.style.filter = 'hue-rotate(150deg) saturate(2)';
+                        break;
+                    case 'marrón':
+                    case 'marron':
+                        imagenProducto.style.filter = 'sepia(0.8) brightness(0.6)';
+                        break;
+                    default:
+                        imagenProducto.style.filter = 'none'; // Color original (vino/uva)
+                }
+            }
         }
 
         function seleccionarTalla(elemento, talla) {
-            document.querySelectorAll('.container-sizes .btn-size').forEach(el => el.style.background = '#fff');
+            document.querySelectorAll('.container-sizes .btn-size').forEach(el => {
+                el.style.background = '#fff';
+                el.classList.remove('selected');
+            });
             elemento.style.background = '#f1f5f9';
+            elemento.classList.add('selected');
             document.getElementById('value-size').textContent = talla;
         }
 
