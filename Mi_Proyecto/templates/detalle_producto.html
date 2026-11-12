@@ -151,27 +151,28 @@
             elemento.classList.add('selected');
             document.getElementById('value-color').textContent = color;
 
-            // CAMBIO DINÁMICO DE COLOR DE LA IMAGEN SEGÚN EL BOTÓN SELECCIONADO
             if (imagenProducto) {
                 switch(color.toLowerCase()) {
                     case 'blanco':
-                        imagenProducto.style.filter = 'brightness(1.8) grayscale(1)';
+                        // Invertir y dar brillo controlado para simular tela blanca conservando detalles
+                        imagenProducto.style.filter = 'invert(0.9) grayscale(1) brightness(1.4)';
                         break;
                     case 'negro':
-                        imagenProducto.style.filter = 'brightness(0.3) contrast(1.5)';
+                        // Oscurecer conservando sombras y contornos (en lugar de volverse 100% negro plano)
+                        imagenProducto.style.filter = 'brightness(0.35) contrast(1.2) grayscale(0.5)';
                         break;
                     case 'naranja':
-                        imagenProducto.style.filter = 'sepia(1) hue-rotate(-30deg) saturate(3)';
+                        imagenProducto.style.filter = 'sepia(1) hue-rotate(-20deg) saturate(4) brightness(1.1)';
                         break;
                     case 'celeste':
-                        imagenProducto.style.filter = 'hue-rotate(150deg) saturate(2)';
+                        imagenProducto.style.filter = 'hue-rotate(160deg) saturate(2.5) brightness(1.1)';
                         break;
                     case 'marrón':
                     case 'marron':
-                        imagenProducto.style.filter = 'sepia(0.8) brightness(0.6)';
+                        imagenProducto.style.filter = 'sepia(0.8) saturate(2) brightness(0.7)';
                         break;
                     default:
-                        imagenProducto.style.filter = 'none'; // Color original (vino/uva)
+                        imagenProducto.style.filter = 'none'; // Color original (vino)
                 }
             }
         }
