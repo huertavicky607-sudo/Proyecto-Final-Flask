@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
-{% block title %}Nuestras tiendas{% endblock %}
+{% block title %}¿Dónde nos ubicamos?{% endblock %}
 
 {% block content %}
 <main class="container page-main">
     <div class="page-hero">
-        <h2><i class="fa-solid fa-map-location-dot" style="color: #0ea5e9;"></i> Nuestras tiendas</h2>
+        <h2><i class="fa-solid fa-map-location-dot" style="color: #0ea5e9;"></i> ¿Dónde nos ubicamos?</h2>
         <p>Visítanos, recoge tu pedido o prueba las prendas antes de comprar.</p>
     </div>
 
@@ -18,43 +18,24 @@
 
             <ul class="store-info">
                 <li><i class="fa-solid fa-location-dot"></i> Coacalco de Berriozábal, Estado de México</li>
-                <li><i class="fa-regular fa-clock"></i> Lun a Sáb · 10:00 – 20:00</li>
+                <li><i class="fa-regular fa-clock"></i> <span>Lun a Sáb · 10:00 – 20:00 <span class="store-open" id="store-open"></span></span></li>
                 <li><i class="fa-solid fa-bag-shopping"></i> Recoge tu pedido sin costo</li>
                 <li><i class="fa-solid fa-shirt"></i> Probadores disponibles</li>
+                <li><i class="fa-solid fa-truck-fast"></i> Envíos a todo el país</li>
             </ul>
 
-            <div class="store-tabs" role="tablist">
-                <button type="button" class="chip active" data-tab="tienda">Tienda</button>
-                <button type="button" class="chip" data-tab="entrega">Punto de entrega</button>
-            </div>
-
-            <a href="https://www.google.com/maps/dir/?api=1&destination=19.6006437,-99.1022204" target="_blank" rel="noopener" class="btn-primary-pill" id="btn-ruta">
+            <a href="https://www.google.com/maps/dir/?api=1&destination=19.6006437,-99.1022204" target="_blank" rel="noopener" class="btn-primary-pill">
                 <i class="fa-solid fa-route"></i> Cómo llegar
             </a>
         </aside>
 
-        <!-- ===== Mapas ===== -->
-        <section class="mapas-col">
-            <div class="panel map-panel" id="panel-tienda">
-                <div class="map-head">
-                    <h3><i class="fa-solid fa-store"></i> Tienda Coacalco</h3>
-                    <span class="tag">Mapa iFrame</span>
-                </div>
-                <div class="map-frame">
-                    <iframe
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3758.672322049102!2d-99.1022204!3d19.6006437!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x85d1f5e27a6f2bd7%3A0x62a14e9f90f23cd!2sCoacalco%20de%20Berrioz%C3%A1bal!5e0!3m2!1ses-419!2smx!4v1700000000000!5m2!1ses-419!2smx"
-                        allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"
-                        title="Mapa de la tienda Starwish Coacalco"></iframe>
-                </div>
+        <!-- ===== Mapa (Google Maps JavaScript API) ===== -->
+        <section class="panel map-panel">
+            <div class="map-head">
+                <h3><i class="fa-solid fa-store"></i> Nuestra tienda</h3>
+                <span class="tag">Google Maps API</span>
             </div>
-
-            <div class="panel map-panel" id="panel-entrega">
-                <div class="map-head">
-                    <h3><i class="fa-solid fa-box"></i> Punto de entrega · Museo Soumaya</h3>
-                    <span class="tag">Google Maps API</span>
-                </div>
-                <div class="map-frame"><div id="mapa-js"></div></div>
-            </div>
+            <div class="map-frame map-tall"><div id="mapa-js"></div></div>
         </section>
     </div>
 </main>
@@ -62,36 +43,30 @@
 
 {% block scripts %}
 <script>
-    const DESTINOS = {
-        tienda:  'https://www.google.com/maps/dir/?api=1&destination=19.6006437,-99.1022204',
-        entrega: 'https://www.google.com/maps/dir/?api=1&destination=19.4407,-99.2047'
-    };
-
-    // Pestañas: resaltan el mapa y cambian el destino de "Cómo llegar"
-    document.querySelectorAll('.store-tabs .chip').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.store-tabs .chip').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            document.getElementById('btn-ruta').href = DESTINOS[btn.dataset.tab];
-            const panel = document.getElementById('panel-' + btn.dataset.tab);
-            document.querySelectorAll('.map-panel').forEach(p => p.classList.toggle('focus', p === panel));
-            panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
-    });
+    // ¿Abierto ahora? (Lun–Sáb 10:00–20:00)
+    (function () {
+        const el = document.getElementById('store-open');
+        const ahora = new Date();
+        const abierto = ahora.getDay() !== 0 && ahora.getHours() >= 10 && ahora.getHours() < 20;
+        el.textContent = abierto ? '· Abierto ahora' : '· Cerrado';
+        el.classList.add(abierto ? 'is-open' : 'is-closed');
+    })();
 
     // Mapa interactivo (Google Maps JavaScript API)
     function initMap() {
-        const punto = { lat: 19.4407, lng: -99.2047 };
+        const tienda = { lat: 19.6006437, lng: -99.1022204 };
         const map = new google.maps.Map(document.getElementById('mapa-js'), {
             zoom: 16,
-            center: punto,
+            center: tienda,
             mapTypeControl: false,
             streetViewControl: false
         });
-        const marker = new google.maps.Marker({ position: punto, map, title: 'Punto de entrega Starwish' });
+        const marker = new google.maps.Marker({ position: tienda, map, title: 'Starwish Coacalco' });
         const info = new google.maps.InfoWindow({
-            content: '<strong>Punto de entrega Starwish</strong><br>Museo Soumaya, CDMX'
+            content: '<div style="font-family:inherit"><strong>Starwish Coacalco</strong><br>Lun a Sáb · 10:00 – 20:00<br>' +
+                     '<a href="https://www.google.com/maps/dir/?api=1&destination=19.6006437,-99.1022204" target="_blank" rel="noopener">Cómo llegar</a></div>'
         });
+        info.open({ anchor: marker, map });
         marker.addListener('click', () => info.open({ anchor: marker, map }));
     }
     window.initMap = initMap;
