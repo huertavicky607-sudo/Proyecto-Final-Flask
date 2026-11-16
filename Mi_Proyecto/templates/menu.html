@@ -20,6 +20,7 @@
             {% for prod in productos %}
             <div class="card-producto-relacionado">
                 <div class="image-product">
+                    <a href="{{ url_for('detalle_producto', id_producto=prod.id_producto) }}" class="card-link" aria-label="Ver {{ prod.nombre }}"></a>
                     <img src="{{ prod.imagen if prod.imagen else 'https://placehold.co/400x400/f1f5f9/334155?text=Starwish' }}"
                          alt="{{ prod.nombre }}"
                          onerror="this.src='https://placehold.co/400x400/f1f5f9/334155?text=Sin+Imagen'">
@@ -31,7 +32,7 @@
                 </div>
                 <div class="info-product">
                     <div class="container-title">
-                        <h4>{{ prod.nombre }}</h4>
+                        <h4><a href="{{ url_for('detalle_producto', id_producto=prod.id_producto) }}" style="color: inherit; text-decoration: none;">{{ prod.nombre }}</a></h4>
                         <p>{{ prod.descripcion or 'Artículo disponible en catálogo' }}</p>
                     </div>
                     <div class="container-price">
