@@ -1,116 +1,256 @@
 {% extends 'base.html' %}
-{% block title %}Mensajes{% endblock %}
+{% block title %}Atención al cliente{% endblock %}
 
 {% block content %}
 <main class="container page-main">
-    <div class="panel panel-narrow">
-        <div class="chat-head">
-            <h3>Chat de la comunidad</h3>
-            <span class="chat-status" id="estado-chat">Conectando...</span>
-        </div>
+    <div class="page-hero">
+        <h2><i class="fa-solid fa-headset" style="color: #0ea5e9;"></i> Atención al cliente</h2>
+        <p>Pregunta por tus pedidos, envíos, tallas o cambios. Nuestra asistente te responde al instante.</p>
+    </div>
 
-        <div class="chat-box" id="caja-mensajes">
-            <p class="chat-empty" id="chat-vacio">Cargando mensajes...</p>
-        </div>
-
-        <form id="form-chat">
-            <div class="form-field">
-                <label for="chat-usuario">Tu nombre</label>
-                <input type="text" id="chat-usuario" value="{{ session.get('nombre', 'Invitado') }}" maxlength="30" required>
+    <div class="sp-layout">
+        <!-- ===== Chat con la asistente ===== -->
+        <section class="panel sp-chat-card">
+            <div class="sp-head">
+                <span class="sp-avatar"><i class="fa-solid fa-star"></i></span>
+                <div>
+                    <strong>Estrella · Asistente Starwish</strong>
+                    <span class="sp-online">En línea</span>
+                </div>
             </div>
 
-            <div class="form-field">
-                <label for="chat-texto">Mensaje</label>
-                <input type="text" id="chat-texto" placeholder="Escribe un mensaje..." maxlength="500" required autocomplete="off">
+            <div class="sp-chat" id="chat" aria-live="polite"></div>
+
+            <div class="sp-modo" id="modo-ticket" hidden>
+                <span><i class="fa-solid fa-headset"></i> Tu siguiente mensaje le llegará a una asesora.</span>
+                <button type="button" id="cancelar-ticket">Cancelar</button>
             </div>
 
-            <button type="submit" id="btn-enviar" class="btn-primary-pill">
-                <i class="fa-solid fa-paper-plane"></i> Enviar mensaje
-            </button>
-        </form>
+            <form class="sp-form" id="form-chat">
+                <label for="chat-texto" class="sr-only">Escribe tu mensaje</label>
+                <input type="text" id="chat-texto" placeholder="Escribe tu pregunta…" maxlength="500" autocomplete="off" required>
+                <button type="submit" id="btn-enviar" aria-label="Enviar"><i class="fa-solid fa-paper-plane"></i></button>
+            </form>
+        </section>
+
+        <!-- ===== Consultas ===== -->
+        <aside class="panel sp-side">
+            {% if rol == 'admin' %}
+                <h3><i class="fa-solid fa-inbox"></i> Bandeja de consultas</h3>
+                <p class="sp-side-sub">Mensajes que los clientes enviaron a una asesora. Las pendientes aparecen primero.</p>
+            {% else %}
+                <h3><i class="fa-solid fa-envelope-open-text"></i> Mis consultas</h3>
+                <p class="sp-side-sub">Aquí verás la respuesta de la asesora cuando conteste.</p>
+            {% endif %}
+            <div class="sp-tickets" id="tickets"><p class="mx-empty">Cargando…</p></div>
+        </aside>
     </div>
 </main>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    const INTERVALO_MS = 2000;
-    let ultimoId = 0;
+(function () {
+    const ES_ADMIN = {{ 'true' if rol == 'admin' else 'false' }};
+    const OPCIONES = {{ opciones|tojson }};
+    const chat = document.getElementById('chat');
+    const form = document.getElementById('form-chat');
+    const campo = document.getElementById('chat-texto');
+    const btn = document.getElementById('btn-enviar');
+    const modo = document.getElementById('modo-ticket');
+    let modoTicket = false;
 
-    const caja = document.getElementById("caja-mensajes");
-    const vacio = document.getElementById("chat-vacio");
-    const estado = document.getElementById("estado-chat");
-    const formulario = document.getElementById("form-chat");
-    const campoUsuario = document.getElementById("chat-usuario");
-    const campoTexto = document.getElementById("chat-texto");
-    const botonEnviar = document.getElementById("btn-enviar");
+    const dinero = n => Number(n || 0).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+    const hora = () => new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+    function el(tag, clase, texto) {
+        const e = document.createElement(tag);
+        if (clase) e.className = clase;
+        if (texto != null) e.textContent = texto;
+        return e;
+    }
+    const bajar = () => { chat.scrollTop = chat.scrollHeight; };
 
-    function pintarMensaje(m) {
-        if (vacio) vacio.style.display = 'none';
-        const div = document.createElement("div");
-        const esPropio = m.usuario === campoUsuario.value.trim();
-        div.className = "msg-item" + (esPropio ? " propio" : "");
-
-        const meta = document.createElement("div");
-        meta.className = "msg-meta";
-        const fechaObj = m.fecha ? new Date(m.fecha) : new Date();
-        const hora = fechaObj.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
-        meta.textContent = m.usuario + " · " + hora;
-
-        const cuerpo = document.createElement("div");
-        cuerpo.textContent = m.texto;
-
-        div.append(meta, cuerpo);
-        caja.appendChild(div);
+    // ---------- Burbujas ----------
+    function burbuja(quien, texto) {
+        const fila = el('div', 'sp-msg ' + quien);
+        const b = el('div', 'sp-bubble', texto);
+        b.appendChild(el('span', 'sp-time', hora()));
+        fila.appendChild(b);
+        chat.appendChild(fila);
+        bajar();
+        return b;
     }
 
-    async function consultarMensajes() {
-        try {
-            const resp = await fetch("/api/mensajes?desde=" + ultimoId);
-            if (!resp.ok) throw new Error("HTTP " + resp.status);
-            const nuevos = await resp.json();
-            if (nuevos.length > 0) {
-                if (vacio) vacio.style.display = 'none';
-                nuevos.forEach(pintarMensaje);
-                ultimoId = nuevos[nuevos.length - 1].id;
-                caja.scrollTop = caja.scrollHeight;
-            } else if (ultimoId === 0 && vacio) {
-                vacio.textContent = "Aún no hay mensajes. ¡Sé el primero!";
-            }
-            estado.textContent = "Conectado";
-        } catch (err) {
-            estado.textContent = "Sin conexión...";
-        }
+    function opciones(lista) {
+        chat.querySelectorAll('.sp-chips').forEach(c => c.remove());   // solo las más recientes
+        if (!lista || !lista.length) return;
+        const cont = el('div', 'sp-chips');
+        lista.forEach(o => {
+            const c = el('button', 'sp-chip', o);
+            c.type = 'button';
+            c.addEventListener('click', () => enviar(o));
+            cont.appendChild(c);
+        });
+        chat.appendChild(cont);
+        bajar();
     }
 
-    formulario.addEventListener("submit", async (evento) => {
-        evento.preventDefault();
-        const usuario = campoUsuario.value.trim();
-        const texto = campoTexto.value.trim();
-        if (!usuario || !texto) return;
+    function pedidos(lista, dentro) {
+        lista.forEach(p => {
+            const card = el('div', 'sp-order');
+            const top = el('div', 'sp-order-top');
+            top.append(el('strong', '', p.folio), el('span', 'tag ' + (p.estado === 'Entregado' ? 'tag-fit' : ''), p.estado));
+            card.append(top,
+                el('p', 'sp-order-prod', p.productos),
+                el('p', 'sp-order-meta', `${p.fecha} · ${p.piezas} pieza${p.piezas === 1 ? '' : 's'} · ${dinero(p.total)}`));
+            if (p.direccion) card.appendChild(el('p', 'sp-order-meta', '📍 ' + p.direccion));
+            dentro.appendChild(card);
+        });
+    }
 
-        botonEnviar.disabled = true;
-        try {
-            const resp = await fetch("/api/mensajes", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ usuario, texto })
-            });
-            if (!resp.ok) {
-                swToast("No se pudo enviar el mensaje.");
-            } else {
-                campoTexto.value = "";
-                await consultarMensajes();
-            }
-        } catch (err) {
-            swToast("Error al conectar con el servidor.");
-        } finally {
-            botonEnviar.disabled = false;
-            campoTexto.focus();
+    function escribiendo() {
+        const fila = el('div', 'sp-msg bot sp-typing');
+        fila.innerHTML = '<div class="sp-bubble"><span></span><span></span><span></span></div>';
+        chat.appendChild(fila);
+        bajar();
+        return fila;
+    }
+
+    function respuestaBot(d) {
+        const b = burbuja('bot', d.texto);
+        if (d.pedidos && d.pedidos.length) pedidos(d.pedidos, b);
+        if (d.enlace) {
+            const a = el('a', 'sp-link', d.enlace.texto + ' →');
+            a.href = d.enlace.url;
+            b.insertBefore(a, b.querySelector('.sp-time'));
         }
+        if (d.accion === 'ticket') activarTicket(true);
+        opciones(modoTicket ? [] : d.opciones);
+    }
+
+    function activarTicket(si) {
+        modoTicket = si;
+        modo.hidden = !si;
+        campo.placeholder = si ? 'Escribe tu mensaje para la asesora…' : 'Escribe tu pregunta…';
+        if (si) campo.focus();
+    }
+    document.getElementById('cancelar-ticket').addEventListener('click', () => {
+        activarTicket(false);
+        burbuja('bot', 'Listo, sigo aquí para ayudarte.');
+        opciones(OPCIONES);
     });
 
-    consultarMensajes();
-    setInterval(consultarMensajes, INTERVALO_MS);
+    // ---------- Enviar ----------
+    async function enviar(texto) {
+        texto = texto.trim();
+        if (!texto) return;
+        burbuja('yo', texto);
+        campo.value = '';
+        btn.disabled = true;
+        chat.querySelectorAll('.sp-chips').forEach(c => c.remove());
+        const typing = escribiendo();
+
+        try {
+            if (modoTicket) {
+                const r = await fetch('/api/soporte/tickets', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ texto })
+                });
+                const d = await r.json().catch(() => ({}));
+                typing.remove();
+                if (!r.ok) { burbuja('bot', d.error || 'No se pudo enviar tu mensaje.'); return; }
+                activarTicket(false);
+                burbuja('bot', '¡Listo! Tu mensaje ya le llegó a una asesora. Verás su respuesta en "Mis consultas".');
+                opciones(OPCIONES);
+                cargarTickets();
+            } else {
+                const [r] = await Promise.all([
+                    fetch('/api/soporte/bot', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ texto })
+                    }),
+                    new Promise(ok => setTimeout(ok, 550))   // pequeña pausa para que se sienta natural
+                ]);
+                if (r.status === 401) { window.location.href = '/login'; return; }
+                const d = await r.json();
+                typing.remove();
+                respuestaBot(d);
+            }
+        } catch (e) {
+            typing.remove();
+            burbuja('bot', 'Ups, no hay conexión. Intenta de nuevo.');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+    form.addEventListener('submit', e => { e.preventDefault(); enviar(campo.value); });
+
+    // ---------- Consultas (cliente) / Bandeja (admin) ----------
+    const lista = document.getElementById('tickets');
+    let firma = '';
+
+    function pintarTickets(tks) {
+        lista.innerHTML = '';
+        if (!tks.length) {
+            lista.appendChild(el('p', 'mx-empty', ES_ADMIN ? 'No hay consultas todavía.' : 'Aún no has enviado consultas a una asesora.'));
+            return;
+        }
+        tks.forEach(t => {
+            const card = el('article', 'sp-ticket' + (t.respuesta ? '' : ' pendiente'));
+            const top = el('div', 'sp-ticket-top');
+            top.append(el('strong', '', ES_ADMIN ? t.usuario : `Consulta #${t.id}`),
+                       el('span', 'tag ' + (t.respuesta ? 'tag-fit' : 'tag-warn'), t.respuesta ? 'Respondida' : 'Pendiente'));
+            card.append(top, el('p', 'sp-ticket-txt', t.texto), el('p', 'sp-ticket-date', t.fecha));
+
+            if (t.respuesta) {
+                const r = el('div', 'sp-reply');
+                r.append(el('span', 'sp-reply-who', 'Respuesta de Starwish · ' + (t.respondido_en || '')), el('p', '', t.respuesta));
+                card.appendChild(r);
+            }
+            if (ES_ADMIN) {
+                const f = el('form', 'sp-reply-form');
+                const ta = el('textarea');
+                ta.rows = 2;
+                ta.placeholder = t.respuesta ? 'Editar respuesta…' : 'Escribe tu respuesta…';
+                ta.required = true;
+                ta.setAttribute('aria-label', 'Respuesta para ' + t.usuario);
+                const b = el('button', 'btn-primary-pill', t.respuesta ? 'Actualizar' : 'Responder');
+                f.append(ta, b);
+                f.addEventListener('submit', async e => {
+                    e.preventDefault();
+                    b.disabled = true;
+                    const r = await fetch(`/api/soporte/tickets/${t.id}/responder`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ respuesta: ta.value })
+                    }).catch(() => null);
+                    b.disabled = false;
+                    if (r && r.ok) { swToast('Respuesta enviada'); firma = ''; cargarTickets(); }
+                    else swToast('No se pudo guardar la respuesta');
+                });
+                card.appendChild(f);
+            }
+            lista.appendChild(card);
+        });
+    }
+
+    async function cargarTickets() {
+        // No repinta mientras la admin está escribiendo una respuesta
+        if (ES_ADMIN && lista.contains(document.activeElement) && document.activeElement.tagName === 'TEXTAREA') return;
+        try {
+            const r = await fetch('/api/soporte/tickets');
+            if (!r.ok) return;
+            const tks = await r.json();
+            const nueva = JSON.stringify(tks);
+            if (nueva !== firma) { firma = nueva; pintarTickets(tks); }
+        } catch (e) { /* sin conexión: se reintenta */ }
+    }
+
+    // ---------- Inicio ----------
+    {% set primer_nombre = (nombre or '').split()[0] if (nombre or '').split() else '' %}
+    burbuja('bot', {{ ('¡Hola' ~ (', ' ~ primer_nombre if primer_nombre else '') ~ '! Soy Estrella, la asistente de Starwish. ¿En qué te ayudo?')|tojson }});
+    opciones(OPCIONES);
+    cargarTickets();
+    setInterval(cargarTickets, 15000);
+})();
 </script>
 {% endblock %}
