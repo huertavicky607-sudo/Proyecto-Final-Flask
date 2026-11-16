@@ -78,8 +78,9 @@
                 <div class="ugc-grid">
                     {% for f in fotos %}
                     <article class="ugc-card">
-                        <button type="button" class="ugc-img" data-src="{{ url_for('static', filename='uploads/' + f.archivo) }}" aria-label="Ampliar foto">
-                            <img src="{{ url_for('static', filename='uploads/' + f.archivo) }}" alt="Foto de {{ f.nombre }}" loading="lazy">
+                        <button type="button" class="ugc-img" data-src="{{ f.archivo|foto_src }}" aria-label="Ampliar foto">
+                            <img src="{{ f.archivo|foto_src }}" alt="Foto de {{ f.nombre }}" loading="lazy"
+                                 onerror="this.closest('.ugc-img').classList.add('roto')">
                         </button>
                         <div class="ugc-body">
                             <div class="ugc-user">
