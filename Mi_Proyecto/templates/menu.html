@@ -82,6 +82,48 @@
             object-fit: contain;
             padding: 10px;
         }
+
+        /* ---------- Encabezado ---------- */
+        .header .logo { font-size: 24px; white-space: nowrap; }
+        .header-user { display: flex; align-items: center; gap: 12px; }
+        .badge-rol { display: inline-flex; align-items: center; gap: 6px; }
+        .logout-link { color: #ef4444; font-size: 18px; }
+
+        /* Celular / tablet: hamburguesa | logo | usuario en una sola fila */
+        @media (max-width: 990px) {
+            .header {
+                display: grid;
+                grid-template-columns: 1fr auto 1fr;
+                align-items: center;
+                gap: 10px;
+            }
+            .header .menu-hamburger { justify-self: start; }
+            .header .logo { text-align: center; }
+            .header-user { order: 3; justify-self: end; }
+
+            /* Menú lateral fijo a la pantalla (si no, aparece arriba de la página al hacer scroll) */
+            .menu-responsive {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                height: 100dvh;
+                overflow-y: auto;
+                box-shadow: 0 10px 30px #00000030;
+            }
+        }
+
+        /* Celular: el chip pasa a ser un círculo con ícono; nombre y salir están en el menú lateral */
+        @media (max-width: 600px) {
+            .badge-txt, .btn-login-txt, .logout-link { display: none; }
+            .badge-rol, .btn-login {
+                width: 36px;
+                height: 36px;
+                padding: 0 !important;
+                justify-content: center;
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -89,7 +131,11 @@
     <!-- MENÚ SUPERIOR -->
     <header>
         <div class="header container">
-            <h1 class="logo" style="font-size: 24px; color: #0f172a;">
+            <div class="menu-hamburger">
+                <i class="fa-solid fa-bars"></i>
+            </div>
+
+            <h1 class="logo" style="color: #0f172a;">
                 <i class="fa-solid fa-bolt" style="color: #0ea5e9;"></i> Starwish
             </h1>
 
@@ -109,18 +155,20 @@
                 </ul>
             </nav>
 
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <div class="menu-hamburger">
-                    <i class="fa-solid fa-bars"></i>
-                </div>
-
+            <div class="header-user">
                 {% if session.get('usuario_id') %}
-                    <span class="badge-rol">{{ nombre }} ({{ rol }})</span>
-                    <a href="{{ url_for('logout') }}" title="Cerrar sesión" style="color: #ef4444; font-size: 18px;">
+                    <span class="badge-rol" title="{{ nombre }} ({{ rol }})">
+                        <i class="fa-solid fa-user"></i>
+                        <span class="badge-txt">{{ nombre }} ({{ rol }})</span>
+                    </span>
+                    <a href="{{ url_for('logout') }}" class="logout-link" title="Cerrar sesión">
                         <i class="fa-solid fa-right-from-bracket"></i>
                     </a>
                 {% else %}
-                    <a href="{{ url_for('login') }}" class="btn-admin-crud" style="padding: 8px 16px;">Iniciar Sesión</a>
+                    <a href="{{ url_for('login') }}" class="btn-admin-crud btn-login" style="padding: 8px 16px;">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        <span class="btn-login-txt">Iniciar Sesión</span>
+                    </a>
                 {% endif %}
             </div>
         </div>
@@ -178,11 +226,11 @@
                         <img src="{{ prod.imagen if prod.imagen else 'https://placehold.co/400x400/f1f5f9/334155?text=Starwish' }}" 
                              alt="{{ prod.nombre }}"
                              onerror="this.src='https://placehold.co/400x400/f1f5f9/334155?text=Sin+Imagen'">
-                        <div class="button-group" style="z-index: 10; pointer-events: auto;">
-                        <a href="{{ url_for('detalle_producto', id_producto=prod.id_producto) }}" class="btn-add-to-bag" style="text-decoration: none; cursor: pointer; user-select: none;">
-                        <i class="fa-solid fa-bag-shopping"></i> Ver y Comprar
-                        </a>
-                    </div>
+                        <div class="button-group">
+                            <a href="{{ url_for('detalle_producto', id_producto=prod.id_producto) }}" class="btn-add-to-bag" style="text-decoration: none;">
+                                <i class="fa-solid fa-bag-shopping"></i> Ver y Comprar
+                            </a>
+                        </div>
                     </div>
                     <div class="info-product">
                         <div class="container-title">
