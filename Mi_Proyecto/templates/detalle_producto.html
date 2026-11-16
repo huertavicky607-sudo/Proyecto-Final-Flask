@@ -176,6 +176,28 @@
         </div>
     </div>
 
+    <!-- ===== Fotos de clientes (estilo Shein) ===== -->
+    <section class="ugc-producto">
+        <div class="map-head">
+            <h2><i class="fa-solid fa-camera-retro" style="color: #0ea5e9;"></i> Fotos de clientes ({{ fotos_clientes|length }})</h2>
+            <a href="{{ url_for('vista_fotos', producto=producto.id_producto) }}" class="btn-admin-crud">
+                <i class="fa-solid fa-camera"></i> Sube la foto de tu prenda
+            </a>
+        </div>
+        {% if fotos_clientes %}
+            <div class="ugc-strip">
+                {% for f in fotos_clientes %}
+                    <a href="{{ url_for('vista_fotos', producto=producto.id_producto) }}" class="ugc-thumb" title="{{ f.comentario or f.nombre }}">
+                        <img src="{{ url_for('static', filename='uploads/' + f.archivo) }}" alt="Foto de {{ f.nombre }}" loading="lazy">
+                        <span>{{ f.nombre }}{% if f.talla %} · {{ f.talla }}{% endif %}{% if f.ajuste %} · {{ f.ajuste }}{% endif %}</span>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="color: #64748b;">Todavía nadie ha subido fotos de este producto. ¿Ya lo tienes? ¡Comparte cómo te queda!</p>
+        {% endif %}
+    </section>
+
     <!-- ===== Reseñas (textos de ejemplo) ===== -->
     {% set resenas = [
         {'nombre': 'Ana Lozano',   'fecha': '12 de octubre, 2026',    'estrellas': 5, 'color': '#0ea5e9',
