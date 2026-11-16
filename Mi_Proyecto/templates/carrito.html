@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% block title %}Mi carrito{% endblock %}
+
+{% block content %}
+<main class="container page-main">
+    <div class="page-hero">
+        <h2>Tu carrito</h2>
+        <p>Revisa tus artículos antes de finalizar la compra.</p>
+    </div>
+
+    <!-- Se llena con JavaScript desde el carrito guardado en el navegador -->
+    <div id="cart-root"></div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const TASA_IVA = 0.16;
+    const LOGUEADO = "{{ (session.get('usuario_id') is not none) | tojson }}" === 'true';
+    const URL_LOGIN = "{{ url_for('login') }}";
+    const URL_MENU = "{{ url_for('menu') }}";
+
+    const MAPA_COLORES = {
+        negro: '#000000', blanco: '#eaeaea', naranja: '#fb923c', celeste: '#449dd1',
+        marron: '#826251', 'marrón': '#826251', rojo: '#dc2626', vino: '#7f1d1d',
+        azul: '#2563eb', verde: '#16a34a', gris: '#9ca3af', rosa: '#f472b6',
+        amarillo: '#facc15', morado: '#7c3aed', beige: '#d6c3a5'
+    };
+
+    const root = document.getElementById('cart-root');
+    const dinero = n => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    function pintarVacio() {
+        root.innerHTML = `
+            <div class="cart-empty">
+                <i class="fa-solid fa-bag-shopping"></i>
+                <h3>Tu carrito está vacío</h3>
+                <p style="margin-top: 8px;">Explora el catálogo y añade lo que más te guste.</p>
+                <a href="${URL_MENU}" class="btn-primary-pill btn-inline">Ir al catálogo</a>
+            </div>`;
+    }
+
+    function pintar() {
+        const items = swCart.items();
+        if (items.length === 0) { pintarVacio(); return; }
+
+        const subtotal = items.reduce((s, i) => s + i.precio * i.cantidad, 0);
+        const iva = subtotal * TASA_IVA;
+        const unidades = items.reduce((s, i) => s + i.cantidad, 0);
+
+        const filas = items.map(i => {
+            const k = swCart.keyOf(i);
+            const hex = MAPA_COLORES[String(i.color || '').toLowerCase().trim()] || '#cbd5e1';
+            const max = i.stock > 0 ? i.stock : Infinity;
+            const img = i.imagen || 'https://placehold.co/200x200/f1f5f9/334155?text=Starwish';
+            return `
+            <div class="cart-item" data-key="${esc(k)}">
+                <div class="cart-thumb"><img src="${esc(img)}" alt="${esc(i.nombre)}" onerror="this.src='https://placehold.co/200x200/f1f5f9/334155?text=Sin+Imagen'"></div>
+                <div class="cart-info">
+                    <h4>${esc(i.nombre)}</h4>
+                    <div class="cart-meta">
+                        <span class="cart-dot" style="background:${hex}"></span><span>${esc(i.color)}</span>
+                        <span>·</span><span>Talla ${esc(i.talla)}</span>
+                    </div>
+                    <p class="cart-unit">${dinero(i.precio)} c/u</p>
+                </div>
+                <div class="cart-side">
+                    <div class="cart-qty">
+                        <button type="button" data-accion="menos" aria-label="Quitar uno" ${i.cantidad <= 1 ? 'disabled' : ''}><i class="fa-solid fa-minus"></i></button>
+                        <span>${i.cantidad}</span>
+                        <button type="button" data-accion="mas" aria-label="Agregar uno" ${i.cantidad >= max ? 'disabled' : ''}><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <span class="cart-line-total">${dinero(i.precio * i.cantidad)}</span>
+                    <button type="button" class="cart-remove" data-accion="quitar"><i class="fa-regular fa-trash-can"></i> Quitar</button>
+                </div>
+            </div>`;
+        }).join('');
+
+        const boton = LOGUEADO
+            ? `<button type="button" class="btn-primary-pill" id="btn-checkout"><i class="fa-solid fa-lock"></i> Finalizar compra</button>`
+            : `<a href="${URL_LOGIN}" class="btn-primary-pill"><i class="fa-solid fa-right-to-bracket"></i> Inicia sesión para comprar</a>`;
+
+        root.innerHTML = `
+            <div class="cart-layout">
+                <div class="cart-items">${filas}</div>
+                <aside class="cart-summary">
+                    <h3>Resumen del pedido</h3>
+                    <div class="sum-row"><span>Artículos (${unidades})</span><span>${dinero(subtotal)}</span></div>
+                    <div class="sum-row"><span>Impuesto estimado (16%)</span><span>${dinero(iva)}</span></div>
+                    <div class="sum-total"><span>Total (IVA inc.)</span><span>${dinero(subtotal + iva)}</span></div>
+                    ${boton}
+                    <a href="${URL_MENU}" class="btn-outline-pill">Seguir comprando</a>
+                </aside>
+            </div>`;
+    }
+
+    // Cantidades y quitar (delegación de eventos)
+    root.addEventListener('click', e => {
+        const btn = e.target.closest('[data-accion]');
+        if (!btn) return;
+        const fila = btn.closest('.cart-item');
+        if (!fila) return;
+        const k = fila.dataset.key;
+        const item = swCart.items().find(i => swCart.keyOf(i) === k);
+        if (!item) return;
+
+        if (btn.dataset.accion === 'mas') swCart.setQty(k, item.cantidad + 1);
+        if (btn.dataset.accion === 'menos') swCart.setQty(k, item.cantidad - 1);
+        if (btn.dataset.accion === 'quitar') swCart.remove(k);
+    });
+
+    document.addEventListener('sw-cart-change', pintar);
+
+    // Finalizar compra
+    root.addEventListener('click', async e => {
+        const btn = e.target.closest('#btn-checkout');
+        if (!btn) return;
+
+        btn.disabled = true;
+        try {
+            const items = swCart.items().map(i => ({
+                id_producto: i.id_producto,
+                cantidad: i.cantidad,
+                color: i.color,
+                talla: i.talla
+            }));
+            const res = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.status === 401) { window.location.href = URL_LOGIN; return; }
+            if (!res.ok) throw new Error(data.error || 'No se pudo procesar la compra.');
+
+            swCart.clear();
+            root.innerHTML = `
+                <div class="panel panel-narrow cart-done">
+                    <div class="auth-icon"><i class="fa-solid fa-check"></i></div>
+                    <h2>¡Compra realizada!</h2>
+                    <p class="auth-sub">Registramos tu pedido por <strong>${dinero(data.total_final)}</strong> (${data.unidades} pieza(s)).</p>
+                    <a href="${URL_MENU}" class="btn-primary-pill btn-inline">Volver al catálogo</a>
+                </div>`;
+        } catch (err) {
+            btn.disabled = false;
+            swToast(err.message);
+        }
+    });
+
+    pintar();
+</script>
+{% endblock %}
