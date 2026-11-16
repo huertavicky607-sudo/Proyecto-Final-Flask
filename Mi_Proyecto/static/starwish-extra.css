@@ -1,0 +1,202 @@
+/* =====================================================================
+   starwish-extra.css
+   Se carga DESPUÉS de starwish.css:
+   <link rel="stylesheet" href="{{ url_for('static', filename='starwish-extra.css') }}">
+   ===================================================================== */
+
+/* ---------- ENCABEZADO (compartido por todas las páginas) ---------- */
+.header.container { flex-wrap: wrap; gap: 15px; }
+.header .menu-nav { flex-wrap: wrap; gap: 8px; }
+.header .menu-nav li a { font-size: 14px; padding: 8px 14px; }
+.header .logo { font-size: 24px; white-space: nowrap; }
+
+.header-user { display: flex; align-items: center; gap: 12px; }
+.header-user .carrito { flex: 0 0 auto; }
+
+.badge-rol {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    background: #0ea5e9;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+}
+.logout-link { color: #ef4444; font-size: 18px; }
+
+.btn-admin-crud {
+    background-color: #0f172a;
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 500px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.btn-admin-crud:hover { opacity: 0.9; }
+
+/* Celular / tablet: hamburguesa | logo | usuario en una sola fila */
+@media (max-width: 990px) {
+    .header.container {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        gap: 10px;
+    }
+    /* El <nav> queda vacío (su <ul> ya está oculto) pero seguiría ocupando una celda */
+    .header.container > nav { display: none; }
+
+    .header .menu-hamburger { justify-self: start; flex: none; }
+    .header .logo { text-align: center; }
+    .header-user { order: 3; justify-self: end; }
+
+    /* Menú lateral fijo a la pantalla (si no, aparece arriba de la página al hacer scroll) */
+    .menu-responsive {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        height: 100dvh;
+        overflow-y: auto;
+        box-shadow: 0 10px 30px #00000030;
+    }
+}
+
+/* Celular: el chip pasa a círculo; nombre y "salir" están en el menú lateral */
+@media (max-width: 600px) {
+    .badge-txt, .btn-login-txt, .logout-link { display: none; }
+    .badge-rol, .btn-login {
+        width: 36px;
+        height: 36px;
+        padding: 0 !important;
+        justify-content: center;
+        font-size: 14px;
+    }
+}
+
+/* ---------- AVISO FLOTANTE (toast) ---------- */
+.sw-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translate(-50%, 20px);
+    max-width: calc(100% - 32px);
+    background: #0f172a;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 999px;
+    font-size: 14px;
+    box-shadow: 0 10px 25px #00000040;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s, transform .25s;
+    z-index: 10;
+}
+.sw-toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- TARJETAS DE PRODUCTO (catálogo y "también compraron") ---------- */
+.card-producto-relacionado {
+    background: #fff;
+    border: 1px solid #f1f5f9;
+    border-radius: 20px;
+    padding: 15px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-producto-relacionado:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+}
+.cards-productos-relacionados {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 300px));
+    gap: 30px;
+    justify-content: start;
+}
+.card-producto-relacionado .image-product {
+    height: 260px;
+    background-color: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px;
+}
+.card-producto-relacionado .image-product img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 10px;
+}
+
+/* ---------- DETALLE DE PRODUCTO ---------- */
+.imagen-principal {
+    height: clamp(260px, 50vw, 420px);
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    margin-bottom: 30px;
+    overflow: hidden;
+}
+.imagen-principal img { max-height: 100%; max-width: 100%; object-fit: contain; }
+
+/* La tarjeta de compra crece según su contenido (en starwish.css tiene altura fija) */
+.card-payment { height: auto; gap: 20px; padding-top: 24px; padding-bottom: 24px; }
+.card-payment .quantity { gap: 20px; }
+.btn-add-to-cart { padding: 14px 10px; }
+
+.row-colors { flex-wrap: wrap; }
+.row-colors .container-color { min-width: 48px; border: 1px solid rgba(15, 23, 42, .15); }
+
+.btn-buy-now {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 13px;
+    border-radius: 500px;
+    border: 1px solid #0f172a;
+    background: #fff;
+    color: #0f172a;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-buy-now:hover { background: #f1f5f9; }
+.btn-buy-now:disabled, .btn-add-to-cart:disabled { opacity: .6; cursor: wait; }
+
+/* Acordeón: listas dentro del contenido */
+.acordeon-content ul { padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.acordeon-content p + p { margin-top: 10px; }
+.acordeon-content strong { color: #0f172a; }
+
+/* Reseñas */
+.container-reviews { grid-template-columns: repeat(2, 1fr); gap: 50px 80px; }
+.container-review.is-hidden { display: none; }
+.avatar-review {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.section-reviews h2 { font-size: 24px; display: flex; align-items: center; gap: 10px; }
+
+@media (max-width: 700px) {
+    .container-reviews { grid-template-columns: 1fr; gap: 40px; }
+    .section-reviews { gap: 35px; padding: 40px 0; }
+}
