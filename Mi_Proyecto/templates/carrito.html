@@ -130,7 +130,7 @@
         const data = await swPago({
             total: subtotal * (1 + TASA_IVA),
             unidades: carrito.reduce((s, i) => s + i.cantidad, 0),
-            pagar: () => swCheckout(items)
+            pagar: envio => swCheckout(envio, items)
         });
         if (!data) return;   // canceló
 
