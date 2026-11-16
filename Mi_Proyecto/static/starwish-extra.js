@@ -115,12 +115,12 @@ window.swToast = function (mensaje) {
     window.__swToastTimer = setTimeout(() => el.classList.remove('show'), 2800);
 };
 
-/* ---------- Compra: envía los artículos al servidor ---------- */
-window.swCheckout = async function (items) {
+/* ---------- Compra: envía artículos + dirección de entrega al servidor ---------- */
+window.swCheckout = async function (envio, items) {
     const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items })
+        body: JSON.stringify({ items, envio })
     });
     const data = await res.json().catch(() => ({}));
     if (res.status === 401) { window.location.href = '/login'; throw new Error('Inicia sesión para comprar.'); }
@@ -128,13 +128,36 @@ window.swCheckout = async function (items) {
     return data;
 };
 
-/* ---------- Ventana de pago (SIMULADA, solo para pruebas) ----------
-   swPago({ total, unidades, pagar }) abre el formulario de tarjeta.
-   - pagar: función async que registra la compra (la llama al aprobar).
-   - Devuelve una promesa con el resultado de pagar(), o null si se cancela.
-   Los datos de la tarjeta NUNCA se envían al servidor. */
+/* ---------- Leaflet bajo demanda (mapa de entrega) ---------- */
+function swCargarLeaflet() {
+    if (window.L) return Promise.resolve();
+    if (window.__swLeaflet) return window.__swLeaflet;
+    window.__swLeaflet = new Promise((ok, mal) => {
+        const css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        css.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+        css.crossOrigin = '';
+        document.head.appendChild(css);
+        const js = document.createElement('script');
+        js.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        js.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+        js.crossOrigin = '';
+        js.onload = ok;
+        js.onerror = () => { window.__swLeaflet = null; mal(new Error('No se pudo cargar el mapa.')); };
+        document.head.appendChild(js);
+    });
+    return window.__swLeaflet;
+}
+
+/* ---------- Ventana de compra (pago SIMULADO, solo para pruebas) ----------
+   Paso 1: el cliente marca su dirección de entrega en el mapa.
+   Paso 2: datos de la tarjeta (nunca se envían al servidor).
+   swPago({ total, unidades, pagar }) → pagar(envio) registra la compra.
+   Devuelve una promesa con el resultado de pagar(), o null si se cancela. */
 window.swPago = function ({ total, unidades = 1, pagar }) {
     const dinero = n => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const TIENDA = [19.6006437, -99.1022204];   // Starwish Coacalco
 
     return new Promise(resolve => {
         const modal = document.createElement('div');
@@ -143,9 +166,34 @@ window.swPago = function ({ total, unidades = 1, pagar }) {
         <div class="pay-dialog" role="dialog" aria-modal="true" aria-labelledby="pay-title">
             <button type="button" class="pay-close" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
 
-            <div class="pay-view" data-view="form">
-                <h3 id="pay-title"><i class="fa-solid fa-lock"></i> Pago seguro</h3>
+            <ol class="pay-steps">
+                <li class="active" data-step="envio"><span>1</span> Envío</li>
+                <li data-step="pago"><span>2</span> Pago</li>
+            </ol>
+
+            <!-- ===== Paso 1: dirección de entrega ===== -->
+            <div class="pay-view" data-view="envio">
+                <h3 id="pay-title"><i class="fa-solid fa-location-dot"></i> ¿A dónde te lo enviamos?</h3>
+                <p class="pay-sub">Usa tu ubicación o toca el mapa para marcar tu domicilio. Puedes arrastrar el marcador.</p>
+                <button type="button" class="btn-outline-pill pay-geo" id="pay-geo"><i class="fa-solid fa-location-crosshairs"></i> Usar mi ubicación</button>
+                <div class="pay-map" id="pay-map"><p class="pay-map-msg">Cargando mapa…</p></div>
+                <div class="form-field">
+                    <label for="pay-dir">Dirección de entrega</label>
+                    <input id="pay-dir" autocomplete="street-address" placeholder="Calle, número, colonia, ciudad" maxlength="200">
+                </div>
+                <div class="form-field">
+                    <label for="pay-ref">Referencias (opcional)</label>
+                    <input id="pay-ref" autocomplete="off" placeholder="Ej. Casa azul, portón negro" maxlength="50">
+                </div>
+                <p class="pay-error" id="err-envio" hidden></p>
+                <button type="button" class="btn-primary-pill" id="pay-next">Continuar al pago <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+
+            <!-- ===== Paso 2: tarjeta ===== -->
+            <div class="pay-view" data-view="pago" hidden>
+                <h3><i class="fa-solid fa-lock"></i> Pago seguro</h3>
                 <p class="pay-test"><i class="fa-solid fa-flask"></i> Modo de prueba: no se realiza ningún cargo. Usa la tarjeta <strong>4242 4242 4242 4242</strong>.</p>
+                <button type="button" class="pay-back" id="pay-back"><i class="fa-solid fa-arrow-left"></i> <span id="pay-dir-resumen"></span></button>
 
                 <div class="pay-card" id="pay-card">
                     <div class="pay-card-front">
@@ -182,10 +230,6 @@ window.swPago = function ({ total, unidades = 1, pagar }) {
                             <input id="pay-cvv" inputmode="numeric" autocomplete="off" placeholder="123" maxlength="4">
                         </div>
                     </div>
-                    <div class="form-field">
-                        <label for="pay-dir">Dirección de envío</label>
-                        <input id="pay-dir" autocomplete="off" placeholder="Calle, número, colonia, ciudad" maxlength="120">
-                    </div>
 
                     <p class="pay-error" id="pay-error" hidden></p>
 
@@ -194,14 +238,16 @@ window.swPago = function ({ total, unidades = 1, pagar }) {
                 </form>
             </div>
 
+            <!-- ===== Listo ===== -->
             <div class="pay-view" data-view="ok" hidden>
                 <div class="pay-ok-icon"><i class="fa-solid fa-check"></i></div>
                 <h3>¡Pago aprobado!</h3>
-                <p class="pay-sub">Tu pedido fue registrado correctamente.</p>
+                <p class="pay-sub">Tu pedido fue registrado y va en camino.</p>
                 <div class="pay-receipt">
                     <div><span>Folio</span><strong id="pay-folio"></strong></div>
                     <div><span>Tarjeta</span><strong id="pay-last4"></strong></div>
                     <div><span>Total</span><strong id="pay-paid"></strong></div>
+                    <div class="pay-receipt-dir"><span>Entrega en</span><strong id="pay-entrega"></strong></div>
                 </div>
                 <button type="button" class="btn-primary-pill" id="pay-done">Seguir comprando</button>
             </div>
@@ -211,13 +257,26 @@ window.swPago = function ({ total, unidades = 1, pagar }) {
 
         const $ = s => modal.querySelector(s);
         const inNombre = $('#pay-nombre'), inNum = $('#pay-num'), inExp = $('#pay-exp'),
-              inCvv = $('#pay-cvv'), inDir = $('#pay-dir'), err = $('#pay-error'),
+              inCvv = $('#pay-cvv'), inDir = $('#pay-dir'), inRef = $('#pay-ref'),
+              err = $('#pay-error'), errEnvio = $('#err-envio'),
               btn = $('#pay-submit'), card = $('#pay-card');
         let resultado = null;
         let procesando = false;
+        let mapa = null, marcador = null, punto = null;
+
+        function vista(nombre) {
+            modal.querySelectorAll('.pay-view').forEach(v => { v.hidden = v.dataset.view !== nombre; });
+            modal.querySelectorAll('.pay-steps li').forEach(li => {
+                li.classList.toggle('active', li.dataset.step === nombre);
+                li.classList.toggle('done', nombre !== 'envio' && li.dataset.step === 'envio');
+            });
+            $('.pay-steps').hidden = nombre === 'ok';
+            $('.pay-dialog').scrollTop = 0;
+        }
 
         function cerrar() {
             if (procesando) return;
+            if (mapa) mapa.remove();
             modal.remove();
             document.body.style.overflow = '';
             document.removeEventListener('keydown', onKey);
@@ -229,6 +288,108 @@ window.swPago = function ({ total, unidades = 1, pagar }) {
         $('#pay-done').addEventListener('click', cerrar);
         modal.addEventListener('click', e => { if (e.target === modal) cerrar(); });
 
+        /* ---------- Paso 1: mapa de entrega ---------- */
+        let ultimaBusqueda = 0;
+        async function direccionDe(lat, lng) {
+            const id = ++ultimaBusqueda;
+            inDir.placeholder = 'Buscando dirección…';
+            try {
+                const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=es&zoom=18`);
+                const d = await r.json();
+                if (id !== ultimaBusqueda) return;   // llegó una respuesta vieja
+                const a = d.address || {};
+                const partes = [
+                    [a.road, a.house_number].filter(Boolean).join(' '),
+                    a.neighbourhood || a.suburb,
+                    a.city || a.town || a.village || a.municipality,
+                    a.state, a.postcode
+                ].filter(Boolean);
+                inDir.value = partes.join(', ') || d.display_name || '';
+            } catch (e) {
+                /* sin internet o servicio ocupado: el cliente la escribe a mano */
+            } finally {
+                inDir.placeholder = 'Calle, número, colonia, ciudad';
+            }
+        }
+
+        function marcar(lat, lng, zoom) {
+            punto = { lat, lng };
+            if (!marcador) {
+                marcador = L.marker([lat, lng], { draggable: true }).addTo(mapa);
+                marcador.on('dragend', () => {
+                    const p = marcador.getLatLng();
+                    punto = { lat: p.lat, lng: p.lng };
+                    direccionDe(p.lat, p.lng);
+                });
+            } else {
+                marcador.setLatLng([lat, lng]);
+            }
+            mapa.setView([lat, lng], zoom || Math.max(mapa.getZoom(), 16));
+            direccionDe(lat, lng);
+            errEnvio.hidden = true;
+        }
+
+        swCargarLeaflet().then(() => {
+            if (!document.body.contains(modal)) return;
+            $('#pay-map').innerHTML = '';
+            mapa = L.map($('#pay-map')).setView(TIENDA, 12);
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(mapa);
+            mapa.on('click', e => marcar(e.latlng.lat, e.latlng.lng));
+            setTimeout(() => mapa.invalidateSize(), 150);
+        }).catch(() => {
+            $('#pay-map').innerHTML = '<p class="pay-map-msg">No se pudo cargar el mapa. Escribe tu dirección abajo.</p>';
+        });
+
+        $('#pay-geo').addEventListener('click', () => {
+            const b = $('#pay-geo');
+            if (!navigator.geolocation || !window.isSecureContext) {
+                swToast('La ubicación solo funciona en https:// o en localhost');
+                return;
+            }
+            if (!mapa) { swToast('Espera a que cargue el mapa'); return; }
+            b.disabled = true;
+            b.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Buscando…';
+            navigator.geolocation.getCurrentPosition(pos => {
+                marcar(pos.coords.latitude, pos.coords.longitude, 17);
+                b.disabled = false;
+                b.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> Usar mi ubicación';
+            }, e => {
+                b.disabled = false;
+                b.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> Usar mi ubicación';
+                swToast(e.code === 1 ? 'Negaste el permiso de ubicación' : 'No se pudo obtener tu ubicación');
+            }, { enableHighAccuracy: false, timeout: 20000, maximumAge: 60000 });
+        });
+
+        function direccionCompleta() {
+            const ref = inRef.value.trim();
+            return inDir.value.trim() + (ref ? ` (Ref: ${ref})` : '');
+        }
+
+        $('#pay-next').addEventListener('click', () => {
+            if (!punto) {
+                errEnvio.textContent = 'Marca tu domicilio en el mapa o usa tu ubicación.';
+                errEnvio.hidden = false;
+                return;
+            }
+            if (inDir.value.trim().length < 8) {
+                errEnvio.textContent = 'Escribe tu dirección de entrega.';
+                errEnvio.hidden = false;
+                inDir.focus();
+                return;
+            }
+            $('#pay-dir-resumen').textContent = direccionCompleta();
+            vista('pago');
+            setTimeout(() => inNombre.focus(), 50);
+        });
+        $('#pay-back').addEventListener('click', () => {
+            vista('envio');
+            if (mapa) setTimeout(() => mapa.invalidateSize(), 50);
+        });
+
+        /* ---------- Paso 2: tarjeta ---------- */
         function marca(n) {
             if (/^4/.test(n)) return 'VISA';
             if (/^(5[1-5]|2[2-7])/.test(n)) return 'MASTERCARD';
@@ -245,7 +406,6 @@ window.swPago = function ({ total, unidades = 1, pagar }) {
             return n.length >= 13 && suma % 10 === 0;
         }
 
-        // Formato y vista previa en vivo
         inNombre.addEventListener('input', () => {
             $('#pv-nombre').textContent = inNombre.value.trim().toUpperCase() || 'NOMBRE APELLIDO';
         });
@@ -271,13 +431,11 @@ window.swPago = function ({ total, unidades = 1, pagar }) {
         function validar() {
             const num = inNum.value.replace(/\D/g, '');
             const [mm, aa] = inExp.value.split('/').map(Number);
-            const hoy = new Date();
-            const vencida = !aa || new Date(2000 + aa, mm) <= hoy;   // mes siguiente al vencimiento
+            const vencida = !aa || new Date(2000 + aa, mm) <= new Date();   // 1er día del mes siguiente
             if (inNombre.value.trim().length < 3) return [inNombre, 'Escribe el nombre del titular.'];
             if (!luhn(num)) return [inNum, 'El número de tarjeta no es válido.'];
             if (!mm || mm < 1 || mm > 12 || vencida) return [inExp, 'La fecha de vencimiento no es válida.'];
             if (inCvv.value.length < 3) return [inCvv, 'El CVV debe tener 3 o 4 dígitos.'];
-            if (inDir.value.trim().length < 8) return [inDir, 'Escribe tu dirección de envío.'];
             return null;
         }
 
@@ -299,13 +457,14 @@ window.swPago = function ({ total, unidades = 1, pagar }) {
 
             try {
                 await new Promise(r => setTimeout(r, 1200));   // simula al banco
-                resultado = await pagar();
+                const envio = { direccion: direccionCompleta(), lat: punto.lat, lng: punto.lng };
+                resultado = await pagar(envio);
                 const num = inNum.value.replace(/\D/g, '');
                 $('#pay-folio').textContent = 'SW-' + Date.now().toString().slice(-8);
                 $('#pay-last4').textContent = (marca(num) || 'Tarjeta') + ' •••• ' + num.slice(-4);
                 $('#pay-paid').textContent = dinero(resultado && resultado.total_final != null ? resultado.total_final : total);
-                $('[data-view="form"]').hidden = true;
-                $('[data-view="ok"]').hidden = false;
+                $('#pay-entrega').textContent = envio.direccion;
+                vista('ok');
             } catch (ex) {
                 err.textContent = ex.message;
                 err.hidden = false;
@@ -315,8 +474,6 @@ window.swPago = function ({ total, unidades = 1, pagar }) {
                 procesando = false;
             }
         });
-
-        setTimeout(() => inNombre.focus(), 50);
     });
 };
 
