@@ -389,32 +389,20 @@
         actualizarTotal();
     });
 
-    // Comprar ahora (compra solo este producto)
+    // Comprar ahora: abre la ventana de pago (simulada) solo con este producto
     btnComprar.addEventListener('click', async () => {
-        btnComprar.disabled = true;
-        try {
-            const res = await fetch('/api/checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    items: [{
-                        id_producto: ID_PRODUCTO,
-                        cantidad: cantidadActual,
-                        color: valorColor.textContent,
-                        talla: valorTalla.textContent
-                    }]
-                })
-            });
-            const data = await res.json().catch(() => ({}));
-            if (res.status === 401) { window.location.href = "{{ url_for('login') }}"; return; }
-            if (!res.ok) throw new Error(data.error || 'No se pudo procesar la compra.');
-
-            swToast(`¡Compra realizada! Total: ${dinero(data.total_final)}`);
-            setTimeout(() => { window.location.href = "{{ url_for('menu') }}"; }, 1600);
-        } catch (err) {
-            btnComprar.disabled = false;
-            swToast(err.message);
-        }
+        const cantidad = cantidadActual;
+        const resultado = await swPago({
+            total: precioBase * cantidad * (1 + TASA_IVA),
+            unidades: cantidad,
+            pagar: () => swCheckout([{
+                id_producto: ID_PRODUCTO,
+                cantidad: cantidad,
+                color: valorColor.textContent,
+                talla: valorTalla.textContent
+            }])
+        });
+        if (resultado) window.location.reload();   // refresca el stock disponible
     });
 
     actualizarTotal();
