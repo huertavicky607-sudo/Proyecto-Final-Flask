@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Starwish{% endblock %} | Starwish</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='starwish.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='starwish-extra.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% set nav = [
+        ('menu', 'Catálogo'),
+        ('mapas', 'Mapas API'),
+        ('vista_ubicacion', 'Ubicación'),
+        ('youtube', 'Video / Iframe'),
+        ('encuesta', 'Encuesta'),
+        ('vista_fotos', 'Fotos'),
+        ('mensajes', 'Mensajes')
+    ] %}
+
+    <div id="overlay"></div>
+
+    <!-- ===== ENCABEZADO ===== -->
+    <header>
+        <div class="header container">
+            <div class="menu-hamburger"><i class="fa-solid fa-bars"></i></div>
+
+            <h1 class="logo" style="color: #0f172a;">
+                <a href="{{ url_for('menu') }}"><i class="fa-solid fa-bolt" style="color: #0ea5e9;"></i> Starwish</a>
+            </h1>
+
+            <nav>
+                <ul class="menu-nav">
+                    {% for ep, etiqueta in nav %}
+                        <li><a href="{{ url_for(ep) }}" {% if request.endpoint == ep %}class="active"{% endif %}>{{ etiqueta }}</a></li>
+                    {% endfor %}
+                    {% if rol == 'admin' %}
+                        <li><a href="{{ url_for('crud') }}" style="color: #0284c7; font-weight: 600;">Admin CRUD</a></li>
+                        <li><a href="{{ url_for('metrics') }}" style="color: #d97706; font-weight: 600;">Métricas</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+
+            <div class="header-user">
+                {% if session.get('usuario_id') %}
+                    {% if nombre %}
+                        <span class="badge-rol" title="{{ nombre }} ({{ rol }})">
+                            <i class="fa-solid fa-user"></i>
+                            <span class="badge-txt">{{ nombre }} ({{ rol }})</span>
+                        </span>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}" class="logout-link" title="Cerrar sesión">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="btn-admin-crud btn-login" style="padding: 8px 16px;">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        <span class="btn-login-txt">Iniciar Sesión</span>
+                    </a>
+                {% endif %}
+
+                <a href="{{ url_for('carrito') }}" class="carrito" aria-label="Ver carrito">
+                    <img src="{{ url_for('static', filename='cart.svg') }}" alt="carrito">
+                    <div class="count-products-cart">0</div>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== MENÚ LATERAL (celular) ===== -->
+    <div class="menu-responsive">
+        <div class="logo-responsive">
+            <h1 style="color: #0f172a; font-size: 26px;"><i class="fa-solid fa-bolt" style="color: #0ea5e9;"></i> Starwish</h1>
+        </div>
+        <i class="fa-solid fa-xmark btn-close-responsive"></i>
+        {% if session.get('usuario_id') and nombre %}
+            <p>Hola, <strong>{{ nombre }}</strong>. Accede a todas las herramientas del sistema.</p>
+        {% else %}
+            <p>Inicia sesión para comprar y acceder a todas las herramientas.</p>
+        {% endif %}
+        <nav>
+            <ul class="menu-nav-responsive">
+                {% for ep, etiqueta in nav %}
+                    <li><a href="{{ url_for(ep) }}" {% if request.endpoint == ep %}class="active"{% endif %}>{{ etiqueta }}</a></li>
+                {% endfor %}
+                <li><a href="{{ url_for('carrito') }}" {% if request.endpoint == 'carrito' %}class="active"{% endif %}>Mi carrito</a></li>
+                {% if rol == 'admin' %}
+                    <li><a href="{{ url_for('crud') }}">Admin CRUD</a></li>
+                    <li><a href="{{ url_for('metrics') }}">Métricas</a></li>
+                {% endif %}
+                {% if session.get('usuario_id') %}
+                    <li><a href="{{ url_for('logout') }}" style="color: #ef4444;">Cerrar Sesión</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('login') }}">Iniciar Sesión</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+
+    <!-- ===== MENSAJES FLASH ===== -->
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            <div class="container flash-wrap">
+                {% for categoria, mensaje in mensajes %}
+                    <div class="flash flash-{{ categoria }}">{{ mensaje }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+
+    <!-- ===== PIE DE PÁGINA ===== -->
+    <footer>
+        <div class="container footer">
+            <h1 class="logo" style="font-size: 24px;">Starwish</h1>
+            <div class="container-social">
+                <a href="{{ url_for('youtube') }}" class="youtube">
+                    <i class="fa-brands fa-youtube"></i>
+                    <span>Multimedia</span>
+                </a>
+                <a href="{{ url_for('mapas') }}" class="facebook">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <span>Rutas y Mapas</span>
+                </a>
+            </div>
+            <div class="user-footer">
+                <ul>
+                    <li><a href="{{ url_for('menu') }}">Catálogo</a></li>
+                    <li><a href="{{ url_for('encuesta') }}">Encuesta UPVM</a></li>
+                    <li><a href="{{ url_for('mensajes') }}">Chat en vivo</a></li>
+                </ul>
+            </div>
+            <div class="container-policies">
+                <ul>
+                    <li><a href="{{ url_for('vista_fotos') }}">Galería de Fotos</a></li>
+                    <li><a href="{{ url_for('vista_ubicacion') }}">Geolocalización</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ===== AVISO DE COOKIES ===== -->
+    <div class="cookie-banner" id="cookie-banner" hidden>
+        <p><i class="fa-solid fa-cookie-bite"></i> Usamos cookies para medir las visitas y mejorar tu experiencia en Starwish.</p>
+        <button type="button" class="btn-cookie" id="cookie-ok">Entendido</button>
+    </div>
+
+    <script src="{{ url_for('static', filename='starwish-extra.js') }}"></script>
+    {% block scripts %}{% endblock %}
+    <script src="{{ url_for('static', filename='assets/tracker.js') }}"></script>
+</body>
+</html>
