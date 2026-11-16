@@ -117,35 +117,31 @@
         const btn = e.target.closest('#btn-checkout');
         if (!btn) return;
 
-        btn.disabled = true;
-        try {
-            const items = swCart.items().map(i => ({
-                id_producto: i.id_producto,
-                cantidad: i.cantidad,
-                color: i.color,
-                talla: i.talla
-            }));
-            const res = await fetch('/api/checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ items })
-            });
-            const data = await res.json().catch(() => ({}));
-            if (res.status === 401) { window.location.href = URL_LOGIN; return; }
-            if (!res.ok) throw new Error(data.error || 'No se pudo procesar la compra.');
+        const carrito = swCart.items();
+        const items = carrito.map(i => ({
+            id_producto: i.id_producto,
+            cantidad: i.cantidad,
+            color: i.color,
+            talla: i.talla
+        }));
+        const subtotal = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
 
-            swCart.clear();
-            root.innerHTML = `
-                <div class="panel panel-narrow cart-done">
-                    <div class="auth-icon"><i class="fa-solid fa-check"></i></div>
-                    <h2>¡Compra realizada!</h2>
-                    <p class="auth-sub">Registramos tu pedido por <strong>${dinero(data.total_final)}</strong> (${data.unidades} pieza(s)).</p>
-                    <a href="${URL_MENU}" class="btn-primary-pill btn-inline">Volver al catálogo</a>
-                </div>`;
-        } catch (err) {
-            btn.disabled = false;
-            swToast(err.message);
-        }
+        // Abre la ventana de pago (simulada); registra la compra al aprobar
+        const data = await swPago({
+            total: subtotal * (1 + TASA_IVA),
+            unidades: carrito.reduce((s, i) => s + i.cantidad, 0),
+            pagar: () => swCheckout(items)
+        });
+        if (!data) return;   // canceló
+
+        swCart.clear();
+        root.innerHTML = `
+            <div class="panel panel-narrow cart-done">
+                <div class="auth-icon"><i class="fa-solid fa-check"></i></div>
+                <h2>¡Compra realizada!</h2>
+                <p class="auth-sub">Registramos tu pedido por <strong>${dinero(data.total_final)}</strong> (${data.unidades} pieza(s)).</p>
+                <a href="${URL_MENU}" class="btn-primary-pill btn-inline">Volver al catálogo</a>
+            </div>`;
     });
 
     pintar();
