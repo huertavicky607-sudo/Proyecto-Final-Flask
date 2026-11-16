@@ -188,7 +188,8 @@
             <div class="ugc-strip">
                 {% for f in fotos_clientes %}
                     <a href="{{ url_for('vista_fotos', producto=producto.id_producto) }}" class="ugc-thumb" title="{{ f.comentario or f.nombre }}">
-                        <img src="{{ url_for('static', filename='uploads/' + f.archivo) }}" alt="Foto de {{ f.nombre }}" loading="lazy">
+                        <img src="{{ f.archivo|foto_src }}" alt="Foto de {{ f.nombre }}" loading="lazy"
+                             onerror="this.src='https://placehold.co/160x200/f1f5f9/94a3b8?text=Foto+no+disponible'">
                         <span>{{ f.nombre }}{% if f.talla %} · {{ f.talla }}{% endif %}{% if f.ajuste %} · {{ f.ajuste }}{% endif %}</span>
                     </a>
                 {% endfor %}
@@ -395,7 +396,7 @@
         const resultado = await swPago({
             total: precioBase * cantidad * (1 + TASA_IVA),
             unidades: cantidad,
-            pagar: () => swCheckout([{
+            pagar: envio => swCheckout(envio, [{
                 id_producto: ID_PRODUCTO,
                 cantidad: cantidad,
                 color: valorColor.textContent,
