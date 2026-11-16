@@ -221,8 +221,10 @@
     color: #94a3b8;
     pointer-events: none;
 }
-.input-icon input:not([type=radio]) { padding-left: 44px; }
-.input-icon.has-toggle input { padding-right: 46px; }
+/* Más específico que ".form-field input..." para que el texto no quede debajo del ícono */
+.form-field .input-icon input:not([type=radio]):not([type=checkbox]) { padding-left: 46px; }
+.form-field .input-icon.has-toggle input:not([type=radio]):not([type=checkbox]) { padding-right: 50px; }
+.input-icon > .lead { width: 18px; text-align: center; z-index: 1; }
 .toggle-pass {
     position: absolute;
     right: 6px;
@@ -771,3 +773,216 @@
     .ugc-layout { grid-template-columns: 1fr; }
     .ugc-upload { position: static; }
 }
+
+/* ---------- PORTADA (hero del catálogo) ---------- */
+.hero {
+    margin-top: 30px;
+    padding: clamp(28px, 5vw, 56px);
+    border-radius: 28px;
+    background: linear-gradient(135deg, #f8fafc 0%, #eef6fc 100%);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+.hero-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 30px; align-items: center; }
+.hero-kicker {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0284c7;
+    background: #e0f2fe;
+    padding: 6px 14px;
+    border-radius: 999px;
+}
+.hero-text h1 {
+    font-size: clamp(34px, 5.2vw, 62px);
+    line-height: 1.05;
+    letter-spacing: -1.5px;
+    color: #0f172a;
+    margin: 18px 0 16px;
+    font-weight: 800;
+}
+.hero-text h1 span { color: #0ea5e9; }
+.hero-text p { color: #475569; font-size: 16px; line-height: 1.6; max-width: 460px; }
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 26px; }
+.hero-stats { list-style: none; padding: 0; display: flex; gap: 32px; margin-top: 34px; flex-wrap: wrap; }
+.hero-stats li { display: flex; flex-direction: column; gap: 2px; }
+.hero-stats strong { font-size: 22px; color: #0f172a; }
+.hero-stats strong i { color: #eab308; font-size: 16px; }
+.hero-stats li:last-child strong i { color: #0ea5e9; }
+.hero-stats span { font-size: 13px; color: #64748b; }
+
+.hero-visual { position: relative; display: flex; align-items: center; justify-content: center; min-height: 380px; }
+.hero-blob {
+    position: absolute;
+    width: 82%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #bae6fd, #e0f2fe 60%, transparent 70%);
+}
+.hero-dot { position: absolute; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #94a3b8; }
+.hero-dot.d1 { top: 8%; left: 18%; }
+.hero-dot.d2 { top: 20%; right: 10%; }
+.hero-dot.d3 { bottom: 14%; left: 8%; }
+#hero-img {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    max-height: 420px;
+    object-fit: contain;
+    filter: drop-shadow(0 25px 30px rgba(15, 23, 42, .18));
+    transition: opacity .2s, transform .2s;
+}
+#hero-img.swap { opacity: 0; transform: scale(.96); }
+.hero-tag {
+    position: absolute;
+    right: 0;
+    bottom: 6%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    padding: 10px 16px;
+    border-radius: 999px;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, .12);
+    text-decoration: none;
+    color: #0f172a;
+    font-size: 14px;
+    max-width: 90%;
+}
+.hero-tag span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hero-tag strong { color: #16a34a; }
+.hero-tag i { color: #0ea5e9; }
+
+.hero-strip {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    margin-top: 30px;
+    padding-top: 26px;
+    border-top: 1px solid #e2e8f0;
+    overflow-x: auto;
+}
+.hero-thumb {
+    flex: 0 0 64px;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    background: #fff;
+    padding: 4px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, .08);
+    transition: border-color .15s, transform .15s;
+}
+.hero-thumb img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
+.hero-thumb:hover { transform: translateY(-2px); }
+.hero-thumb.active { border-color: #0f172a; }
+@media (max-width: 800px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .hero-visual { min-height: 300px; order: -1; }
+    .hero-strip { justify-content: flex-start; }
+}
+
+/* ---------- VENTANA DE PAGO (simulada) ---------- */
+.pay-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, .6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 30;
+    animation: pay-fade .2s ease;
+}
+@keyframes pay-fade { from { opacity: 0; } }
+.pay-dialog {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 24px;
+    padding: 28px 24px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, .25);
+}
+.pay-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: #f1f5f9;
+    cursor: pointer;
+    font-size: 16px;
+    color: #334155;
+}
+.pay-dialog h3 { font-size: 20px; color: #0f172a; display: flex; gap: 10px; align-items: center; }
+.pay-dialog h3 i { color: #16a34a; font-size: 16px; }
+.pay-test {
+    margin: 12px 0 18px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: #fef9c3;
+    color: #854d0e;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.pay-card { position: relative; height: 190px; perspective: 1000px; margin-bottom: 22px; }
+.pay-card-front, .pay-card-back {
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    color: #fff;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0284c7 100%);
+    box-shadow: 0 15px 30px rgba(15, 23, 42, .3);
+    backface-visibility: hidden;
+    transition: transform .5s;
+}
+.pay-card-front { padding: 20px 22px; display: flex; flex-direction: column; justify-content: space-between; }
+.pay-card-back { transform: rotateY(180deg); padding-top: 26px; }
+.pay-card.flip .pay-card-front { transform: rotateY(-180deg); }
+.pay-card.flip .pay-card-back { transform: rotateY(0); }
+.pay-card-top { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 15px; }
+.pay-card-top i { color: #38bdf8; }
+.pay-brand { margin-left: auto; font-size: 13px; letter-spacing: 1px; font-style: italic; }
+.pay-chip { width: 42px; height: 30px; border-radius: 6px; background: linear-gradient(135deg, #fde68a, #d97706); }
+.pay-num { font-family: ui-monospace, Consolas, monospace; font-size: clamp(16px, 4.6vw, 20px); letter-spacing: 2px; }
+.pay-card-bottom { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; }
+.pay-card-bottom small, .pay-cvv-box small { display: block; font-size: 10px; opacity: .7; text-transform: uppercase; }
+.pay-card-bottom span { font-weight: 600; letter-spacing: .5px; }
+.pay-strip { height: 40px; background: #0b1120; }
+.pay-cvv-box { margin: 18px 22px 0; background: #fff; color: #0f172a; border-radius: 6px; padding: 6px 12px; text-align: right; }
+.pay-cvv-box small { color: #64748b; opacity: 1; }
+
+.pay-form .form-field { margin-bottom: 14px; }
+.pay-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pay-form input.invalid { border-color: #ef4444 !important; box-shadow: 0 0 0 3px rgba(239, 68, 68, .15) !important; }
+.pay-error { background: #fee2e2; color: #991b1b; padding: 10px 14px; border-radius: 12px; font-size: 13px; margin-bottom: 14px; }
+.pay-total { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-top: 1px solid #e2e8f0; margin-bottom: 12px; color: #475569; font-size: 14px; }
+.pay-total strong { font-size: 20px; color: #0f172a; }
+
+.pay-view[data-view="ok"] { text-align: center; padding: 10px 0; }
+.pay-view[data-view="ok"] h3 { justify-content: center; margin-top: 14px; }
+.pay-ok-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: #dcfce7;
+    color: #16a34a;
+    font-size: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+.pay-sub { color: #64748b; font-size: 14px; margin-top: 6px; }
+.pay-receipt { background: #f8fafc; border-radius: 16px; padding: 16px; margin: 20px 0; display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.pay-receipt div { display: flex; justify-content: space-between; font-size: 14px; color: #475569; }
+.pay-receipt strong { color: #0f172a; }
