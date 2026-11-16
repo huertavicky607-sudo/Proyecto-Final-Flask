@@ -460,7 +460,7 @@ window.swPago = function ({ total, unidades = 1, pagar }) {
                 const envio = { direccion: direccionCompleta(), lat: punto.lat, lng: punto.lng };
                 resultado = await pagar(envio);
                 const num = inNum.value.replace(/\D/g, '');
-                $('#pay-folio').textContent = 'SW-' + Date.now().toString().slice(-8);
+                $('#pay-folio').textContent = (resultado && resultado.folio) || 'SW-' + Date.now().toString().slice(-8);
                 $('#pay-last4').textContent = (marca(num) || 'Tarjeta') + ' •••• ' + num.slice(-4);
                 $('#pay-paid').textContent = dinero(resultado && resultado.total_final != null ? resultado.total_final : total);
                 $('#pay-entrega').textContent = envio.direccion;
@@ -477,19 +477,36 @@ window.swPago = function ({ total, unidades = 1, pagar }) {
     });
 };
 
-/* ---------- Aviso de cookies ---------- */
+/* ---------- Aviso de cookies ----------
+   sw_cookies = 'todas' (acepta métricas) | 'necesarias' (solo sesión y carrito).
+   Se puede volver a abrir desde el enlace "Cookies" del pie de página. */
+window.swConsentimiento = function () {
+    const c = document.cookie.split('; ').find(x => x.startsWith('sw_cookies='));
+    return c ? c.split('=')[1] : null;
+};
 (function () {
     const banner = document.getElementById('cookie-banner');
-    const boton = document.getElementById('cookie-ok');
-    if (!banner || !boton) return;
+    if (!banner) return;
 
-    const yaVisto = document.cookie.split('; ').some(c => c.startsWith('sw_aviso_cookies='));
-    if (!yaVisto) banner.hidden = false;
+    function guardar(valor) {
+        document.cookie = 'sw_cookies=' + valor + '; max-age=31536000; path=/; SameSite=Lax';
+        banner.classList.remove('show');
+        setTimeout(() => { banner.hidden = true; }, 300);
+        document.dispatchEvent(new CustomEvent('sw-consentimiento', { detail: valor }));
+    }
+    function abrir() {
+        banner.hidden = false;
+        requestAnimationFrame(() => banner.classList.add('show'));
+    }
 
-    boton.addEventListener('click', () => {
-        document.cookie = 'sw_aviso_cookies=1; max-age=31536000; path=/; SameSite=Lax';
-        banner.hidden = true;
-    });
+    document.getElementById('cookie-ok')?.addEventListener('click', () => guardar('todas'));
+    document.getElementById('cookie-no')?.addEventListener('click', () => guardar('necesarias'));
+    document.querySelectorAll('[data-abrir-cookies]').forEach(a => a.addEventListener('click', e => {
+        e.preventDefault();
+        abrir();
+    }));
+
+    if (!window.swConsentimiento()) setTimeout(abrir, 600);
 })();
 
 /* ---------- Mostrar / ocultar contraseña ---------- */
