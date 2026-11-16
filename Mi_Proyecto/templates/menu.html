@@ -3,57 +3,64 @@
 
 {% block content %}
 <main class="container">
-    <!-- ===== PORTADA / PRESENTACIÓN ===== -->
-    {% set destacados = productos[:8] if productos else [] %}
-    {% set principal = destacados[0] if destacados else None %}
-    <section class="hero">
-        <div class="hero-grid">
-            <div class="hero-text">
-                <span class="hero-kicker"><i class="fa-solid fa-bolt"></i> Nueva temporada</span>
-                <h1>Las mejores prendas las encuentras en <span>Starwish</span></h1>
-                <p>Estilo, comodidad y calidad en cada pieza. Descubre lo nuevo, elige tu talla y recíbelo en casa.</p>
-                <div class="hero-actions">
-                    <a href="#catalogo" class="btn-primary-pill btn-inline"><i class="fa-solid fa-bag-shopping"></i> Ver catálogo</a>
-                    <a href="{{ url_for('vista_fotos') }}" class="btn-outline-pill btn-inline"><i class="fa-solid fa-camera-retro"></i> Fotos de clientes</a>
+    <!-- ===== PORTADA: carrusel con fondo según el color de la prenda ===== -->
+    {% set h0 = hero[0] if hero else None %}
+    <section class="hero2" id="hero" aria-roledescription="carrusel" aria-label="Prendas destacadas"
+             style="--hero-bg: {{ h0.color if h0 else '#64748b' }};" tabindex="-1">
+        <div class="hero2-top">
+            {% if hero|length > 1 %}
+            <div class="hero2-arrows">
+                <button type="button" id="hero-prev" aria-label="Prenda anterior"><i class="fa-solid fa-chevron-left"></i></button>
+                <button type="button" id="hero-next" aria-label="Siguiente prenda"><i class="fa-solid fa-chevron-right"></i></button>
+                <span class="hero2-count" id="hero-count">01 / {{ '%02d'|format(hero|length) }}</span>
+            </div>
+            {% endif %}
+            <span class="hero2-kicker"><i class="fa-solid fa-bolt"></i> Nueva temporada</span>
+        </div>
+
+        <div class="hero2-grid">
+            <div class="hero2-text">
+                <h1>Las mejores prendas las encuentras en Starwish</h1>
+                <p>Estilo, comodidad y calidad en cada pieza. Elige tu talla y recíbelo en casa.</p>
+                <div class="hero2-actions">
+                    <a href="{{ h0.url if h0 else '#catalogo' }}" class="hero2-cta" id="hero-cta">Ver y comprar <i class="fa-solid fa-chevron-right"></i></a>
+                    <a href="#catalogo" class="hero2-link">Ver catálogo</a>
                 </div>
-                <ul class="hero-stats">
-                    <li><strong>{{ productos|length }}+</strong><span>Prendas</span></li>
-                    <li><strong>4.9 <i class="fa-solid fa-star"></i></strong><span>Calificación</span></li>
-                    <li><strong><i class="fa-solid fa-truck-fast"></i></strong><span>Envío rápido</span></li>
-                </ul>
             </div>
 
-            <div class="hero-visual">
-                <div class="hero-blob"></div>
-                <span class="hero-dot d1"></span><span class="hero-dot d2"></span><span class="hero-dot d3"></span>
+            <div class="hero2-stage">
                 <img id="hero-img"
-                     src="{{ principal.imagen if principal and principal.imagen else 'https://placehold.co/500x500/f1f5f9/334155?text=Starwish' }}"
-                     alt="{{ principal.nombre if principal else 'Starwish' }}"
-                     onerror="this.src='https://placehold.co/500x500/f1f5f9/334155?text=Starwish'">
-                {% if principal %}
-                <a id="hero-tag" class="hero-tag" href="{{ url_for('detalle_producto', id_producto=principal.id_producto) }}">
-                    <span id="hero-nombre">{{ principal.nombre }}</span>
-                    <strong id="hero-precio">${{ "%.2f"|format(principal.precio) }}</strong>
-                    <i class="fa-solid fa-arrow-right"></i>
-                </a>
+                     src="{{ h0.imagen if h0 and h0.imagen else 'https://placehold.co/500x500/png?text=Starwish' }}"
+                     alt="{{ h0.nombre if h0 else 'Starwish' }}"
+                     onerror="this.src='https://placehold.co/500x500/png?text=Starwish'">
+                <span class="hero2-shadow"></span>
+                <p class="hero2-caption" id="hero-nombre" aria-live="polite">{{ h0.nombre if h0 else 'Starwish' }}</p>
+            </div>
+
+            <div class="hero2-side">
+                {% if h0 %}
+                <p class="hero2-price" id="hero-precio">${{ '%.2f'|format(h0.precio) }}</p>
+                <p class="hero2-side-label">Tallas disponibles</p>
+                <div class="hero2-sizes" id="hero-tallas">
+                    {% for t in h0.tallas %}<a href="{{ h0.url }}">{{ t }}</a>{% endfor %}
+                </div>
                 {% endif %}
             </div>
         </div>
 
-        {% if destacados|length > 1 %}
-        <div class="hero-strip" role="tablist" aria-label="Prendas destacadas">
-            {% for p in destacados %}
-                <button type="button" class="hero-thumb {% if loop.first %}active{% endif %}"
-                        data-img="{{ p.imagen or '' }}" data-nombre="{{ p.nombre }}"
-                        data-precio="${{ '%.2f'|format(p.precio) }}"
-                        data-url="{{ url_for('detalle_producto', id_producto=p.id_producto) }}"
-                        aria-label="{{ p.nombre }}">
-                    <img src="{{ p.imagen or 'https://placehold.co/120x120/f1f5f9/334155?text=SW' }}" alt="" loading="lazy"
-                         onerror="this.src='https://placehold.co/120x120/f1f5f9/334155?text=SW'">
-                </button>
-            {% endfor %}
+        <div class="hero2-bottom">
+            <div class="hero2-dots" id="hero-dots">
+                {% for p in hero %}
+                    <button type="button" aria-label="Ver {{ p.nombre }}" {% if loop.first %}class="active" aria-current="true"{% endif %}></button>
+                {% endfor %}
+            </div>
+            {% if hero|length > 1 %}
+            <button type="button" class="hero2-next" id="hero-next-thumb" aria-label="Siguiente prenda">
+                <img id="hero-next-img" src="{{ hero[1].imagen or 'https://placehold.co/120x120/png?text=SW' }}" alt="">
+                <span>Siguiente</span>
+            </button>
+            {% endif %}
         </div>
-        {% endif %}
     </section>
 
     <div class="catalogo-header" id="catalogo">
@@ -110,36 +117,145 @@
 
 {% block scripts %}
 <script>
-    // Portada: al elegir una miniatura cambia la prenda destacada
-    (function () {
-        const img = document.getElementById('hero-img');
-        const tag = document.getElementById('hero-tag');
-        const thumbs = document.querySelectorAll('.hero-thumb');
-        if (!img || !thumbs.length) return;
-        let actual = 0, timer = null;
+(function () {
+    const HERO = {{ hero|tojson }};
+    const hero = document.getElementById('hero');
+    if (!HERO.length) return;
 
-        function mostrar(i) {
-            const t = thumbs[i];
-            actual = i;
-            thumbs.forEach(b => b.classList.toggle('active', b === t));
-            img.classList.add('swap');
-            setTimeout(() => {
-                img.src = t.dataset.img || 'https://placehold.co/500x500/f1f5f9/334155?text=Starwish';
-                img.alt = t.dataset.nombre;
-                if (tag) {
-                    tag.href = t.dataset.url;
-                    document.getElementById('hero-nombre').textContent = t.dataset.nombre;
-                    document.getElementById('hero-precio').textContent = t.dataset.precio;
+    const img = document.getElementById('hero-img');
+    const PLACE = 'https://placehold.co/500x500/png?text=Starwish';
+    const dots = [...document.querySelectorAll('#hero-dots button')];
+    let actual = 0, timer = null;
+    const colores = {};   // caché: índice -> { bg, blend }
+
+    // ---------- Color dominante de la prenda ----------
+    // Lee los píxeles de la imagen (ignora transparentes y blancos del fondo).
+    // Si el servidor de la imagen no lo permite (CORS), usa el color del producto.
+    function analizar(i) {
+        if (colores[i]) return Promise.resolve(colores[i]);
+        const respaldo = { bg: HERO[i].color, blend: false };
+        if (!HERO[i].imagen) return Promise.resolve(colores[i] = respaldo);
+
+        return new Promise(ok => {
+            const im = new Image();
+            im.crossOrigin = 'anonymous';
+            im.onload = () => {
+                try {
+                    const N = 48, c = document.createElement('canvas');
+                    c.width = c.height = N;
+                    const ctx = c.getContext('2d', { willReadFrequently: true });
+                    ctx.drawImage(im, 0, 0, N, N);
+                    const px = ctx.getImageData(0, 0, N, N).data;
+
+                    // ¿Fondo blanco? (esquinas opacas y casi blancas)
+                    const esq = [0, N - 1, N * (N - 1), N * N - 1].filter(k => {
+                        const o = k * 4;
+                        return px[o + 3] > 240 && px[o] > 230 && px[o + 1] > 230 && px[o + 2] > 230;
+                    }).length;
+
+                    let r = 0, g = 0, b = 0, peso = 0;
+                    for (let o = 0; o < px.length; o += 4) {
+                        const [R, G, B, A] = [px[o], px[o + 1], px[o + 2], px[o + 3]];
+                        if (A < 200 || (R > 232 && G > 232 && B > 232)) continue;
+                        const max = Math.max(R, G, B), min = Math.min(R, G, B);
+                        const w = 1 + ((max - min) / 255) * 3;   // favorece colores vivos
+                        r += R * w; g += G * w; b += B * w; peso += w;
+                    }
+                    colores[i] = peso
+                        ? { bg: `rgb(${Math.round(r / peso)}, ${Math.round(g / peso)}, ${Math.round(b / peso)})`, blend: esq >= 3 }
+                        : respaldo;
+                } catch (e) {
+                    colores[i] = respaldo;
                 }
+                ok(colores[i]);
+            };
+            im.onerror = () => ok(colores[i] = respaldo);
+            im.src = HERO[i].imagen;
+        });
+    }
+
+    // Ajusta el color para que funcione como fondo y elige texto claro u oscuro
+    function pintarFondo({ bg, blend }) {
+        const tmp = document.createElement('span');
+        tmp.style.color = bg;
+        document.body.appendChild(tmp);
+        const [r, g, b] = getComputedStyle(tmp).color.match(/\d+/g).map(Number);
+        tmp.remove();
+
+        // Limita la luminosidad: ni negro puro ni blanco puro
+        const l = (Math.max(r, g, b) + Math.min(r, g, b)) / 510;
+        const objetivo = Math.min(Math.max(l, 0.3), 0.78);
+        const f = l > 0 ? objetivo / l : 1;
+        const ajust = [r, g, b].map(v => Math.round(Math.min(255, l > 0 ? v * f : 80)));
+        const lum = (0.2126 * ajust[0] + 0.7152 * ajust[1] + 0.0722 * ajust[2]) / 255;
+
+        hero.style.setProperty('--hero-bg', `rgb(${ajust.join(',')})`);
+        hero.classList.toggle('is-light', lum > 0.6);
+        img.style.mixBlendMode = blend ? 'multiply' : 'normal';
+    }
+
+    function mostrar(i) {
+        const p = HERO[i];
+        actual = i;
+        img.classList.add('swap');
+        analizar(i).then(col => {
+            setTimeout(() => {
+                img.src = p.imagen || PLACE;
+                img.alt = p.nombre;
+                pintarFondo(col);
+                document.getElementById('hero-nombre').textContent = p.nombre;
+                document.getElementById('hero-cta').href = p.url;
+                const precio = document.getElementById('hero-precio');
+                if (precio) precio.textContent = '$' + p.precio.toFixed(2);
+                const tallas = document.getElementById('hero-tallas');
+                if (tallas) {
+                    tallas.innerHTML = '';
+                    p.tallas.forEach(t => {
+                        const a = document.createElement('a');
+                        a.href = p.url;
+                        a.textContent = t;
+                        tallas.appendChild(a);
+                    });
+                }
+                const cuenta = document.getElementById('hero-count');
+                if (cuenta) cuenta.textContent = `${String(i + 1).padStart(2, '0')} / ${String(HERO.length).padStart(2, '0')}`;
+                dots.forEach((d, k) => {
+                    d.classList.toggle('active', k === i);
+                    d.toggleAttribute('aria-current', k === i);
+                });
+                const sig = document.getElementById('hero-next-img');
+                if (sig) sig.src = HERO[(i + 1) % HERO.length].imagen || PLACE;
                 img.classList.remove('swap');
-            }, 200);
+                analizar((i + 1) % HERO.length);   // precarga el color de la siguiente
+            }, 220);
+        });
+    }
+
+    const siguiente = () => mostrar((actual + 1) % HERO.length);
+    const anterior = () => mostrar((actual - 1 + HERO.length) % HERO.length);
+
+    function auto() {
+        clearInterval(timer);
+        if (HERO.length > 1 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            timer = setInterval(siguiente, 6000);
         }
-        function auto() {
-            clearInterval(timer);
-            timer = setInterval(() => mostrar((actual + 1) % thumbs.length), 4500);
-        }
-        thumbs.forEach((b, i) => b.addEventListener('click', () => { mostrar(i); auto(); }));
-        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) auto();
-    })();
+    }
+    function manual(fn) { return () => { fn(); auto(); }; }
+
+    document.getElementById('hero-next')?.addEventListener('click', manual(siguiente));
+    document.getElementById('hero-prev')?.addEventListener('click', manual(anterior));
+    document.getElementById('hero-next-thumb')?.addEventListener('click', manual(siguiente));
+    dots.forEach((d, k) => d.addEventListener('click', manual(() => mostrar(k))));
+    hero.addEventListener('keydown', e => {
+        if (e.key === 'ArrowRight') manual(siguiente)();
+        if (e.key === 'ArrowLeft') manual(anterior)();
+    });
+    // Pausa mientras el cursor está encima
+    hero.addEventListener('mouseenter', () => clearInterval(timer));
+    hero.addEventListener('mouseleave', auto);
+
+    analizar(0).then(pintarFondo);
+    auto();
+})();
 </script>
 {% endblock %}
