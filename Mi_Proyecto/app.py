@@ -9,12 +9,19 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # CLOUDINARY (fotos permanentes). Se activa solo si existe
 # la variable de entorno CLOUDINARY_URL; si no, guarda en static/uploads.
 # ----------------------------------------------------
+# Si al pegarla en Render se incluyó "CLOUDINARY_URL=" o comillas, se limpian aquí
+_cld = os.getenv('CLOUDINARY_URL', '').strip().strip('"\'')
+if _cld.startswith('CLOUDINARY_URL='):
+    _cld = _cld[len('CLOUDINARY_URL='):]
+if _cld:
+    os.environ['CLOUDINARY_URL'] = _cld
 try:
     import cloudinary
     import cloudinary.uploader
-    USA_CLOUDINARY = bool(os.getenv('CLOUDINARY_URL'))
+    USA_CLOUDINARY = _cld.startswith('cloudinary://')
 except ImportError:
     USA_CLOUDINARY = False
+print('Fotos de clientes guardadas en:', 'Cloudinary' if USA_CLOUDINARY else 'static/uploads (se borran en Render)')
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'clave_secreta_desarrollo')
@@ -973,7 +980,7 @@ def vista_fotos():
         flash(f'Error al cargar la galería: {e}', 'error')
 
     return render_template('fotos.html', fotos=lista_fotos, productos=productos,
-                           filtro=filtro, ajustes=AJUSTES)
+                           filtro=filtro, ajustes=AJUSTES, usa_cloudinary=USA_CLOUDINARY)
 
 @app.post('/fotos/<int:id_foto>/eliminar')
 def eliminar_foto(id_foto):
