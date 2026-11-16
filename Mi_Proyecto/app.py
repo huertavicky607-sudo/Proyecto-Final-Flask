@@ -5,6 +5,17 @@ from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# ----------------------------------------------------
+# CLOUDINARY (fotos permanentes). Se activa solo si existe
+# la variable de entorno CLOUDINARY_URL; si no, guarda en static/uploads.
+# ----------------------------------------------------
+try:
+    import cloudinary
+    import cloudinary.uploader
+    USA_CLOUDINARY = bool(os.getenv('CLOUDINARY_URL'))
+except ImportError:
+    USA_CLOUDINARY = False
+
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'clave_secreta_desarrollo')
 app.config['MAX_CONTENT_LENGTH'] = 8 * 1024 * 1024   # límite de subida (fotos)
@@ -149,9 +160,17 @@ def init_db():
             """)
             # Columnas nuevas para las fotos de clientes (si la tabla ya existía)
             for columna in ("id_producto INT NULL", "talla VARCHAR(20) NULL",
-                            "ajuste VARCHAR(20) NULL", "comentario VARCHAR(500) NULL"):
+                            "ajuste VARCHAR(20) NULL", "comentario VARCHAR(500) NULL",
+                            "public_id VARCHAR(255) NULL"):
                 try:
                     cursor.execute(f"ALTER TABLE fotos ADD COLUMN {columna}")
+                except:
+                    pass
+            # Dirección de entrega de cada venta
+            for columna in ("direccion_envio VARCHAR(255) NULL", "latitud DECIMAL(9, 6) NULL",
+                            "longitud DECIMAL(9, 6) NULL"):
+                try:
+                    cursor.execute(f"ALTER TABLE ventas ADD COLUMN {columna}")
                 except:
                     pass
         conn.commit()
@@ -166,6 +185,21 @@ init_db()
 @app.context_processor
 def inyectar_usuario():
     return {'nombre': session.get('nombre'), 'rol': session.get('rol', 'invitado')}
+
+# Foto guardada en Cloudinary (URL completa) o en static/uploads (solo nombre)
+@app.template_filter('foto_src')
+def foto_src(archivo):
+    if archivo and archivo.startswith('http'):
+        return archivo
+    return url_for('static', filename='uploads/' + (archivo or ''))
+
+# Color de respaldo para el fondo de la portada (si no se puede leer la imagen)
+COLOR_HEX = {
+    'negro': '#1f2937', 'blanco': '#cbd5e1', 'naranja': '#f97316', 'celeste': '#449dd1',
+    'marron': '#826251', 'marrón': '#826251', 'rojo': '#dc2626', 'vino': '#7f1d1d',
+    'azul': '#2563eb', 'verde': '#16a34a', 'gris': '#9ca3af', 'rosa': '#f472b6',
+    'amarillo': '#facc15', 'morado': '#7c3aed', 'beige': '#d6c3a5'
+}
 
 @app.route('/')
 @app.route('/menu')
@@ -182,7 +216,22 @@ def menu():
     except Exception as e:
         print(f"Error al cargar catálogo: {e}")
 
-    return render_template('menu.html', nombre=nombre_usuario, rol=rol_usuario, productos=productos)
+    # Datos para el carrusel de la portada
+    hero = []
+    for p in productos[:8]:
+        primer_color = ((p.get('colores') or '').split(',')[0]).strip().lower()
+        hero.append({
+            'nombre': p['nombre'],
+            'descripcion': p.get('descripcion') or '',
+            'precio': float(p['precio']),
+            'imagen': p.get('imagen') or '',
+            'tallas': [t.strip() for t in (p.get('tallas') or '').split(',') if t.strip()][:5],
+            'color': COLOR_HEX.get(primer_color, '#64748b'),
+            'url': url_for('detalle_producto', id_producto=p['id_producto'])
+        })
+
+    return render_template('menu.html', nombre=nombre_usuario, rol=rol_usuario,
+                           productos=productos, hero=hero)
 
 @app.route('/producto/<int:id_producto>')
 def detalle_producto(id_producto):
@@ -239,6 +288,19 @@ def api_checkout():
     if not isinstance(items, list) or not items:
         return jsonify({'error': 'Tu carrito está vacío.'}), 400
 
+    # Dirección de entrega (elegida en el mapa de la ventana de pago)
+    envio = datos.get('envio') or {}
+    direccion = str(envio.get('direccion', '')).strip()[:255]
+    try:
+        lat = float(envio.get('lat'))
+        lng = float(envio.get('lng'))
+        if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+            raise ValueError
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Marca tu dirección de entrega en el mapa.'}), 400
+    if len(direccion) < 8:
+        return jsonify({'error': 'Escribe tu dirección de entrega.'}), 400
+
     TASA = 16.0
     conn = None
     try:
@@ -269,12 +331,19 @@ def api_checkout():
                 final = bruto + impuesto
 
                 cursor.execute("""INSERT INTO ventas (id_usuario, id_producto, cantidad, precio_unit, total_bruto,
-                                                      tasa_impuesto, total_impuesto, total_final)
-                                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
-                               (session['usuario_id'], id_p, cantidad, precio_unit, bruto, TASA, impuesto, final))
+                                                      tasa_impuesto, total_impuesto, total_final,
+                                                      direccion_envio, latitud, longitud)
+                                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                               (session['usuario_id'], id_p, cantidad, precio_unit, bruto, TASA, impuesto, final,
+                                direccion, lat, lng))
                 cursor.execute("UPDATE productos SET stock = stock - %s WHERE id_producto = %s", (cantidad, id_p))
                 total_final += final
                 unidades += cantidad
+
+            # También queda en el historial de ubicaciones
+            cursor.execute("""INSERT INTO ubicaciones (usuario_id, nombre, latitud, longitud, precision_m)
+                              VALUES (%s, %s, %s, %s, 0)""",
+                           (session['usuario_id'], session.get('nombre', 'cliente'), lat, lng))
         conn.commit()
         return jsonify({'total_final': round(total_final, 2), 'unidades': unidades}), 201
     except ValueError as e:
@@ -461,22 +530,45 @@ def api_metricas():
 
             cursor.execute("""
                 SELECT COALESCE(u.nombre, '(anónimos)') AS nombre,
-                       'Ingeniería' AS carrera,
                        COUNT(DISTINCT e.visitante_id) AS sesiones,
                        SUM(CASE WHEN e.tipo = 'vista' THEN 1 ELSE 0 END) AS vistas,
                        SUM(CASE WHEN e.tipo = 'clic' THEN 1 ELSE 0 END)  AS clics,
                        COALESCE(SUM(e.segundos), 0) AS segundos,
-                       MAX(e.fecha) AS ultima
+                       DATE_FORMAT(MAX(e.fecha), '%d/%m/%Y %H:%i') AS ultima
                 FROM eventos e
                 LEFT JOIN usuarios u ON u.id_usuario = e.usuario_id
                 GROUP BY e.usuario_id, u.nombre
-                ORDER BY ultima DESC
+                ORDER BY MAX(e.fecha) DESC
             """)
             usuarios = cursor.fetchall() or []
 
-            carreras = [
-                {'carrera': 'Ingeniería en Tecnologías de la Información', 'usuarios': len(usuarios), 'clics': resumen['clics'], 'segundos': sum(u.get('segundos', 0) for u in usuarios)}
-            ]
+            # ----- Ventas -----
+            cursor.execute("""
+                SELECT COUNT(*) AS pedidos,
+                       COALESCE(SUM(cantidad), 0) AS piezas,
+                       COALESCE(SUM(total_final), 0) AS ingresos
+                FROM ventas
+            """)
+            ventas = cursor.fetchone() or {'pedidos': 0, 'piezas': 0, 'ingresos': 0}
+
+            cursor.execute("""
+                SELECT p.nombre, SUM(v.cantidad) AS piezas, SUM(v.total_final) AS ingresos
+                FROM ventas v INNER JOIN productos p ON p.id_producto = v.id_producto
+                GROUP BY p.id_producto, p.nombre
+                ORDER BY piezas DESC
+                LIMIT 6
+            """)
+            top_productos = cursor.fetchall() or []
+
+            # ----- Satisfacción (pregunta 1 de la encuesta) -----
+            cursor.execute("""
+                SELECT pregunta1 AS respuesta, COUNT(*) AS total
+                FROM respuestas
+                WHERE pregunta1 IS NOT NULL AND pregunta1 != ''
+                GROUP BY pregunta1
+                ORDER BY total DESC
+            """)
+            satisfaccion = cursor.fetchall() or []
 
             cursor.execute("""
                 SELECT DATE_FORMAT(e.fecha, '%H:%i:%s') AS hora,
@@ -495,7 +587,9 @@ def api_metricas():
             'paginas': paginas,
             'clics': clics,
             'usuarios': usuarios,
-            'carreras': carreras,
+            'ventas': ventas,
+            'top_productos': top_productos,
+            'satisfaccion': satisfaccion,
             'recientes': recientes
         })
     except Exception as e:
@@ -680,19 +774,32 @@ def vista_fotos():
             return redirect(destino)
 
         import time
-        nombre_final = f"cliente{session['usuario_id']}_{int(time.time() * 1000)}{ext}"
-        carpeta_uploads = os.path.join(app.root_path, 'static', 'uploads')
-        os.makedirs(carpeta_uploads, exist_ok=True)
-        archivo.save(os.path.join(carpeta_uploads, nombre_final))
+        public_id = None
+        try:
+            if USA_CLOUDINARY:
+                # Se guarda en la nube: no se pierde cuando Render reinicia
+                res = cloudinary.uploader.upload(
+                    archivo, folder='starwish/clientes', resource_type='image',
+                    transformation=[{'width': 1200, 'crop': 'limit', 'quality': 'auto', 'fetch_format': 'auto'}])
+                nombre_final = res['secure_url']
+                public_id = res['public_id']
+            else:
+                nombre_final = f"cliente{session['usuario_id']}_{int(time.time() * 1000)}{ext}"
+                carpeta_uploads = os.path.join(app.root_path, 'static', 'uploads')
+                os.makedirs(carpeta_uploads, exist_ok=True)
+                archivo.save(os.path.join(carpeta_uploads, nombre_final))
+        except Exception as e:
+            flash(f'No se pudo subir la imagen: {e}', 'error')
+            return redirect(destino)
 
         try:
             conexion = get_db_connection()
             with conexion.cursor() as cursor:
                 cursor.execute("""INSERT INTO fotos (usuario_id, nombre, archivo, tipo, bytes, creado_en,
-                                                     id_producto, talla, ajuste, comentario)
-                                  VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s)""",
+                                                     id_producto, talla, ajuste, comentario, public_id)
+                                  VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s)""",
                                (session['usuario_id'], session.get('nombre', 'Cliente'), nombre_final,
-                                archivo.mimetype, tamano_bytes, id_producto, talla, ajuste, comentario))
+                                archivo.mimetype, tamano_bytes, id_producto, talla, ajuste, comentario, public_id))
             conexion.commit()
             conexion.close()
             flash('¡Gracias! Tu foto ya aparece en la galería de clientes.', 'success')
@@ -728,14 +835,20 @@ def eliminar_foto(id_foto):
     try:
         conexion = get_db_connection()
         with conexion.cursor() as cursor:
-            cursor.execute("SELECT usuario_id, archivo FROM fotos WHERE id = %s", (id_foto,))
+            cursor.execute("SELECT usuario_id, archivo, public_id FROM fotos WHERE id = %s", (id_foto,))
             foto = cursor.fetchone()
             if foto and (foto['usuario_id'] == session['usuario_id'] or session.get('rol') == 'admin'):
                 cursor.execute("DELETE FROM fotos WHERE id = %s", (id_foto,))
                 conexion.commit()
-                ruta = os.path.join(app.root_path, 'static', 'uploads', foto['archivo'] or '')
-                if foto['archivo'] and os.path.isfile(ruta):
-                    os.remove(ruta)
+                if foto.get('public_id') and USA_CLOUDINARY:
+                    try:
+                        cloudinary.uploader.destroy(foto['public_id'])
+                    except Exception:
+                        pass
+                elif foto['archivo'] and not foto['archivo'].startswith('http'):
+                    ruta = os.path.join(app.root_path, 'static', 'uploads', foto['archivo'])
+                    if os.path.isfile(ruta):
+                        os.remove(ruta)
                 flash('Foto eliminada.', 'success')
             else:
                 flash('No puedes eliminar esta foto.', 'error')
