@@ -166,6 +166,12 @@ def init_db():
                     cursor.execute(f"ALTER TABLE fotos ADD COLUMN {columna}")
                 except:
                     pass
+            # Atención al cliente: cada mensaje es una consulta que la tienda responde
+            for columna in ("id_usuario INT NULL", "respuesta TEXT NULL", "respondido_en DATETIME NULL"):
+                try:
+                    cursor.execute(f"ALTER TABLE mensajes ADD COLUMN {columna}")
+                except:
+                    pass
             # Dirección de entrega de cada venta
             for columna in ("direccion_envio VARCHAR(255) NULL", "latitud DECIMAL(9, 6) NULL",
                             "longitud DECIMAL(9, 6) NULL"):
@@ -308,6 +314,7 @@ def api_checkout():
         conn.begin()
         total_final = 0.0
         unidades = 0
+        primer_id = None
         with conn.cursor() as cursor:
             for item in items:
                 try:
@@ -336,6 +343,8 @@ def api_checkout():
                                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                                (session['usuario_id'], id_p, cantidad, precio_unit, bruto, TASA, impuesto, final,
                                 direccion, lat, lng))
+                if primer_id is None:
+                    primer_id = cursor.lastrowid
                 cursor.execute("UPDATE productos SET stock = stock - %s WHERE id_producto = %s", (cantidad, id_p))
                 total_final += final
                 unidades += cantidad
@@ -345,7 +354,8 @@ def api_checkout():
                               VALUES (%s, %s, %s, %s, 0)""",
                            (session['usuario_id'], session.get('nombre', 'cliente'), lat, lng))
         conn.commit()
-        return jsonify({'total_final': round(total_final, 2), 'unidades': unidades}), 201
+        return jsonify({'total_final': round(total_final, 2), 'unidades': unidades,
+                        'folio': folio_de(primer_id)}), 201
     except ValueError as e:
         if conn: conn.rollback()
         return jsonify({'error': str(e)}), 422
@@ -689,47 +699,184 @@ def regalo():
         return redirect(url_for('login'))
     return render_template('regalo.html')
 
+# ----------------------------------------------------
+# ATENCIÓN AL CLIENTE: chatbot + consultas que responde la tienda
+# ----------------------------------------------------
+def folio_de(id_venta):
+    return f"SW-{int(id_venta):05d}" if id_venta else None
+
+# Respuestas del asistente. Cambia los textos por las políticas reales de tu tienda.
+BOT = {
+    'saludo': "¡Hola{nombre}! Soy Estrella, la asistente de Starwish. ¿En qué te ayudo?",
+    'envio': "Enviamos a todo México. La entrega tarda de 3 a 5 días hábiles después de tu compra. "
+             "Tu dirección de entrega la eliges en el mapa al momento de pagar.",
+    'tallas': "Cada prenda muestra sus tallas disponibles. Si dudas entre dos, te recomendamos la más grande. "
+              "En la sección Comunidad puedes ver fotos de clientes y cómo les quedó su talla.",
+    'devolucion': "Tienes 15 días después de recibir tu pedido para pedir un cambio de talla o una devolución. "
+                  "La prenda debe estar sin usar y con etiquetas. Pide tu cambio aquí con una asesora.",
+    'pago': "Aceptamos tarjetas Visa, Mastercard y American Express. "
+            "El cobro se confirma al instante y recibes tu folio en pantalla.",
+    'tienda': "Nuestra tienda está en Coacalco, Estado de México. Abrimos de lunes a sábado de 10:00 a 20:00.",
+    'cupon': "Contesta nuestra encuesta de servicio y te regalamos el cupón STARWISH10 con 10% de descuento en tienda.",
+    'gracias': "¡Con gusto! Si necesitas algo más, aquí estoy.",
+    'asesora': "Claro. Escribe tu duda con todos los detalles (por ejemplo, tu folio) y una asesora te responderá aquí mismo.",
+    'nada': "Mmm, no estoy segura de haber entendido. Elige una opción de abajo o deja tu mensaje a una asesora.",
+}
+OPCIONES = ['Mis pedidos', 'Envíos', 'Tallas', 'Cambios y devoluciones', 'Formas de pago', 'Hablar con una asesora']
+
+# Palabras clave de cada tema (sin acentos y en minúsculas)
+INTENCIONES = [
+    ('asesora', ('asesor', 'humano', 'persona', 'agente', 'hablar con', 'queja', 'reclamo')),
+    ('pedido', ('pedido', 'mi compra', 'mis compras', 'orden', 'folio', 'rastre', 'donde esta mi', 'ya llego', 'cuando llega', 'estado')),
+    ('devolucion', ('devol', 'cambio', 'cambiar', 'reembolso', 'regresar')),
+    ('envio', ('envio', 'enviar', 'entrega', 'paqueteria', 'cuanto tarda', 'domicilio')),
+    ('tallas', ('talla', 'medida', 'me queda', 'tamano', 'chica', 'grande')),
+    ('pago', ('pago', 'pagar', 'tarjeta', 'efectivo', 'oxxo', 'transferencia', 'meses')),
+    ('tienda', ('tienda', 'ubica', 'direccion', 'horario', 'abren', 'cierran', 'sucursal', 'donde estan')),
+    ('cupon', ('cupon', 'descuento', 'promo', 'oferta', 'codigo')),
+    ('gracias', ('gracias', 'thank', 'excelente', 'genial')),
+    ('saludo', ('hola', 'buenas', 'buenos dias', 'buen dia', 'hey', 'que tal')),
+]
+ENLACES = {
+    'tallas': {'texto': 'Ver fotos de clientes', 'url': '/fotos'},
+    'tienda': {'texto': 'Ver mapa y cómo llegar', 'url': '/mapas'},
+    'cupon': {'texto': 'Contestar encuesta', 'url': '/encuesta'},
+    'pedido': {'texto': 'Ir al catálogo', 'url': '/menu'},
+}
+
+def _normalizar(texto):
+    import unicodedata
+    texto = unicodedata.normalize('NFD', texto.lower())
+    return ''.join(c for c in texto if unicodedata.category(c) != 'Mn')
+
+def _pedidos_de(cursor, id_usuario):
+    """Últimos pedidos del cliente (una compra = artículos registrados en el mismo momento)."""
+    cursor.execute("""
+        SELECT MIN(v.id_venta) AS id, v.created_at AS fecha, SUM(v.cantidad) AS piezas,
+               SUM(v.total_final) AS total, MAX(v.direccion_envio) AS direccion,
+               GROUP_CONCAT(p.nombre ORDER BY v.id_venta SEPARATOR ', ') AS productos
+        FROM ventas v JOIN productos p ON p.id_producto = v.id_producto
+        WHERE v.id_usuario = %s
+        GROUP BY v.created_at
+        ORDER BY v.created_at DESC
+        LIMIT 3
+    """, (id_usuario,))
+    from datetime import datetime
+    pedidos = []
+    for r in cursor.fetchall():
+        dias = (datetime.now() - r['fecha']).days if r['fecha'] else 0
+        estado = 'Preparando tu pedido' if dias < 1 else 'En camino' if dias < 5 else 'Entregado'
+        pedidos.append({
+            'folio': folio_de(r['id']),
+            'fecha': r['fecha'].strftime('%d/%m/%Y') if r['fecha'] else '',
+            'productos': r['productos'],
+            'piezas': int(r['piezas'] or 0),
+            'total': float(r['total'] or 0),
+            'estado': estado,
+            'direccion': r['direccion'] or '',
+        })
+    return pedidos
+
 @app.route('/mensajes')
 def mensajes():
     if 'usuario_id' not in session:
+        flash('Inicia sesión para hablar con atención al cliente.', 'error')
         return redirect(url_for('login'))
-    return render_template('mensajes.html')
+    return render_template('mensajes.html', opciones=OPCIONES)
 
-@app.get('/api/mensajes')
-def listar_mensajes():
-    desde = request.args.get("desde", default=0, type=int)
+@app.post('/api/soporte/bot')
+def soporte_bot():
+    """Chatbot por palabras clave. No usa servicios externos."""
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'Inicia sesión.'}), 401
+    texto = str((request.get_json(silent=True) or {}).get('texto', '')).strip()[:300]
+    limpio = _normalizar(texto)
+
+    intencion = 'nada'
+    for clave, palabras in INTENCIONES:
+        if any(p in limpio for p in palabras):
+            intencion = clave
+            break
+
+    respuesta = {'intencion': intencion, 'opciones': OPCIONES, 'enlace': ENLACES.get(intencion)}
+    if intencion == 'pedido':
+        try:
+            conn = get_db_connection()
+            with conn.cursor() as cursor:
+                pedidos = _pedidos_de(cursor, session['usuario_id'])
+            conn.close()
+        except Exception:
+            return jsonify({**respuesta, 'texto': 'No pude consultar tus pedidos en este momento. Intenta de nuevo en un rato.'})
+        respuesta['pedidos'] = pedidos
+        respuesta['texto'] = (f"Encontré tus últimos {len(pedidos)} pedidos:" if len(pedidos) > 1
+                              else "Este es tu pedido más reciente:" if pedidos
+                              else "Aún no tienes pedidos. Cuando compres, aquí verás su estado.")
+    else:
+        partes = (session.get('nombre') or '').split()
+        respuesta['texto'] = BOT[intencion].format(nombre=f", {partes[0]}" if partes else '')
+    if intencion == 'asesora':
+        respuesta['accion'] = 'ticket'
+    return jsonify(respuesta)
+
+@app.get('/api/soporte/tickets')
+def listar_tickets():
+    """El cliente ve sus consultas; la administradora ve todas."""
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'Inicia sesión.'}), 401
+    es_admin = session.get('rol') == 'admin'
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            cursor.execute("SELECT id, usuario, texto, fecha FROM mensajes WHERE id > %s ORDER BY id ASC", (desde,))
-            nuevos = cursor.fetchall()
-            for m in nuevos:
-                if m.get('fecha'):
-                    m['fecha'] = str(m['fecha'])
+            sql = """SELECT id, usuario, texto, respuesta,
+                            DATE_FORMAT(fecha, '%%d/%%m/%%Y %%H:%%i') AS fecha,
+                            DATE_FORMAT(respondido_en, '%%d/%%m/%%Y %%H:%%i') AS respondido_en
+                     FROM mensajes {} ORDER BY (respuesta IS NULL) DESC, id DESC LIMIT 100"""
+            if es_admin:
+                cursor.execute(sql.format('WHERE id_usuario IS NOT NULL'), ())
+            else:
+                cursor.execute(sql.format('WHERE id_usuario = %s'), (session['usuario_id'],))
+            tickets = cursor.fetchall()
         conn.close()
-        return jsonify(nuevos), 200
-    except Exception as e:
-        return jsonify([]), 200
+        return jsonify(tickets)
+    except Exception:
+        return jsonify([])
 
-@app.post('/api/mensajes')
-def crear_mensaje():
-    datos = request.get_json(silent=True) or {}
-    usuario = str(datos.get("usuario", "")).strip()
-    texto = str(datos.get("texto", "")).strip()
-
-    if not usuario or not texto:
-        return jsonify({"error": "Campos obligatorios."}), 400
-
+@app.post('/api/soporte/tickets')
+def crear_ticket():
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'Inicia sesión.'}), 401
+    texto = str((request.get_json(silent=True) or {}).get('texto', '')).strip()
+    if len(texto) < 5:
+        return jsonify({'error': 'Describe tu duda con un poco más de detalle.'}), 400
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            cursor.execute("INSERT INTO mensajes (usuario, texto) VALUES (%s, %s)", (usuario, texto))
-            mensaje_id = cursor.lastrowid
+            cursor.execute("INSERT INTO mensajes (usuario, texto, id_usuario) VALUES (%s, %s, %s)",
+                           (session.get('nombre', 'Cliente')[:50], texto[:1000], session['usuario_id']))
+            nuevo = cursor.lastrowid
         conn.commit()
         conn.close()
-        return jsonify({"id": mensaje_id, "usuario": usuario, "texto": texto}), 201
-    except Exception as e:
-        return jsonify({"error": "Error al guardar el mensaje."}), 500
+        return jsonify({'id': nuevo}), 201
+    except Exception:
+        return jsonify({'error': 'No se pudo enviar tu mensaje.'}), 500
+
+@app.post('/api/soporte/tickets/<int:id_ticket>/responder')
+def responder_ticket(id_ticket):
+    if session.get('rol') != 'admin':
+        return jsonify({'error': 'No autorizado'}), 403
+    respuesta = str((request.get_json(silent=True) or {}).get('respuesta', '')).strip()
+    if not respuesta:
+        return jsonify({'error': 'Escribe una respuesta.'}), 400
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            cursor.execute("UPDATE mensajes SET respuesta = %s, respondido_en = NOW() WHERE id = %s",
+                           (respuesta[:2000], id_ticket))
+        conn.commit()
+        conn.close()
+        return jsonify({'ok': True})
+    except Exception:
+        return jsonify({'error': 'No se pudo guardar la respuesta.'}), 500
 
 @app.route('/crud')
 def crud():
