@@ -1,128 +1,39 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Servicio de Mensajería</title>
-  <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='assets/global.css') }}">
-  <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
-  <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
-  <style>
-    .chat-container {
-      max-width: 600px;
-      margin: 20px auto;
-      padding: 30px;
-      background: rgba(255, 255, 255, 0.65);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.8);
-      border-radius: 30px;
-      box-shadow: 0 20px 40px rgba(14, 116, 144, 0.15),
-                  inset 0 1px 2px rgba(255, 255, 255, 0.9);
-      position: relative;
-      z-index: 2;
-    }
-    #caja-mensajes {
-      height: 300px;
-      overflow-y: auto;
-      border: 1px solid rgba(186, 230, 253, 0.8);
-      border-radius: 12px;
-      padding: 15px;
-      background: rgba(240, 249, 255, 0.6);
-      margin-bottom: 20px;
-      box-shadow: inset 2px 2px 5px rgba(14, 116, 144, 0.05);
-    }
-    .msg-item {
-      padding: 10px 14px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.8);
-      margin-bottom: 10px;
-      max-width: 80%;
-      word-wrap: break-word;
-      color: #1e293b;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-    }
-    .msg-item.propio {
-      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
-      color: #ffffff !important;
-      margin-left: auto;
-    }
-    .msg-meta {
-      font-size: 0.75em;
-      opacity: 0.8;
-      margin-bottom: 4px;
-    }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    .form-group label {
-      display: block;
-      font-weight: bold !important;
-      color: #1e293b;
-      margin-bottom: 6px !important;
-    }
-  </style>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
-</head>
-<body class="glass-bg" style="position: relative; overflow-x: hidden; margin: 0; padding: 0;">
+{% extends 'base.html' %}
+{% block title %}Mensajes{% endblock %}
 
-  <!-- Burbujas decorativas en el fondo -->
-  <div class="bg-bubble" style="width: 70px; height: 70px; top: 15%; left: 10%;"></div>
-  <div class="bg-bubble" style="width: 50px; height: 50px; top: 70%; right: 12%;"></div>
-  <div class="bg-bubble" style="width: 40px; height: 40px; top: 30%; right: 15%;"></div>
-
-  <div data-role="page" id="chat-page" style="background: transparent !important; position: relative; z-index: 2;">
-    
-    <!-- Barra Superior (Header) con el logo de ElectroRuta -->
-    <div data-role="header" data-theme="b" style="padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; min-height: 65px;">
-        <div style="display: flex; align-items: center;">
-            <div style="background: #1E40AF; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 1px solid #FBBF24; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                <span style="font-size: 20px; line-height: 1;">⚡</span>
-            </div>
-            <span style="font-size: 22px; font-weight: bold; color: #FBBF24; letter-spacing: 0.5px;">ElectroRuta</span>
-        </div>
-        <div>
-            <a href="{{ url_for('menu') }}" data-icon="home" class="ui-btn ui-corner-all ui-icon-home" data-ajax="false" style="background: transparent; border: none; color: #FBBF24; font-size: 14px;">Menú</a>
-        </div>
-    </div>
-
-    <div role="main" class="ui-content" style="padding: 15px;">
-      <div class="chat-container">
-        <h2 style="text-align: center; color: #1e40af; margin-top: 0; margin-bottom: 10px;">Chat de la Comunidad</h2>
-        
-        <div style="text-align: right; margin-bottom: 15px;">
-          <span id="estado-chat" style="font-size: 12px; color: #0284c7; font-weight: bold;">Conectando...</span>
+{% block content %}
+<main class="container page-main">
+    <div class="panel panel-narrow">
+        <div class="chat-head">
+            <h3>Chat de la comunidad</h3>
+            <span class="chat-status" id="estado-chat">Conectando...</span>
         </div>
 
-        <div id="caja-mensajes">
-          <p id="chat-vacio" style="text-align: center; color: #64748b; margin-top: 100px;">Cargando mensajes...</p>
+        <div class="chat-box" id="caja-mensajes">
+            <p class="chat-empty" id="chat-vacio">Cargando mensajes...</p>
         </div>
 
         <form id="form-chat">
-          <div class="form-group">
-            <label for="chat-usuario">Tu Nombre:</label>
-            <input type="text" id="chat-usuario" value="{{ session.get('nombre', 'Invitado') }}" maxlength="30" class="glass-input" required>
-          </div>
+            <div class="form-field">
+                <label for="chat-usuario">Tu nombre</label>
+                <input type="text" id="chat-usuario" value="{{ session.get('nombre', 'Invitado') }}" maxlength="30" required>
+            </div>
 
-          <div class="form-group">
-            <label for="chat-texto">Mensaje:</label>
-            <input type="text" id="chat-texto" placeholder="Escribe un mensaje..." maxlength="500" class="glass-input" required autocomplete="off">
-          </div>
+            <div class="form-field">
+                <label for="chat-texto">Mensaje</label>
+                <input type="text" id="chat-texto" placeholder="Escribe un mensaje..." maxlength="500" required autocomplete="off">
+            </div>
 
-          <div style="margin-top: 20px;">
-            <button type="submit" id="btn-enviar" class="glass-btn">Enviar Mensaje</button>
-          </div>
+            <button type="submit" id="btn-enviar" class="btn-primary-pill">
+                <i class="fa-solid fa-paper-plane"></i> Enviar mensaje
+            </button>
         </form>
-      </div>
     </div>
+</main>
+{% endblock %}
 
-    <div data-role="footer" data-position="fixed" data-theme="b">
-      <h4>Chat en tiempo real conectado a Aiven</h4>
-    </div>
-  </div>
-
-  <script>
+{% block scripts %}
+<script>
     const INTERVALO_MS = 2000;
     let ultimoId = 0;
 
@@ -135,72 +46,71 @@
     const botonEnviar = document.getElementById("btn-enviar");
 
     function pintarMensaje(m) {
-      if (vacio) vacio.style.display = 'none';
-      const div = document.createElement("div");
-      const esPropio = m.usuario === campoUsuario.value.trim();
-      div.className = "msg-item" + (esPropio ? " propio" : "");
+        if (vacio) vacio.style.display = 'none';
+        const div = document.createElement("div");
+        const esPropio = m.usuario === campoUsuario.value.trim();
+        div.className = "msg-item" + (esPropio ? " propio" : "");
 
-      const meta = document.createElement("div");
-      meta.className = "msg-meta";
-      const fechaObj = m.fecha ? new Date(m.fecha) : new Date();
-      const hora = fechaObj.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
-      meta.textContent = m.usuario + " · " + hora;
+        const meta = document.createElement("div");
+        meta.className = "msg-meta";
+        const fechaObj = m.fecha ? new Date(m.fecha) : new Date();
+        const hora = fechaObj.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+        meta.textContent = m.usuario + " · " + hora;
 
-      const cuerpo = document.createElement("div");
-      cuerpo.textContent = m.texto;
+        const cuerpo = document.createElement("div");
+        cuerpo.textContent = m.texto;
 
-      div.append(meta, cuerpo);
-      caja.appendChild(div);
+        div.append(meta, cuerpo);
+        caja.appendChild(div);
     }
 
     async function consultarMensajes() {
-      try {
-        const resp = await fetch("/api/mensajes?desde=" + ultimoId);
-        if (!resp.ok) throw new Error("HTTP " + resp.status);
-        const nuevos = await resp.json();
-        if (nuevos.length > 0) {
-          if (vacio) vacio.style.display = 'none';
-          nuevos.forEach(pintarMensaje);
-          ultimoId = nuevos[nuevos.length - 1].id;
-          caja.scrollTop = caja.scrollHeight;
-        } else if (ultimoId === 0 && vacio) {
-          vacio.textContent = "Aún no hay mensajes. ¡Sé el primero!";
+        try {
+            const resp = await fetch("/api/mensajes?desde=" + ultimoId);
+            if (!resp.ok) throw new Error("HTTP " + resp.status);
+            const nuevos = await resp.json();
+            if (nuevos.length > 0) {
+                if (vacio) vacio.style.display = 'none';
+                nuevos.forEach(pintarMensaje);
+                ultimoId = nuevos[nuevos.length - 1].id;
+                caja.scrollTop = caja.scrollHeight;
+            } else if (ultimoId === 0 && vacio) {
+                vacio.textContent = "Aún no hay mensajes. ¡Sé el primero!";
+            }
+            estado.textContent = "Conectado";
+        } catch (err) {
+            estado.textContent = "Sin conexión...";
         }
-        estado.textContent = "Conectado";
-      } catch (err) {
-        estado.textContent = "Sin conexión...";
-      }
     }
 
     formulario.addEventListener("submit", async (evento) => {
-      evento.preventDefault();
-      const usuario = campoUsuario.value.trim();
-      const texto = campoTexto.value.trim();
-      if (!usuario || !texto) return;
+        evento.preventDefault();
+        const usuario = campoUsuario.value.trim();
+        const texto = campoTexto.value.trim();
+        if (!usuario || !texto) return;
 
-      botonEnviar.disabled = true;
-      try {
-        const resp = await fetch("/api/mensajes", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ usuario, texto })
-        });
-        if (!resp.ok) {
-          alert("No se pudo enviar el mensaje.");
-        } else {
-          campoTexto.value = "";
-          await consultarMensajes();
+        botonEnviar.disabled = true;
+        try {
+            const resp = await fetch("/api/mensajes", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ usuario, texto })
+            });
+            if (!resp.ok) {
+                swToast("No se pudo enviar el mensaje.");
+            } else {
+                campoTexto.value = "";
+                await consultarMensajes();
+            }
+        } catch (err) {
+            swToast("Error al conectar con el servidor.");
+        } finally {
+            botonEnviar.disabled = false;
+            campoTexto.focus();
         }
-      } catch (err) {
-        alert("Error al conectar con el servidor.");
-      } finally {
-        botonEnviar.disabled = false;
-        campoTexto.focus();
-      }
     });
 
     consultarMensajes();
     setInterval(consultarMensajes, INTERVALO_MS);
-  </script>
-</body>
-</html>
+</script>
+{% endblock %}
