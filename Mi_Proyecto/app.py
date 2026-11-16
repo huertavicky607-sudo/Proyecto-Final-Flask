@@ -507,12 +507,6 @@ def mapas():
         return redirect(url_for('login'))
     return render_template('pagina1.html')
 
-@app.route('/presentacion')
-def presentacion():
-    if 'usuario_id' not in session:
-        return redirect(url_for('login'))
-    return render_template('pagina2.html')
-
 @app.route('/youtube')
 def youtube():
     if 'usuario_id' not in session:
