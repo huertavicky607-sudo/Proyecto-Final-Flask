@@ -22,6 +22,7 @@
                         <strong>Elige o arrastra una foto</strong>
                         <small>JPG, PNG o WEBP · máx. 5 MB</small>
                     </span>
+                    <span class="ugc-drop-change" id="drop-change" hidden><i class="fa-solid fa-rotate"></i> Cambiar foto</span>
                 </label>
                 <canvas id="canvas" hidden></canvas>
 
@@ -150,6 +151,8 @@
         preview.src = URL.createObjectURL(file);
         preview.hidden = false;
         dropTxt.hidden = true;
+        document.getElementById('drop-change').hidden = false;
+        drop.classList.add('has-foto');
     }
     input.addEventListener('change', () => mostrarPreview(input.files[0]));
 
@@ -171,6 +174,11 @@
         stream = null;
         video.hidden = true;
         btnCapturar.hidden = true;
+        // Vuelve a mostrar la foto elegida o el mensaje para elegir una
+        const hayFoto = input.files.length > 0;
+        preview.hidden = !hayFoto;
+        dropTxt.hidden = hayFoto;
+        document.getElementById('drop-change').hidden = !hayFoto;
         btnCamara.innerHTML = '<i class="fa-solid fa-camera"></i> Usar cámara';
     }
 
@@ -182,6 +190,7 @@
             video.hidden = false;
             preview.hidden = true;
             dropTxt.hidden = true;
+            document.getElementById('drop-change').hidden = true;
             btnCapturar.hidden = false;
             btnCamara.innerHTML = '<i class="fa-solid fa-xmark"></i> Cerrar cámara';
         } catch (err) {
