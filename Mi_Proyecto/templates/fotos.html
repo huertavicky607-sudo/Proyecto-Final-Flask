@@ -8,6 +8,19 @@
         <p>Comparte cómo te queda tu prenda Starwish y ayuda a otros clientes a elegir su talla.</p>
     </div>
 
+    {% if rol == 'admin' %}
+        {% if usa_cloudinary %}
+            <div class="flash flash-success" style="margin-bottom: 20px;">
+                <i class="fa-solid fa-cloud"></i> Cloudinary activo: las fotos nuevas se guardan de forma permanente. (Solo tú ves este aviso.)
+            </div>
+        {% else %}
+            <div class="flash flash-error" style="margin-bottom: 20px;">
+                <i class="fa-solid fa-triangle-exclamation"></i> Cloudinary no está activo: las fotos se guardan en el servidor y Render las borra en cada deploy o reinicio.
+                Agrega la variable <strong>CLOUDINARY_URL</strong> en Render → Environment. (Solo tú ves este aviso.)
+            </div>
+        {% endif %}
+    {% endif %}
+
     <div class="ugc-layout">
         <!-- ===== Formulario para subir ===== -->
         <aside class="panel ugc-upload">
