@@ -126,6 +126,13 @@
 /* Cualquier elemento con el atributo hidden se oculta, aunque su clase tenga display */
 [hidden] { display: none !important; }
 
+/* Logo con el gatito */
+.logo-link { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; }
+.logo-img { width: 44px; height: 44px; object-fit: contain; flex: none; transition: transform .3s ease; }
+.logo-link:hover .logo-img { transform: rotate(-8deg) scale(1.06); }
+@media (max-width: 600px) { .logo-img { width: 36px; height: 36px; } }
+@media (prefers-reduced-motion: reduce) { .logo-img { transition: none; } }
+
 .cookie-banner {
     position: fixed;
     left: 16px;
