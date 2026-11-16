@@ -7,6 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'clave_secreta_desarrollo')
+app.config['MAX_CONTENT_LENGTH'] = 8 * 1024 * 1024   # límite de subida (fotos)
 
 # ----------------------------------------------------
 # CONFIGURACIÓN DE BASE DE DATOS (AIVEN)
@@ -139,9 +140,20 @@ def init_db():
                     archivo VARCHAR(255),
                     tipo VARCHAR(50),
                     bytes INT,
-                    creado_en DATETIME
+                    creado_en DATETIME,
+                    id_producto INT NULL,
+                    talla VARCHAR(20) NULL,
+                    ajuste VARCHAR(20) NULL,
+                    comentario VARCHAR(500) NULL
                 )
             """)
+            # Columnas nuevas para las fotos de clientes (si la tabla ya existía)
+            for columna in ("id_producto INT NULL", "talla VARCHAR(20) NULL",
+                            "ajuste VARCHAR(20) NULL", "comentario VARCHAR(500) NULL"):
+                try:
+                    cursor.execute(f"ALTER TABLE fotos ADD COLUMN {columna}")
+                except:
+                    pass
         conn.commit()
         conn.close()
         print("Base de datos inicializada correctamente.")
@@ -149,6 +161,11 @@ def init_db():
         print(f"Aviso de conexión DB: {e}")
 
 init_db()
+
+# Nombre y rol disponibles en TODAS las plantillas (encabezado de base.html)
+@app.context_processor
+def inyectar_usuario():
+    return {'nombre': session.get('nombre'), 'rol': session.get('rol', 'invitado')}
 
 @app.route('/')
 @app.route('/menu')
@@ -185,22 +202,89 @@ def detalle_producto(id_producto):
                 
             cursor.execute("SELECT * FROM productos WHERE id_producto != %s AND activo = 1 LIMIT 4", (id_producto,))
             relacionados = cursor.fetchall()
-            
+
+            cursor.execute("""SELECT id, nombre, archivo, talla, ajuste, comentario, creado_en
+                              FROM fotos WHERE id_producto = %s ORDER BY id DESC LIMIT 12""", (id_producto,))
+            fotos_clientes = cursor.fetchall()
+
         conn.close()
-        
+
         lista_colores = [c.strip() for c in (producto.get('colores') or 'negro,blanco').split(',')]
         lista_tallas = [t.strip() for t in (producto.get('tallas') or 'S,M,L').split(',')]
-        
-        return render_template('detalle_producto.html', 
-                               producto=producto, 
-                               colores=lista_colores, 
-                               tallas=lista_tallas, 
+
+        return render_template('detalle_producto.html',
+                               producto=producto,
+                               colores=lista_colores,
+                               tallas=lista_tallas,
                                relacionados=relacionados,
+                               fotos_clientes=fotos_clientes,
                                nombre=session.get('nombre'),
                                rol=session.get('rol'))
     except Exception as e:
         flash(f'Error al cargar el producto: {e}', 'error')
         return redirect(url_for('menu'))
+
+@app.route('/carrito')
+def carrito():
+    return render_template('carrito.html')
+
+@app.post('/api/checkout')
+def api_checkout():
+    """Registra la compra: una venta por artículo y descuenta el stock."""
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'Inicia sesión para comprar.'}), 401
+
+    datos = request.get_json(silent=True) or {}
+    items = datos.get('items') or []
+    if not isinstance(items, list) or not items:
+        return jsonify({'error': 'Tu carrito está vacío.'}), 400
+
+    TASA = 16.0
+    conn = None
+    try:
+        conn = get_db_connection()
+        conn.begin()
+        total_final = 0.0
+        unidades = 0
+        with conn.cursor() as cursor:
+            for item in items:
+                try:
+                    id_p = int(item.get('id_producto'))
+                    cantidad = int(item.get('cantidad', 1))
+                except (TypeError, ValueError):
+                    raise ValueError('Artículo inválido en el carrito.')
+                if cantidad < 1:
+                    raise ValueError('Cantidad inválida.')
+
+                cursor.execute("SELECT nombre, precio, stock FROM productos WHERE id_producto = %s AND activo = 1 FOR UPDATE", (id_p,))
+                prod = cursor.fetchone()
+                if not prod:
+                    raise ValueError('Uno de los productos ya no está disponible.')
+                if prod['stock'] < cantidad:
+                    raise ValueError(f"Solo quedan {prod['stock']} piezas de {prod['nombre']}.")
+
+                precio_unit = float(prod['precio'])
+                bruto = precio_unit * cantidad
+                impuesto = bruto * TASA / 100
+                final = bruto + impuesto
+
+                cursor.execute("""INSERT INTO ventas (id_usuario, id_producto, cantidad, precio_unit, total_bruto,
+                                                      tasa_impuesto, total_impuesto, total_final)
+                                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+                               (session['usuario_id'], id_p, cantidad, precio_unit, bruto, TASA, impuesto, final))
+                cursor.execute("UPDATE productos SET stock = stock - %s WHERE id_producto = %s", (cantidad, id_p))
+                total_final += final
+                unidades += cantidad
+        conn.commit()
+        return jsonify({'total_final': round(total_final, 2), 'unidades': unidades}), 201
+    except ValueError as e:
+        if conn: conn.rollback()
+        return jsonify({'error': str(e)}), 422
+    except Exception as e:
+        if conn: conn.rollback()
+        return jsonify({'error': f'Error al procesar la compra: {e}'}), 500
+    finally:
+        if conn: conn.close()
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -566,52 +650,105 @@ def crud():
         return redirect(url_for('menu'))
     return render_template('crud.html')
 
+EXT_PERMITIDAS = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
+MAX_FOTO_BYTES = 5 * 1024 * 1024   # 5 MB
+AJUSTES = ('Pequeña', 'Perfecta', 'Grande')
+
 @app.route('/fotos', methods=['GET', 'POST'])
 def vista_fotos():
+    """Fotos de clientes (estilo Shein): cada cliente sube la foto de su prenda."""
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
 
-    conexion = get_db_connection()
-
     if request.method == 'POST':
-        if 'foto' in request.files:
-            file = request.files['foto']
-            if file.filename != '':
-                filename = secure_filename(file.filename)
-                import time
-                _, ext = os.path.splitext(filename)
-                nombre_final = f"{session.get('nombre', 'invitado')}_{int(time.time())}{ext}"
-                
-                carpeta_uploads = os.path.join(app.root_path, 'static', 'uploads')
-                os.makedirs(carpeta_uploads, exist_ok=True)
-                
-                ruta_guardado = os.path.join(carpeta_uploads, nombre_final)
-                file.save(ruta_guardado)
-                
-                tamano_bytes = os.path.getsize(ruta_guardado)
-                tipo_archivo = file.content_type or 'image/jpeg'
-                nombre_usuario = session.get('nombre', 'Invitado')
-                
-                try:
-                    with conexion.cursor() as cursor:
-                        sql = """INSERT INTO fotos (usuario_id, nombre, archivo, tipo, bytes, creado_en) 
-                                 VALUES (%s, %s, %s, %s, %s, NOW())"""
-                        cursor.execute(sql, (session.get('usuario_id'), nombre_usuario, nombre_final, tipo_archivo, tamano_bytes))
-                        conexion.commit()
-                finally:
-                    pass
-                
-        conexion.close()
-        return redirect(url_for('vista_fotos'))
+        archivo = request.files.get('foto')
+        id_producto = request.form.get('id_producto', type=int)
+        talla = request.form.get('talla', '').strip()[:20] or None
+        ajuste = request.form.get('ajuste', '').strip()
+        ajuste = ajuste if ajuste in AJUSTES else None
+        comentario = request.form.get('comentario', '').strip()[:500] or None
+        destino = url_for('vista_fotos', producto=id_producto) if id_producto else url_for('vista_fotos')
 
+        if not archivo or archivo.filename == '':
+            flash('Selecciona o toma una foto de tu prenda.', 'error')
+            return redirect(destino)
+
+        _, ext = os.path.splitext(secure_filename(archivo.filename).lower())
+        if ext not in EXT_PERMITIDAS or not (archivo.mimetype or '').startswith('image/'):
+            flash('Solo se permiten imágenes JPG, PNG, WEBP o GIF.', 'error')
+            return redirect(destino)
+
+        archivo.seek(0, os.SEEK_END)
+        tamano_bytes = archivo.tell()
+        archivo.seek(0)
+        if tamano_bytes > MAX_FOTO_BYTES:
+            flash('La imagen pesa más de 5 MB.', 'error')
+            return redirect(destino)
+
+        import time
+        nombre_final = f"cliente{session['usuario_id']}_{int(time.time() * 1000)}{ext}"
+        carpeta_uploads = os.path.join(app.root_path, 'static', 'uploads')
+        os.makedirs(carpeta_uploads, exist_ok=True)
+        archivo.save(os.path.join(carpeta_uploads, nombre_final))
+
+        try:
+            conexion = get_db_connection()
+            with conexion.cursor() as cursor:
+                cursor.execute("""INSERT INTO fotos (usuario_id, nombre, archivo, tipo, bytes, creado_en,
+                                                     id_producto, talla, ajuste, comentario)
+                                  VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s)""",
+                               (session['usuario_id'], session.get('nombre', 'Cliente'), nombre_final,
+                                archivo.mimetype, tamano_bytes, id_producto, talla, ajuste, comentario))
+            conexion.commit()
+            conexion.close()
+            flash('¡Gracias! Tu foto ya aparece en la galería de clientes.', 'success')
+        except Exception as e:
+            flash(f'No se pudo guardar la foto: {e}', 'error')
+        return redirect(destino)
+
+    filtro = request.args.get('producto', type=int)
+    lista_fotos, productos = [], []
     try:
+        conexion = get_db_connection()
         with conexion.cursor() as cursor:
-            cursor.execute("SELECT * FROM fotos ORDER BY id DESC")
+            cursor.execute("SELECT id_producto, nombre, tallas FROM productos WHERE activo = 1 ORDER BY nombre")
+            productos = cursor.fetchall()
+            sql = """SELECT f.*, p.nombre AS producto, p.imagen AS producto_imagen
+                     FROM fotos f LEFT JOIN productos p ON p.id_producto = f.id_producto"""
+            if filtro:
+                cursor.execute(sql + " WHERE f.id_producto = %s ORDER BY f.id DESC", (filtro,))
+            else:
+                cursor.execute(sql + " ORDER BY f.id DESC")
             lista_fotos = cursor.fetchall()
-    finally:
         conexion.close()
+    except Exception as e:
+        flash(f'Error al cargar la galería: {e}', 'error')
 
-    return render_template('fotos.html', fotos=lista_fotos)
+    return render_template('fotos.html', fotos=lista_fotos, productos=productos,
+                           filtro=filtro, ajustes=AJUSTES)
+
+@app.post('/fotos/<int:id_foto>/eliminar')
+def eliminar_foto(id_foto):
+    if 'usuario_id' not in session:
+        return redirect(url_for('login'))
+    try:
+        conexion = get_db_connection()
+        with conexion.cursor() as cursor:
+            cursor.execute("SELECT usuario_id, archivo FROM fotos WHERE id = %s", (id_foto,))
+            foto = cursor.fetchone()
+            if foto and (foto['usuario_id'] == session['usuario_id'] or session.get('rol') == 'admin'):
+                cursor.execute("DELETE FROM fotos WHERE id = %s", (id_foto,))
+                conexion.commit()
+                ruta = os.path.join(app.root_path, 'static', 'uploads', foto['archivo'] or '')
+                if foto['archivo'] and os.path.isfile(ruta):
+                    os.remove(ruta)
+                flash('Foto eliminada.', 'success')
+            else:
+                flash('No puedes eliminar esta foto.', 'error')
+        conexion.close()
+    except Exception as e:
+        flash(f'Error al eliminar: {e}', 'error')
+    return redirect(request.referrer or url_for('vista_fotos'))
 
 @app.route('/api.php', methods=['GET', 'POST'])
 def api_crud():
@@ -739,156 +876,6 @@ def api_crud():
         return jsonify({'error': 'Operación no válida'}), 400
     except Exception as e:
         return jsonify({'error': f'Error en el servidor: {str(e)}'}), 500
-
-# =====================================================================
-# PEGAR EN app.py, justo ANTES de la línea:   if __name__ == '__main__':
-# (después de la ruta api_crud). No necesitas cambiar nada más del archivo.
-# =====================================================================
-
-# 1) Datos del usuario disponibles en TODAS las plantillas (base.html los usa).
-#    Si una ruta pasa nombre=/rol= explícitamente (como menu), esos valores mandan.
-@app.context_processor
-def inyectar_usuario():
-    return {
-        'nombre': session.get('nombre'),
-        'rol': session.get('rol', 'invitado')
-    }
-
-
-# 2) Guardar color y talla de cada venta (se ejecuta una vez al arrancar;
-#    si las columnas ya existen, el ALTER falla y se ignora).
-def asegurar_columnas_ventas():
-    try:
-        conn = get_db_connection()
-        with conn.cursor() as cursor:
-            for columna, tipo in (('color', 'VARCHAR(50)'), ('talla', 'VARCHAR(20)')):
-                try:
-                    cursor.execute(f"ALTER TABLE ventas ADD COLUMN {columna} {tipo} NULL")
-                except Exception:
-                    pass
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        print(f"Aviso al preparar columnas de ventas: {e}")
-
-asegurar_columnas_ventas()
-
-
-# 3) Página del carrito (el contenido vive en el navegador; ver carrito.html)
-@app.route('/carrito')
-def carrito():
-    return render_template('carrito.html')
-
-
-# 4) Finalizar compra: el servidor NO confía en precios ni usuario del navegador.
-#    - Usa el usuario de la sesión.
-#    - Lee el precio real de la base de datos.
-#    - Valida y descuenta el stock en una sola transacción (todo o nada).
-TASA_IVA_PORCENTAJE = 16.0
-
-class CheckoutError(Exception):
-    def __init__(self, mensaje, status=400):
-        super().__init__(mensaje)
-        self.mensaje = mensaje
-        self.status = status
-
-
-@app.post('/api/checkout')
-def api_checkout():
-    if 'usuario_id' not in session:
-        return jsonify({'error': 'Inicia sesión para completar tu compra.'}), 401
-
-    datos = request.get_json(silent=True) or {}
-    items = datos.get('items')
-    if not isinstance(items, list) or not items or len(items) > 50:
-        return jsonify({'error': 'Tu carrito está vacío.'}), 400
-
-    conn = None
-    try:
-        conn = get_db_connection()
-        total_general = 0.0
-        unidades = 0
-
-        with conn.cursor() as cursor:
-            for it in items:
-                try:
-                    id_p = int(it.get('id_producto'))
-                    cantidad = int(it.get('cantidad', 1))
-                except (TypeError, ValueError, AttributeError):
-                    raise CheckoutError('Datos de producto inválidos.')
-                if cantidad < 1 or cantidad > 100:
-                    raise CheckoutError('Cantidad inválida.')
-
-                color = (str(it.get('color') or '')[:50]) or None
-                talla = (str(it.get('talla') or '')[:20]) or None
-
-                cursor.execute(
-                    "SELECT nombre, precio, stock FROM productos WHERE id_producto = %s AND activo = 1 FOR UPDATE",
-                    (id_p,)
-                )
-                prod = cursor.fetchone()
-                if not prod:
-                    raise CheckoutError('Uno de los productos ya no está disponible.', 422)
-                if prod['stock'] < cantidad:
-                    raise CheckoutError(
-                        f"Stock insuficiente de «{prod['nombre']}» (quedan {prod['stock']}).", 409
-                    )
-
-                precio_unit = float(prod['precio'])
-                total_bruto = round(cantidad * precio_unit, 2)
-                total_impuesto = round(total_bruto * TASA_IVA_PORCENTAJE / 100.0, 2)
-                total_final = round(total_bruto + total_impuesto, 2)
-
-                cursor.execute(
-                    "UPDATE productos SET stock = stock - %s WHERE id_producto = %s",
-                    (cantidad, id_p)
-                )
-                cursor.execute(
-                    """INSERT INTO ventas (id_usuario, id_producto, cantidad, precio_unit, total_bruto,
-                                           tasa_impuesto, total_impuesto, total_final, color, talla)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                    (session['usuario_id'], id_p, cantidad, precio_unit, total_bruto,
-                     TASA_IVA_PORCENTAJE, total_impuesto, total_final, color, talla)
-                )
-                total_general += total_final
-                unidades += cantidad
-
-        conn.commit()
-        conn.close()
-        return jsonify({
-            'message': 'Compra realizada con éxito.',
-            'total_final': round(total_general, 2),
-            'unidades': unidades
-        }), 201
-
-    except CheckoutError as e:
-        if conn:
-            conn.rollback()
-            conn.close()
-        return jsonify({'error': e.mensaje}), e.status
-    except Exception as e:
-        print(f"Error en checkout: {e}")
-        if conn:
-            try:
-                conn.rollback()
-                conn.close()
-            except Exception:
-                pass
-        return jsonify({'error': 'No se pudo procesar la compra. Intenta de nuevo.'}), 500
-
-
-# =====================================================================
-# MUY RECOMENDADO (seguridad): /api.php hoy está abierto a cualquiera,
-# incluso sin iniciar sesión (lista usuarios con correo y teléfono, y puede
-# borrar usuarios, productos y ventas). Como ya no se usa para comprar,
-# agrega estas 2 líneas AL INICIO de la función api_crud(), antes del try:
-#
-#     if session.get('rol') != 'admin':
-#         return jsonify({'error': 'No autorizado'}), 403
-#
-# También conviene quitar de app.py los valores por defecto de DB_PASS
-# (y rotar esa contraseña en Aiven): la clave real está escrita en el código.
-# =====================================================================
 
 if __name__ == '__main__':
     puerto = int(os.environ.get("PORT", 5000))
