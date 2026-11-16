@@ -3,7 +3,60 @@
 
 {% block content %}
 <main class="container">
-    <div class="catalogo-header">
+    <!-- ===== PORTADA / PRESENTACIÓN ===== -->
+    {% set destacados = productos[:8] if productos else [] %}
+    {% set principal = destacados[0] if destacados else None %}
+    <section class="hero">
+        <div class="hero-grid">
+            <div class="hero-text">
+                <span class="hero-kicker"><i class="fa-solid fa-bolt"></i> Nueva temporada</span>
+                <h1>Las mejores prendas las encuentras en <span>Starwish</span></h1>
+                <p>Estilo, comodidad y calidad en cada pieza. Descubre lo nuevo, elige tu talla y recíbelo en casa.</p>
+                <div class="hero-actions">
+                    <a href="#catalogo" class="btn-primary-pill btn-inline"><i class="fa-solid fa-bag-shopping"></i> Ver catálogo</a>
+                    <a href="{{ url_for('vista_fotos') }}" class="btn-outline-pill btn-inline"><i class="fa-solid fa-camera-retro"></i> Fotos de clientes</a>
+                </div>
+                <ul class="hero-stats">
+                    <li><strong>{{ productos|length }}+</strong><span>Prendas</span></li>
+                    <li><strong>4.9 <i class="fa-solid fa-star"></i></strong><span>Calificación</span></li>
+                    <li><strong><i class="fa-solid fa-truck-fast"></i></strong><span>Envío rápido</span></li>
+                </ul>
+            </div>
+
+            <div class="hero-visual">
+                <div class="hero-blob"></div>
+                <span class="hero-dot d1"></span><span class="hero-dot d2"></span><span class="hero-dot d3"></span>
+                <img id="hero-img"
+                     src="{{ principal.imagen if principal and principal.imagen else 'https://placehold.co/500x500/f1f5f9/334155?text=Starwish' }}"
+                     alt="{{ principal.nombre if principal else 'Starwish' }}"
+                     onerror="this.src='https://placehold.co/500x500/f1f5f9/334155?text=Starwish'">
+                {% if principal %}
+                <a id="hero-tag" class="hero-tag" href="{{ url_for('detalle_producto', id_producto=principal.id_producto) }}">
+                    <span id="hero-nombre">{{ principal.nombre }}</span>
+                    <strong id="hero-precio">${{ "%.2f"|format(principal.precio) }}</strong>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if destacados|length > 1 %}
+        <div class="hero-strip" role="tablist" aria-label="Prendas destacadas">
+            {% for p in destacados %}
+                <button type="button" class="hero-thumb {% if loop.first %}active{% endif %}"
+                        data-img="{{ p.imagen or '' }}" data-nombre="{{ p.nombre }}"
+                        data-precio="${{ '%.2f'|format(p.precio) }}"
+                        data-url="{{ url_for('detalle_producto', id_producto=p.id_producto) }}"
+                        aria-label="{{ p.nombre }}">
+                    <img src="{{ p.imagen or 'https://placehold.co/120x120/f1f5f9/334155?text=SW' }}" alt="" loading="lazy"
+                         onerror="this.src='https://placehold.co/120x120/f1f5f9/334155?text=SW'">
+                </button>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </section>
+
+    <div class="catalogo-header" id="catalogo">
         <div>
             <h2>Catálogo de Productos</h2>
             <p style="color: #64748b; font-size: 15px;">Explora nuestros artículos disponibles en tiempo real.</p>
@@ -53,4 +106,40 @@
         </div>
     {% endif %}
 </main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Portada: al elegir una miniatura cambia la prenda destacada
+    (function () {
+        const img = document.getElementById('hero-img');
+        const tag = document.getElementById('hero-tag');
+        const thumbs = document.querySelectorAll('.hero-thumb');
+        if (!img || !thumbs.length) return;
+        let actual = 0, timer = null;
+
+        function mostrar(i) {
+            const t = thumbs[i];
+            actual = i;
+            thumbs.forEach(b => b.classList.toggle('active', b === t));
+            img.classList.add('swap');
+            setTimeout(() => {
+                img.src = t.dataset.img || 'https://placehold.co/500x500/f1f5f9/334155?text=Starwish';
+                img.alt = t.dataset.nombre;
+                if (tag) {
+                    tag.href = t.dataset.url;
+                    document.getElementById('hero-nombre').textContent = t.dataset.nombre;
+                    document.getElementById('hero-precio').textContent = t.dataset.precio;
+                }
+                img.classList.remove('swap');
+            }, 200);
+        }
+        function auto() {
+            clearInterval(timer);
+            timer = setInterval(() => mostrar((actual + 1) % thumbs.length), 4500);
+        }
+        thumbs.forEach((b, i) => b.addEventListener('click', () => { mostrar(i); auto(); }));
+        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) auto();
+    })();
+</script>
 {% endblock %}
