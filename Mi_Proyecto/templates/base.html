@@ -16,7 +16,7 @@
         ('youtube', 'Video / Iframe'),
         ('encuesta', 'Encuesta'),
         ('vista_fotos', 'Comunidad'),
-        ('mensajes', 'Mensajes')
+        ('mensajes', 'Atención al cliente')
     ] %}
 
     <div id="overlay"></div>
@@ -129,22 +129,30 @@
                 <ul>
                     <li><a href="{{ url_for('menu') }}">Catálogo</a></li>
                     <li><a href="{{ url_for('encuesta') }}">Encuesta de servicio</a></li>
-                    <li><a href="{{ url_for('mensajes') }}">Chat en vivo</a></li>
+                    <li><a href="{{ url_for('mensajes') }}">Atención al cliente</a></li>
                 </ul>
             </div>
             <div class="container-policies">
                 <ul>
                     <li><a href="{{ url_for('vista_fotos') }}">Fotos de clientes</a></li>
                     <li><a href="{{ url_for('carrito') }}">Mi carrito</a></li>
+                    <li><a href="#" data-abrir-cookies>Preferencias de cookies</a></li>
                 </ul>
             </div>
         </div>
     </footer>
 
     <!-- ===== AVISO DE COOKIES ===== -->
-    <div class="cookie-banner" id="cookie-banner" hidden>
-        <p><i class="fa-solid fa-cookie-bite"></i> Usamos cookies para medir las visitas y mejorar tu experiencia en Starwish.</p>
-        <button type="button" class="btn-cookie" id="cookie-ok">Entendido</button>
+    <div class="cookie-banner" id="cookie-banner" role="dialog" aria-labelledby="cookie-titulo" hidden>
+        <span class="cookie-icon"><i class="fa-solid fa-cookie-bite"></i></span>
+        <div class="cookie-txt">
+            <strong id="cookie-titulo">¿Aceptas las cookies?</strong>
+            <p>Usamos cookies necesarias para tu sesión y tu carrito, y otras para medir las visitas y mejorar Starwish.</p>
+        </div>
+        <div class="cookie-btns">
+            <button type="button" class="btn-cookie-sec" id="cookie-no">Solo necesarias</button>
+            <button type="button" class="btn-cookie" id="cookie-ok">Aceptar todas</button>
+        </div>
     </div>
 
     <script src="{{ url_for('static', filename='starwish-extra.js') }}"></script>
