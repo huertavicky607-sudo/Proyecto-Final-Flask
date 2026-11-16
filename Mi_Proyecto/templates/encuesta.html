@@ -1,68 +1,67 @@
 {% extends 'base.html' %}
-{% block title %}Encuesta UPVM{% endblock %}
+{% block title %}Encuesta de servicio{% endblock %}
 
 {% block content %}
 <main class="container page-main">
     <div class="panel panel-narrow">
-        <img src="{{ url_for('static', filename='images/image1.jpeg') }}" alt="Mi foto" class="avatar-big">
+        <div class="auth-icon"><i class="fa-solid fa-comment-dots"></i></div>
         <div class="page-hero" style="text-align: center;">
-            <h2>Encuesta sobre la UPVM</h2>
-            <p>Tus respuestas nos ayudan a mejorar. Solo toma un minuto.</p>
+            <h2>¿Cómo fue tu experiencia en Starwish?</h2>
+            <p>Responde 5 preguntas rápidas y recibe un cupón de descuento para tu próxima compra.</p>
         </div>
 
         <form action="{{ url_for('encuesta') }}" method="POST">
             <div class="form-field">
-                <label for="nombre">Nombre completo del participante</label>
-                <input type="text" name="nombre" id="nombre" placeholder="Ej. Juan Pérez López" required>
+                <label for="nombre">Tu nombre</label>
+                <input type="text" name="nombre" id="nombre" value="{{ session.get('nombre', '') }}" placeholder="Ej. Ana López" required maxlength="100">
             </div>
 
             <div class="form-field">
-                <label for="pregunta1">1. ¿Cómo calificas el nivel académico de los profesores?</label>
-                <select name="pregunta1" id="pregunta1" required>
-                    <option value="" disabled selected>Selecciona una opción</option>
-                    <option value="Excelente">Excelente</option>
-                    <option value="Bueno">Bueno</option>
-                    <option value="Regular">Regular</option>
-                    <option value="Deficiente">Deficiente</option>
-                </select>
-            </div>
-
-            <div class="form-field">
-                <span class="survey-q">2. ¿Consideras que las instalaciones están en buen estado?</span>
-                <div class="option-list">
-                    <label class="option-card"><input type="radio" name="pregunta2" value="Totalmente de acuerdo" required> Totalmente de acuerdo</label>
-                    <label class="option-card"><input type="radio" name="pregunta2" value="En desacuerdo"> En desacuerdo</label>
-                    <label class="option-card"><input type="radio" name="pregunta2" value="Neutral"> Neutral</label>
+                <span class="survey-q">1. ¿Cómo calificas tu experiencia de compra?</span>
+                <div class="option-list option-row">
+                    {% for op in ['Excelente', 'Buena', 'Regular', 'Mala'] %}
+                        <label class="option-card"><input type="radio" name="pregunta1" value="{{ op }}" required> {{ op }}</label>
+                    {% endfor %}
                 </div>
             </div>
 
             <div class="form-field">
-                <label for="pregunta3">3. ¿Qué servicio necesita mejorar con urgencia?</label>
+                <span class="survey-q">2. ¿Cómo te quedaron las tallas?</span>
+                <div class="option-list">
+                    {% for op in ['Tal como esperaba', 'Más pequeñas de lo esperado', 'Más grandes de lo esperado', 'Aún no he comprado'] %}
+                        <label class="option-card"><input type="radio" name="pregunta2" value="{{ op }}" required> {{ op }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label for="pregunta3">3. ¿Qué te gustaría que mejoráramos?</label>
                 <select name="pregunta3" id="pregunta3" required>
-                    <option value="" disabled selected>Selecciona un servicio</option>
-                    <option value="Cafetería">Cafetería</option>
-                    <option value="Biblioteca">Biblioteca</option>
-                    <option value="Servicios Escolares">Servicios Escolares</option>
-                    <option value="Conexión de Internet (Wi-Fi)">Conexión de Internet (Wi-Fi)</option>
+                    <option value="" disabled selected>Selecciona una opción</option>
+                    <option>Variedad de prendas</option>
+                    <option>Precios y promociones</option>
+                    <option>Tiempos de envío</option>
+                    <option>Guía de tallas</option>
+                    <option>Atención al cliente</option>
+                    <option>Página web / proceso de compra</option>
                 </select>
             </div>
 
             <div class="form-field">
-                <label for="pregunta4">4. ¿Qué sugerencia le darías a la administración?</label>
-                <input type="text" name="pregunta4" id="pregunta4" placeholder="Escribe tu sugerencia..." required>
+                <label for="pregunta4">4. ¿Qué prenda o estilo te gustaría encontrar en Starwish?</label>
+                <textarea name="pregunta4" id="pregunta4" rows="3" maxlength="500" placeholder="Ej. Chamarras oversize, vestidos de fiesta…" class="sw-textarea"></textarea>
             </div>
 
             <div class="form-field">
-                <label for="pregunta5">5. ¿Recomendarías la UPVM a un amigo o familiar?</label>
-                <select name="pregunta5" id="pregunta5" required>
-                    <option value="" disabled selected>Selecciona tu respuesta</option>
-                    <option value="Sí, definitivamente">Sí, definitivamente</option>
-                    <option value="Tal vez">Tal vez</option>
-                    <option value="No">No</option>
-                </select>
+                <span class="survey-q">5. ¿Recomendarías Starwish a un amigo o familiar?</span>
+                <div class="option-list option-row">
+                    {% for op in ['Sí, definitivamente', 'Tal vez', 'No'] %}
+                        <label class="option-card"><input type="radio" name="pregunta5" value="{{ op }}" required> {{ op }}</label>
+                    {% endfor %}
+                </div>
             </div>
 
-            <button type="submit" class="btn-primary-pill" style="margin-top: 10px;">Enviar encuesta</button>
+            <button type="submit" class="btn-primary-pill" style="margin-top: 10px;"><i class="fa-solid fa-paper-plane"></i> Enviar encuesta</button>
         </form>
     </div>
 </main>
