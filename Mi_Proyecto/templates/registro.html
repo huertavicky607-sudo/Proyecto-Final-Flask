@@ -1,55 +1,64 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Crear Cuenta</title>
-    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='assets/global.css') }}">
-    <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
-    <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
-</head>
-<body>
-    <div data-role="page" id="registro-page">
-        <div data-role="header" data-theme="b">
-            <!-- Botón para volver al menú principal -->
-            <a href="{{ url_for('menu') }}" data-icon="home" data-ajax="false">Menú</a>
-            <h1>Crear Cuenta</h1>
-        </div>
+{% extends 'base.html' %}
+{% block title %}Crear cuenta{% endblock %}
 
-        <div role="main" class="ui-content" style="max-width: 500px; margin: 20px auto;">
-            {% if error %}
-                <p style="color: red; text-align: center; font-weight: bold;">{{ error }}</p>
-            {% endif %}
+{% block content %}
+<main class="container auth-wrap">
+    <div class="auth-card">
+        <div class="auth-icon"><i class="fa-solid fa-user-plus"></i></div>
+        <h2>Crea tu cuenta</h2>
+        <p class="auth-sub">Regístrate para comprar y guardar tus pedidos.</p>
 
-            <form method="POST" action="{{ url_for('registro') }}">
-                <label for="nombre">Nombre completo:</label>
-                <input type="text" name="nombre" id="nombre" placeholder="Tu nombre" required>
+        {% if error %}
+            <div class="flash flash-error">{{ error }}</div>
+        {% endif %}
 
-                <label for="correo">Correo electrónico:</label>
-                <input type="email" name="correo" id="correo" placeholder="ejemplo@correo.com" required>
-
-                <label for="telefono">Teléfono:</label>
-                <input type="tel" name="telefono" id="telefono" placeholder="5512345678">
-
-                <label for="password">Contraseña (mínimo 6 caracteres):</label>
-                <input type="password" name="password" id="password" required>
-
-                <label for="confirmar">Confirmar contraseña:</label>
-                <input type="password" name="confirmar" id="confirmar" required>
-
-                <button type="submit" class="ui-btn ui-btn-b ui-corner-all" style="margin-top: 15px;">Registrarme</button>
-            </form>
-
-            <div style="text-align: center; margin-top: 20px;">
-                <p>¿Ya tienes cuenta?</p>
-                <a href="{{ url_for('login') }}" class="ui-btn ui-corner-all" data-ajax="false">Iniciar Sesión</a>
+        <form method="POST" action="{{ url_for('registro') }}">
+            <div class="form-field">
+                <label for="nombre">Nombre completo</label>
+                <div class="input-icon">
+                    <i class="fa-regular fa-user lead"></i>
+                    <input type="text" name="nombre" id="nombre" placeholder="Tu nombre" required autocomplete="name">
+                </div>
             </div>
-        </div>
 
-        <div data-role="footer" data-position="fixed">
-            <h4>Registro de Usuarios</h4>
-        </div>
+            <div class="form-field">
+                <label for="correo">Correo electrónico</label>
+                <div class="input-icon">
+                    <i class="fa-regular fa-envelope lead"></i>
+                    <input type="email" name="correo" id="correo" placeholder="ejemplo@correo.com" required autocomplete="email">
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label for="telefono">Teléfono <span style="color: #94a3b8; font-weight: 400;">(opcional)</span></label>
+                <div class="input-icon">
+                    <i class="fa-solid fa-phone lead"></i>
+                    <input type="tel" name="telefono" id="telefono" placeholder="5512345678" autocomplete="tel">
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label for="password">Contraseña <span style="color: #94a3b8; font-weight: 400;">(mínimo 6 caracteres)</span></label>
+                <div class="input-icon has-toggle">
+                    <i class="fa-solid fa-lock lead"></i>
+                    <input type="password" name="password" id="password" required minlength="6" autocomplete="new-password">
+                    <button type="button" class="toggle-pass" data-target="password" aria-label="Mostrar contraseña"><i class="fa-solid fa-eye"></i></button>
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label for="confirmar">Confirmar contraseña</label>
+                <div class="input-icon has-toggle">
+                    <i class="fa-solid fa-lock lead"></i>
+                    <input type="password" name="confirmar" id="confirmar" required minlength="6" autocomplete="new-password">
+                    <button type="button" class="toggle-pass" data-target="confirmar" aria-label="Mostrar contraseña"><i class="fa-solid fa-eye"></i></button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary-pill" style="margin-top: 6px;">Registrarme</button>
+        </form>
+
+        <p class="auth-switch">¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Iniciar sesión</a></p>
     </div>
-</body>
-</html>
+</main>
+{% endblock %}
