@@ -4,14 +4,14 @@
 {% block content %}
 <main class="container page-main">
     <div class="panel panel-narrow" style="text-align: center;">
-        <img src="{{ url_for('static', filename='images/image1.jpeg') }}" alt="Mi foto" class="avatar-big">
-        <h2 style="color: #0f172a; font-size: 26px;">¡Encuesta completada!</h2>
-        <p style="color: #64748b; margin-top: 8px;">Muchas gracias por tu tiempo. Tus respuestas se guardaron correctamente.</p>
+        <div class="auth-icon" style="background: #dcfce7; color: #16a34a;"><i class="fa-solid fa-check"></i></div>
+        <h2 style="color: #0f172a; font-size: 26px;">¡Gracias por tu opinión!</h2>
+        <p style="color: #64748b; margin-top: 8px;">Tus respuestas nos ayudan a traerte mejores prendas y un mejor servicio.</p>
 
         <div class="gift-box">🎁</div>
 
-        <div class="coupon">CÓDIGO: ORGULLO_UPVM</div>
-        <p style="font-size: 13px; color: #64748b; margin: 10px 0 26px;">(Válido para un café gratis en la próxima kermés universitaria)</p>
+        <div class="coupon">STARWISH10</div>
+        <p style="font-size: 13px; color: #64748b; margin: 10px 0 26px;">10% de descuento en tu próxima compra en tienda. Muestra este código en caja.</p>
 
         <a href="{{ url_for('menu') }}" class="btn-primary-pill">Volver al catálogo</a>
     </div>
