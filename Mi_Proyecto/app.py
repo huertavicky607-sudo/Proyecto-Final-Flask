@@ -740,6 +740,156 @@ def api_crud():
     except Exception as e:
         return jsonify({'error': f'Error en el servidor: {str(e)}'}), 500
 
+# =====================================================================
+# PEGAR EN app.py, justo ANTES de la línea:   if __name__ == '__main__':
+# (después de la ruta api_crud). No necesitas cambiar nada más del archivo.
+# =====================================================================
+
+# 1) Datos del usuario disponibles en TODAS las plantillas (base.html los usa).
+#    Si una ruta pasa nombre=/rol= explícitamente (como menu), esos valores mandan.
+@app.context_processor
+def inyectar_usuario():
+    return {
+        'nombre': session.get('nombre'),
+        'rol': session.get('rol', 'invitado')
+    }
+
+
+# 2) Guardar color y talla de cada venta (se ejecuta una vez al arrancar;
+#    si las columnas ya existen, el ALTER falla y se ignora).
+def asegurar_columnas_ventas():
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            for columna, tipo in (('color', 'VARCHAR(50)'), ('talla', 'VARCHAR(20)')):
+                try:
+                    cursor.execute(f"ALTER TABLE ventas ADD COLUMN {columna} {tipo} NULL")
+                except Exception:
+                    pass
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Aviso al preparar columnas de ventas: {e}")
+
+asegurar_columnas_ventas()
+
+
+# 3) Página del carrito (el contenido vive en el navegador; ver carrito.html)
+@app.route('/carrito')
+def carrito():
+    return render_template('carrito.html')
+
+
+# 4) Finalizar compra: el servidor NO confía en precios ni usuario del navegador.
+#    - Usa el usuario de la sesión.
+#    - Lee el precio real de la base de datos.
+#    - Valida y descuenta el stock en una sola transacción (todo o nada).
+TASA_IVA_PORCENTAJE = 16.0
+
+class CheckoutError(Exception):
+    def __init__(self, mensaje, status=400):
+        super().__init__(mensaje)
+        self.mensaje = mensaje
+        self.status = status
+
+
+@app.post('/api/checkout')
+def api_checkout():
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'Inicia sesión para completar tu compra.'}), 401
+
+    datos = request.get_json(silent=True) or {}
+    items = datos.get('items')
+    if not isinstance(items, list) or not items or len(items) > 50:
+        return jsonify({'error': 'Tu carrito está vacío.'}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        total_general = 0.0
+        unidades = 0
+
+        with conn.cursor() as cursor:
+            for it in items:
+                try:
+                    id_p = int(it.get('id_producto'))
+                    cantidad = int(it.get('cantidad', 1))
+                except (TypeError, ValueError, AttributeError):
+                    raise CheckoutError('Datos de producto inválidos.')
+                if cantidad < 1 or cantidad > 100:
+                    raise CheckoutError('Cantidad inválida.')
+
+                color = (str(it.get('color') or '')[:50]) or None
+                talla = (str(it.get('talla') or '')[:20]) or None
+
+                cursor.execute(
+                    "SELECT nombre, precio, stock FROM productos WHERE id_producto = %s AND activo = 1 FOR UPDATE",
+                    (id_p,)
+                )
+                prod = cursor.fetchone()
+                if not prod:
+                    raise CheckoutError('Uno de los productos ya no está disponible.', 422)
+                if prod['stock'] < cantidad:
+                    raise CheckoutError(
+                        f"Stock insuficiente de «{prod['nombre']}» (quedan {prod['stock']}).", 409
+                    )
+
+                precio_unit = float(prod['precio'])
+                total_bruto = round(cantidad * precio_unit, 2)
+                total_impuesto = round(total_bruto * TASA_IVA_PORCENTAJE / 100.0, 2)
+                total_final = round(total_bruto + total_impuesto, 2)
+
+                cursor.execute(
+                    "UPDATE productos SET stock = stock - %s WHERE id_producto = %s",
+                    (cantidad, id_p)
+                )
+                cursor.execute(
+                    """INSERT INTO ventas (id_usuario, id_producto, cantidad, precio_unit, total_bruto,
+                                           tasa_impuesto, total_impuesto, total_final, color, talla)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                    (session['usuario_id'], id_p, cantidad, precio_unit, total_bruto,
+                     TASA_IVA_PORCENTAJE, total_impuesto, total_final, color, talla)
+                )
+                total_general += total_final
+                unidades += cantidad
+
+        conn.commit()
+        conn.close()
+        return jsonify({
+            'message': 'Compra realizada con éxito.',
+            'total_final': round(total_general, 2),
+            'unidades': unidades
+        }), 201
+
+    except CheckoutError as e:
+        if conn:
+            conn.rollback()
+            conn.close()
+        return jsonify({'error': e.mensaje}), e.status
+    except Exception as e:
+        print(f"Error en checkout: {e}")
+        if conn:
+            try:
+                conn.rollback()
+                conn.close()
+            except Exception:
+                pass
+        return jsonify({'error': 'No se pudo procesar la compra. Intenta de nuevo.'}), 500
+
+
+# =====================================================================
+# MUY RECOMENDADO (seguridad): /api.php hoy está abierto a cualquiera,
+# incluso sin iniciar sesión (lista usuarios con correo y teléfono, y puede
+# borrar usuarios, productos y ventas). Como ya no se usa para comprar,
+# agrega estas 2 líneas AL INICIO de la función api_crud(), antes del try:
+#
+#     if session.get('rol') != 'admin':
+#         return jsonify({'error': 'No autorizado'}), 403
+#
+# También conviene quitar de app.py los valores por defecto de DB_PASS
+# (y rotar esa contraseña en Aiven): la clave real está escrita en el código.
+# =====================================================================
+
 if __name__ == '__main__':
     puerto = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=puerto, debug=True)
