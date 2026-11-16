@@ -1,167 +1,243 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subir foto y Galería</title>
-    <!-- Estilos generales del proyecto -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='assets/app.css') }}">
-    <style>
-        body {
-            margin: 0;
-            min-height: 100vh;
-            display: grid;
-            place-items: center;
-            padding: 16px;
-            font-family: system-ui, sans-serif;
-            background: #eef2f7;
-            color: #1f2937;
-        }
-        .tarjeta {
-            width: 100%;
-            max-width: 560px;
-            padding: 28px;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, .08);
-        }
-        h1 { margin-top: 0; font-size: 1.5rem; }
-        h2 { margin-top: 24px; font-size: 1.2rem; }
-        .btn-grupo {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        button, .boton, input[type="file"] {
-            display: inline-block;
-            width: 100%;
-            padding: 11px;
-            border: 0;
-            border-radius: 8px;
-            background: #2563eb;
-            color: #fff;
-            font-size: 1rem;
-            text-align: center;
-            text-decoration: none;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        button:hover { background: #1d4ed8; }
-        button:disabled { background: #94a3b8; cursor: not-allowed; }
-        .btn-secundario { background: #4b5563; }
-        .btn-secundario:hover { background: #374151; }
-        
-        #video {
-            width: 100%;
-            border-radius: 8px;
-            margin-top: 10px;
-            background: #000;
-            display: none;
-        }
-        .subtext {
-            margin-top: 14px;
-            font-size: 0.9rem;
-            color: #6b7280;
-        }
-        .galeria {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-top: 15px;
-        }
-        .foto-item {
-            text-align: center;
-        }
-        .galeria img {
-            width: 100%;
-            aspect-ratio: 1 / 1; /* Fuerza a que siempre sea un cuadrado perfecto */
-            object-fit: cover;   /* Evita que la foto se deforme al recortarla */
-            border-radius: 14px; /* Esquinas redondeadas idénticas a tu ejemplo */
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        .foto-item span {
-            font-size: 0.8rem;
-            color: #374151;
-            margin-top: 6px;
-            display: block;
-            font-weight: 500;
-        }
-    </style>
-</head>
-<body>
-    <main class="tarjeta">
-        <h1>Subir foto</h1>
-        <p>Sesión: <strong>{{ session.get('nombre', 'Invitado') }}</strong></p>
+{% extends 'base.html' %}
+{% block title %}Fotos de clientes{% endblock %}
 
-        <!-- Controles para la cámara en tiempo real -->
-        <div class="btn-grupo">
-            <button type="button" id="btn-activar">Activar cámara</button>
-            <button type="button" id="btn-capturar" class="btn-secundario" disabled>Tomar foto</button>
-        </div>
-        
-        <video id="video" autoplay playsinline></video>
-        <canvas id="canvas" style="display:none;"></canvas>
-
-        <p class="subtext">o elige una foto de tu equipo</p>
-
-        <!-- Formulario para subir archivos -->
-        <form action="{{ url_for('vista_fotos') }}" method="POST" enctype="multipart/form-data">
-            <input type="file" name="foto" accept="image/*" style="background: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db;">
-            <button type="submit" style="margin-top: 8px;">Subir foto</button>
-        </form>
-
-        <h2>Galería</h2>
-        <div class="galeria">
-    {% for foto in fotos %}
-    <div class="foto-item">
-        <!-- Ajusta la ruta 'uploads/' según dónde guardes tus archivos de imagen -->
-        <img src="{{ url_for('static', filename='uploads/' + foto.archivo) }}" alt="Foto de galería">
-        <span>{{ foto.nombre }}</span>
+{% block content %}
+<main class="container page-main">
+    <div class="page-hero">
+        <h2><i class="fa-solid fa-camera-retro" style="color: #0ea5e9;"></i> Fotos de clientes</h2>
+        <p>Comparte cómo te queda tu prenda Starwish y ayuda a otros clientes a elegir su talla.</p>
     </div>
-    {% endfor %}
-</div>
 
-        <a href="{{ url_for('menu') }}" class="boton btn-secundario" style="margin-top: 24px; text-decoration: none;" data-ajax="false">← Volver al Menú Principal</a>
-    </main>
+    <div class="ugc-layout">
+        <!-- ===== Formulario para subir ===== -->
+        <aside class="panel ugc-upload">
+            <h3>Sube tu foto</h3>
+            <form action="{{ url_for('vista_fotos') }}" method="POST" enctype="multipart/form-data" id="form-foto">
+                <label class="ugc-drop" id="drop">
+                    <input type="file" name="foto" id="input-foto" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
+                    <img id="preview" alt="Vista previa" hidden>
+                    <video id="video" autoplay playsinline muted hidden></video>
+                    <span class="ugc-drop-txt" id="drop-txt">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <strong>Elige o arrastra una foto</strong>
+                        <small>JPG, PNG o WEBP · máx. 5 MB</small>
+                    </span>
+                </label>
+                <canvas id="canvas" hidden></canvas>
 
-    <script>
-        const btnActivar = document.getElementById('btn-activar');
-        const btnCapturar = document.getElementById('btn-capturar');
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const inputFile = document.querySelector('input[type="file"]');
+                <div class="ugc-cam">
+                    <button type="button" class="btn-outline-pill" id="btn-camara"><i class="fa-solid fa-camera"></i> Usar cámara</button>
+                    <button type="button" class="btn-outline-pill" id="btn-capturar" hidden><i class="fa-solid fa-circle-dot"></i> Tomar foto</button>
+                </div>
 
-        let streamCamara = null;
+                <div class="form-field">
+                    <label for="sel-producto">¿Qué prenda compraste?</label>
+                    <select name="id_producto" id="sel-producto">
+                        <option value="">— Selecciona un producto —</option>
+                        {% for p in productos %}
+                            <option value="{{ p.id_producto }}" data-tallas="{{ p.tallas or '' }}" {% if filtro == p.id_producto %}selected{% endif %}>{{ p.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-        // Activar la cámara web en tiempo real
-        btnActivar.addEventListener('click', async () => {
-            try {
-                streamCamara = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                video.srcObject = streamCamara;
-                video.style.display = 'block';
-                btnCapturar.disabled = false;
-                btnActivar.textContent = 'Cámara activa';
-                btnActivar.disabled = true;
-            } catch (err) {
-                alert('No se pudo acceder a la cámara: ' + err.message);
-            }
-        });
+                <div class="form-field">
+                    <label for="sel-talla">Talla comprada</label>
+                    <select name="talla" id="sel-talla">
+                        <option value="">— Talla —</option>
+                    </select>
+                </div>
 
-        // Tomar la foto desde el video activo
-        btnCapturar.addEventListener('click', () => {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const context = canvas.getContext('2d');
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            canvas.toBlob(blob => {
-                const file = new File([blob], "captura_camara.jpg", { type: "image/jpeg" });
-                const container = new DataTransfer();
-                container.items.add(file);
-                inputFile.files = container.files;
-                alert('¡Foto capturada con éxito y cargada en el formulario!');
-            }, 'image/jpeg');
-        });
-    </script>
-</body>
-</html>
+                <div class="form-field">
+                    <span class="form-label">¿Cómo te quedó?</span>
+                    <div class="ugc-fit">
+                        {% for a in ajustes %}
+                            <label><input type="radio" name="ajuste" value="{{ a }}" {% if a == 'Perfecta' %}checked{% endif %}><span>{{ a }}</span></label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label for="comentario">Comentario (opcional)</label>
+                    <textarea name="comentario" id="comentario" maxlength="500" rows="3" placeholder="Ej. La tela es suave, mido 1.60 m y la M me quedó perfecta."></textarea>
+                </div>
+
+                <button type="submit" class="btn-primary-pill" id="btn-subir"><i class="fa-solid fa-paper-plane"></i> Publicar foto</button>
+            </form>
+        </aside>
+
+        <!-- ===== Galería ===== -->
+        <section class="ugc-gallery-wrap">
+            <div class="ugc-filtros">
+                <a href="{{ url_for('vista_fotos') }}" class="chip {% if not filtro %}active{% endif %}">Todas</a>
+                {% for p in productos %}
+                    <a href="{{ url_for('vista_fotos', producto=p.id_producto) }}" class="chip {% if filtro == p.id_producto %}active{% endif %}">{{ p.nombre }}</a>
+                {% endfor %}
+            </div>
+
+            {% if fotos %}
+                <div class="ugc-grid">
+                    {% for f in fotos %}
+                    <article class="ugc-card">
+                        <button type="button" class="ugc-img" data-src="{{ url_for('static', filename='uploads/' + f.archivo) }}" aria-label="Ampliar foto">
+                            <img src="{{ url_for('static', filename='uploads/' + f.archivo) }}" alt="Foto de {{ f.nombre }}" loading="lazy">
+                        </button>
+                        <div class="ugc-body">
+                            <div class="ugc-user">
+                                <span class="ugc-avatar">{{ (f.nombre or 'C')[0]|upper }}</span>
+                                <div>
+                                    <strong>{{ f.nombre or 'Cliente' }}</strong>
+                                    {% if f.creado_en %}<small>{{ f.creado_en.strftime('%d/%m/%Y') if f.creado_en.strftime is defined else f.creado_en }}</small>{% endif %}
+                                </div>
+                            </div>
+                            {% if f.talla or f.ajuste %}
+                                <div class="ugc-tags">
+                                    {% if f.talla %}<span class="tag">Talla {{ f.talla }}</span>{% endif %}
+                                    {% if f.ajuste %}<span class="tag tag-fit">Ajuste: {{ f.ajuste }}</span>{% endif %}
+                                </div>
+                            {% endif %}
+                            {% if f.comentario %}<p class="ugc-text">{{ f.comentario }}</p>{% endif %}
+                            {% if f.producto %}
+                                <a href="{{ url_for('detalle_producto', id_producto=f.id_producto) }}" class="ugc-prod">
+                                    <i class="fa-solid fa-tag"></i> {{ f.producto }}
+                                </a>
+                            {% endif %}
+                            {% if f.usuario_id == session.get('usuario_id') or rol == 'admin' %}
+                                <form action="{{ url_for('eliminar_foto', id_foto=f.id) }}" method="POST" class="ugc-del">
+                                    <button type="submit"><i class="fa-regular fa-trash-can"></i> Eliminar</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="cart-empty">
+                    <i class="fa-solid fa-images"></i>
+                    <h3>Aún no hay fotos {% if filtro %}de este producto{% endif %}</h3>
+                    <p style="margin-top: 8px;">¡Sé la primera persona en compartir cómo le queda!</p>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+
+    <!-- Visor de imagen -->
+    <div class="ugc-lightbox" id="lightbox" hidden>
+        <button type="button" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+        <img alt="Foto ampliada">
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const input = document.getElementById('input-foto');
+    const preview = document.getElementById('preview');
+    const dropTxt = document.getElementById('drop-txt');
+    const drop = document.getElementById('drop');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const btnCamara = document.getElementById('btn-camara');
+    const btnCapturar = document.getElementById('btn-capturar');
+    const selProducto = document.getElementById('sel-producto');
+    const selTalla = document.getElementById('sel-talla');
+    let stream = null;
+
+    // ---------- Vista previa ----------
+    function mostrarPreview(file) {
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) { swToast('La imagen pesa más de 5 MB'); input.value = ''; return; }
+        preview.src = URL.createObjectURL(file);
+        preview.hidden = false;
+        dropTxt.hidden = true;
+    }
+    input.addEventListener('change', () => mostrarPreview(input.files[0]));
+
+    // Arrastrar y soltar
+    ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('drag'); }));
+    ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('drag'); }));
+    drop.addEventListener('drop', e => {
+        const file = e.dataTransfer.files[0];
+        if (!file || !file.type.startsWith('image/')) return;
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+        mostrarPreview(file);
+    });
+
+    // ---------- Cámara ----------
+    function apagarCamara() {
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        stream = null;
+        video.hidden = true;
+        btnCapturar.hidden = true;
+        btnCamara.innerHTML = '<i class="fa-solid fa-camera"></i> Usar cámara';
+    }
+
+    btnCamara.addEventListener('click', async () => {
+        if (stream) { apagarCamara(); return; }
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+            video.srcObject = stream;
+            video.hidden = false;
+            preview.hidden = true;
+            dropTxt.hidden = true;
+            btnCapturar.hidden = false;
+            btnCamara.innerHTML = '<i class="fa-solid fa-xmark"></i> Cerrar cámara';
+        } catch (err) {
+            swToast('No se pudo acceder a la cámara');
+        }
+    });
+
+    btnCapturar.addEventListener('click', () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        canvas.toBlob(blob => {
+            const file = new File([blob], 'captura.jpg', { type: 'image/jpeg' });
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+            apagarCamara();
+            mostrarPreview(file);
+            swToast('¡Foto capturada!');
+        }, 'image/jpeg', 0.9);
+    });
+
+    // Evita que el clic en el video abra el selector de archivos
+    video.addEventListener('click', e => e.preventDefault());
+
+    // ---------- Tallas según el producto ----------
+    function cargarTallas() {
+        const opt = selProducto.selectedOptions[0];
+        const tallas = (opt && opt.dataset.tallas ? opt.dataset.tallas : 'XS,S,M,L,XL').split(',').map(t => t.trim()).filter(Boolean);
+        selTalla.innerHTML = '<option value="">— Talla —</option>' + tallas.map(t => `<option>${t}</option>`).join('');
+    }
+    selProducto.addEventListener('change', cargarTallas);
+    cargarTallas();
+
+    // ---------- Validar antes de enviar ----------
+    document.getElementById('form-foto').addEventListener('submit', e => {
+        if (!input.files.length) { e.preventDefault(); swToast('Primero elige o toma una foto'); return; }
+        document.getElementById('btn-subir').disabled = true;
+    });
+
+    // ---------- Visor ----------
+    const lightbox = document.getElementById('lightbox');
+    document.querySelectorAll('.ugc-img').forEach(b => b.addEventListener('click', () => {
+        lightbox.querySelector('img').src = b.dataset.src;
+        lightbox.hidden = false;
+    }));
+    lightbox.addEventListener('click', () => { lightbox.hidden = true; });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') lightbox.hidden = true; });
+
+    // Confirmación para eliminar
+    document.querySelectorAll('.ugc-del').forEach(f => f.addEventListener('submit', e => {
+        const btn = f.querySelector('button');
+        if (!btn.dataset.confirmar) {
+            e.preventDefault();
+            btn.dataset.confirmar = '1';
+            btn.innerHTML = '¿Seguro? Toca de nuevo';
+        }
+    }));
+</script>
+{% endblock %}
