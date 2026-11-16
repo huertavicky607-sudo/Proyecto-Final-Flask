@@ -30,9 +30,72 @@
         .row-colors { flex-wrap: wrap; }
         .row-colors .container-color { min-width: 48px; border: 1px solid rgba(15, 23, 42, .15); }
 
-        /* Menú lateral móvil: fijo a la pantalla */
+        /* ---------- Encabezado (igual que en el catálogo) ---------- */
+        .header.container { flex-wrap: wrap; gap: 15px; }
+        .header .menu-nav { flex-wrap: wrap; gap: 8px; }
+        .header .menu-nav li a { font-size: 14px; padding: 8px 14px; }
+        .header .logo { font-size: 24px; white-space: nowrap; }
+        .header-user { display: flex; align-items: center; gap: 12px; }
+        .header-user .carrito { flex: 0 0 auto; }
+        .badge-rol {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            background: #0ea5e9;
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+        .logout-link { color: #ef4444; font-size: 18px; }
+        .btn-admin-crud {
+            background-color: #0f172a;
+            color: #fff;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 500px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Celular / tablet: hamburguesa | logo | usuario y carrito en una sola fila */
         @media (max-width: 990px) {
-            .menu-responsive { position: fixed; top: 0; left: 0; box-shadow: 0 10px 30px #00000030; }
+            .header.container {
+                display: grid;
+                grid-template-columns: 1fr auto 1fr;
+                align-items: center;
+                gap: 10px;
+            }
+            .header .menu-hamburger { justify-self: start; }
+            .header .logo { text-align: center; }
+            .header-user { order: 3; justify-self: end; }
+
+            /* Menú lateral fijo a la pantalla */
+            .menu-responsive {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                height: 100dvh;
+                overflow-y: auto;
+                box-shadow: 0 10px 30px #00000030;
+            }
+        }
+
+        /* Celular: chip circular; nombre y salir están en el menú lateral */
+        @media (max-width: 600px) {
+            .badge-txt, .btn-login-txt, .logout-link { display: none; }
+            .badge-rol, .btn-login {
+                width: 36px;
+                height: 36px;
+                padding: 0 !important;
+                justify-content: center;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
@@ -51,16 +114,39 @@
                     <li><a href="{{ url_for('menu') }}">Catálogo</a></li>
                     <li><a href="{{ url_for('mapas') }}">Mapas API</a></li>
                     <li><a href="{{ url_for('vista_ubicacion') }}">Ubicación</a></li>
-                    <li><a href="{{ url_for('youtube') }}">Video</a></li>
+                    <li><a href="{{ url_for('youtube') }}">Video / Iframe</a></li>
                     <li><a href="{{ url_for('encuesta') }}">Encuesta</a></li>
                     <li><a href="{{ url_for('vista_fotos') }}">Fotos</a></li>
                     <li><a href="{{ url_for('mensajes') }}">Mensajes</a></li>
+                    {% if rol == 'admin' %}
+                        <li><a href="{{ url_for('crud') }}" style="color: #0284c7; font-weight: 600;">Admin CRUD</a></li>
+                        <li><a href="{{ url_for('metrics') }}" style="color: #d97706; font-weight: 600;">Métricas</a></li>
+                    {% endif %}
                 </ul>
             </nav>
 
-            <div class="carrito">
-                <img src="{{ url_for('static', filename='cart.svg') }}" alt="carrito">
-                <div class="count-products-cart" id="cart-counter">0</div>
+            <div class="header-user">
+                {% if session.get('usuario_id') %}
+                    {% if nombre %}
+                        <span class="badge-rol" title="{{ nombre }} ({{ rol }})">
+                            <i class="fa-solid fa-user"></i>
+                            <span class="badge-txt">{{ nombre }} ({{ rol }})</span>
+                        </span>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}" class="logout-link" title="Cerrar sesión">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="btn-admin-crud btn-login">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        <span class="btn-login-txt">Iniciar Sesión</span>
+                    </a>
+                {% endif %}
+
+                <div class="carrito">
+                    <img src="{{ url_for('static', filename='cart.svg') }}" alt="carrito">
+                    <div class="count-products-cart" id="cart-counter">0</div>
+                </div>
             </div>
 
             <!-- Menú lateral para celular -->
@@ -69,15 +155,25 @@
                     <h1 style="color: #0f172a; font-size: 26px;"><i class="fa-solid fa-bolt" style="color: #0ea5e9;"></i> Starwish</h1>
                 </div>
                 <i class="fa-solid fa-xmark btn-close-responsive" id="btn-close-menu"></i>
+                {% if nombre %}<p>Hola, <strong>{{ nombre }}</strong>. Accede a todas las herramientas del sistema.</p>{% endif %}
                 <nav>
                     <ul class="menu-nav-responsive">
                         <li><a href="{{ url_for('menu') }}">Catálogo</a></li>
                         <li><a href="{{ url_for('mapas') }}">Mapas API</a></li>
                         <li><a href="{{ url_for('vista_ubicacion') }}">Ubicación</a></li>
-                        <li><a href="{{ url_for('youtube') }}">Video</a></li>
+                        <li><a href="{{ url_for('youtube') }}">Video / Iframe</a></li>
                         <li><a href="{{ url_for('encuesta') }}">Encuesta</a></li>
                         <li><a href="{{ url_for('vista_fotos') }}">Fotos</a></li>
                         <li><a href="{{ url_for('mensajes') }}">Mensajes</a></li>
+                        {% if rol == 'admin' %}
+                            <li><a href="{{ url_for('crud') }}">Admin CRUD</a></li>
+                            <li><a href="{{ url_for('metrics') }}">Métricas</a></li>
+                        {% endif %}
+                        {% if session.get('usuario_id') %}
+                            <li><a href="{{ url_for('logout') }}" style="color: #ef4444;">Cerrar Sesión</a></li>
+                        {% else %}
+                            <li><a href="{{ url_for('login') }}">Iniciar Sesión</a></li>
+                        {% endif %}
                     </ul>
                 </nav>
             </div>
