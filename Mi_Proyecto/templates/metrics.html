@@ -1,59 +1,191 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Métricas del Sitio</title>
-    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
-    <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
-    <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
-    <style>
-        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 20px 0; }
-        .metric-card { background: #f0f4f9; border-radius: 8px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .metric-card h3 { font-size: 1.8rem; margin: 0; color: #1a73e8; }
-        .metric-card p { margin: 6px 0 0; font-size: 0.85rem; color: #5f6368; font-weight: 500; }
-        .table-wrap { overflow-x: auto; margin-bottom: 25px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; background: #fff; }
-        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e0e0e0; }
-        th { background: #f8f9fa; color: #5f6368; font-weight: 600; }
-        h2 { margin-top: 30px; font-size: 1.3rem; color: #202124; }
-        .barra { display: block; height: 6px; background-color: #1a73e8; border-radius: 3px; margin-top: 6px; }
-        .nota { color: #5f6368; font-size: 0.9rem; margin-bottom: 15px; }
-    </style>
-</head>
-<body>
-    <div data-role="page" id="metricas-page">
-        <div data-role="header" data-theme="b">
-            <a href="{{ url_for('menu') }}" data-icon="back" data-ajax="false">Menú</a>
-            <h1>Métricas del sitio</h1>
+{% extends 'base.html' %}
+{% block title %}Métricas{% endblock %}
+
+{% block content %}
+<main class="container page-main">
+    <div class="mx-head">
+        <div class="page-hero" style="margin: 0;">
+            <h2><i class="fa-solid fa-chart-simple" style="color: #0ea5e9;"></i> Panel de métricas</h2>
+            <p>Ventas y actividad de Starwish en tiempo real.</p>
         </div>
-
-        <div role="main" class="ui-content">
-            <h2>Métricas del sitio</h2>
-            <p class="nota">Se actualiza solo cada 5 segundos. <span id="estado"></span></p>
-
-            <!-- Tarjetas KPI -->
-            <div class="metrics-grid" id="kpis"></div>
-
-            <h2>Actividad reciente</h2>
-            <div class="table-wrap"><table id="tabla-recientes"></table></div>
-
-            <h2>Páginas</h2>
-            <div class="table-wrap"><table id="tabla-paginas"></table></div>
-
-            <h2>¿Dónde hacen clic?</h2>
-            <div class="table-wrap"><table id="tabla-clics"></table></div>
-
-            <h2>Usuarios</h2>
-            <div class="table-wrap"><table id="tabla-usuarios"></table></div>
-
-            <h2>Por carrera</h2>
-            <div class="table-wrap"><table id="tabla-carreras"></table></div>
-        </div>
+        <span class="mx-live" id="estado"><span class="mx-pulse"></span> Conectando…</span>
     </div>
 
-    <!-- Scripts de seguimiento y panel -->
-    <script src="{{ url_for('static', filename='assets/tracker.js') }}"></script>
-    <script src="{{ url_for('static', filename='assets/panel.js') }}"></script>
-</body>
-</html>
+    <!-- ===== KPIs ===== -->
+    <h3 class="mx-section">Ventas</h3>
+    <div class="mx-kpis" id="kpis-ventas"></div>
+
+    <h3 class="mx-section">Tráfico del sitio</h3>
+    <div class="mx-kpis" id="kpis-trafico"></div>
+
+    <!-- ===== Rankings ===== -->
+    <div class="mx-grid">
+        <section class="panel mx-card">
+            <h3><i class="fa-solid fa-trophy"></i> Productos más vendidos</h3>
+            <p class="mx-sub">Piezas vendidas</p>
+            <div class="mx-bars" id="bars-productos"></div>
+        </section>
+        <section class="panel mx-card">
+            <h3><i class="fa-solid fa-face-smile"></i> Satisfacción de clientes</h3>
+            <p class="mx-sub">Respuestas a la encuesta</p>
+            <div class="mx-bars" id="bars-satisfaccion"></div>
+        </section>
+        <section class="panel mx-card">
+            <h3><i class="fa-solid fa-file-lines"></i> Páginas más vistas</h3>
+            <p class="mx-sub">Vistas por página</p>
+            <div class="mx-bars" id="bars-paginas"></div>
+        </section>
+        <section class="panel mx-card">
+            <h3><i class="fa-solid fa-arrow-pointer"></i> ¿Dónde hacen clic?</h3>
+            <p class="mx-sub">Clics por elemento</p>
+            <div class="mx-bars" id="bars-clics"></div>
+        </section>
+    </div>
+
+    <!-- ===== Tablas ===== -->
+    <section class="panel mx-card">
+        <h3><i class="fa-solid fa-clock-rotate-left"></i> Actividad reciente</h3>
+        <div class="mx-table-wrap"><table class="mx-table" id="tabla-recientes"></table></div>
+    </section>
+
+    <section class="panel mx-card">
+        <h3><i class="fa-solid fa-users"></i> Usuarios</h3>
+        <div class="mx-table-wrap"><table class="mx-table" id="tabla-usuarios"></table></div>
+    </section>
+
+    <div class="mx-tip" id="mx-tip" role="tooltip" hidden></div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const fmtNum = n => Number(n || 0).toLocaleString('es-MX');
+    const fmtDinero = n => Number(n || 0).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+    function duracion(seg) {
+        seg = Math.round(Number(seg) || 0);
+        const m = Math.floor(seg / 60), s = seg % 60;
+        return m > 0 ? `${m} min ${s} s` : `${s} s`;
+    }
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    // ---------- Tarjetas KPI ----------
+    function kpis(id, lista) {
+        document.getElementById(id).innerHTML = lista.map(([icono, titulo, valor]) => `
+            <div class="mx-kpi">
+                <span class="mx-kpi-icon"><i class="fa-solid ${icono}"></i></span>
+                <div>
+                    <p class="mx-kpi-label">${titulo}</p>
+                    <p class="mx-kpi-value">${valor}</p>
+                </div>
+            </div>`).join('');
+    }
+
+    // ---------- Barras horizontales (una sola serie) ----------
+    function barras(id, filas, etiqueta, valor, formato, extra) {
+        const cont = document.getElementById(id);
+        if (!filas || !filas.length) {
+            cont.innerHTML = '<p class="mx-empty">Sin datos todavía.</p>';
+            return;
+        }
+        const max = Math.max(...filas.map(f => Number(f[valor]) || 0), 1);
+        cont.innerHTML = filas.map(f => {
+            const v = Number(f[valor]) || 0;
+            const pct = Math.max((v / max) * 100, 1.5);
+            const tip = `${etiqueta(f)}: ${formato(v)}${extra ? ' · ' + extra(f) : ''}`;
+            return `
+            <div class="mx-bar-row" data-tip="${esc(tip)}" tabindex="0">
+                <span class="mx-bar-label">${esc(etiqueta(f))}</span>
+                <span class="mx-bar-track"><span class="mx-bar" style="width:${pct}%"></span></span>
+                <span class="mx-bar-value">${formato(v)}</span>
+            </div>`;
+        }).join('');
+    }
+
+    // ---------- Tablas ----------
+    function tabla(id, encabezados, filas, convertir) {
+        const t = document.getElementById(id);
+        const head = '<thead><tr>' + encabezados.map(h => `<th>${h}</th>`).join('') + '</tr></thead>';
+        const body = (!filas || !filas.length)
+            ? `<tr><td colspan="${encabezados.length}" class="mx-empty">Sin datos todavía.</td></tr>`
+            : filas.map(f => '<tr>' + convertir(f).map(c => `<td>${c}</td>`).join('') + '</tr>').join('');
+        t.innerHTML = head + '<tbody>' + body + '</tbody>';
+    }
+
+    const TIPOS = {
+        vista:  '<span class="tag"><i class="fa-regular fa-eye"></i> vista</span>',
+        clic:   '<span class="tag tag-fit"><i class="fa-solid fa-arrow-pointer"></i> clic</span>',
+        tiempo: '<span class="tag"><i class="fa-regular fa-clock"></i> tiempo</span>'
+    };
+
+    async function cargar() {
+        const estado = document.getElementById('estado');
+        try {
+            const r = await fetch('/api/metricas');
+            if (!r.ok) throw new Error();
+            const d = await r.json();
+            const v = d.ventas || {};
+            const pedidos = Number(v.pedidos) || 0;
+
+            kpis('kpis-ventas', [
+                ['fa-sack-dollar', 'Ingresos (IVA inc.)', fmtDinero(v.ingresos)],
+                ['fa-receipt', 'Pedidos', fmtNum(pedidos)],
+                ['fa-shirt', 'Piezas vendidas', fmtNum(v.piezas)],
+                ['fa-tag', 'Ticket promedio', fmtDinero(pedidos ? Number(v.ingresos) / pedidos : 0)]
+            ]);
+            const res = d.resumen || {};
+            kpis('kpis-trafico', [
+                ['fa-user-group', 'Visitantes únicos', fmtNum(res.visitantes)],
+                ['fa-eye', 'Páginas vistas', fmtNum(res.vistas)],
+                ['fa-arrow-pointer', 'Clics', fmtNum(res.clics)],
+                ['fa-stopwatch', 'Tiempo promedio', duracion(res.tiempo_promedio)]
+            ]);
+
+            barras('bars-productos', d.top_productos, f => f.nombre, 'piezas', fmtNum,
+                   f => fmtDinero(f.ingresos) + ' en ventas');
+            barras('bars-satisfaccion', d.satisfaccion, f => f.respuesta, 'total', n => fmtNum(n));
+            barras('bars-paginas', d.paginas, f => f.pagina, 'vistas', fmtNum,
+                   f => `${fmtNum(f.clics)} clics · ${duracion(f.segundos)}`);
+            barras('bars-clics', d.clics, f => f.elemento, 'total', fmtNum, f => 'en ' + f.pagina);
+
+            tabla('tabla-recientes', ['Hora', 'Quién', 'Qué', 'Página', 'Detalle'], d.recientes, f => [
+                esc(f.hora), esc(f.nombre), TIPOS[f.tipo] || esc(f.tipo), esc(f.pagina),
+                f.tipo === 'clic' ? esc(f.elemento) : f.tipo === 'tiempo' ? duracion(f.segundos) : ''
+            ]);
+            tabla('tabla-usuarios', ['Nombre', 'Sesiones', 'Vistas', 'Clics', 'Tiempo', 'Última actividad'], d.usuarios, f => [
+                `<strong>${esc(f.nombre)}</strong>`, fmtNum(f.sesiones), fmtNum(f.vistas), fmtNum(f.clics),
+                duracion(f.segundos), esc(f.ultima)
+            ]);
+
+            estado.classList.remove('is-error');
+            estado.innerHTML = `<span class="mx-pulse"></span> En vivo · ${new Date().toLocaleTimeString('es-MX')}`;
+        } catch (e) {
+            estado.classList.add('is-error');
+            estado.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Sin conexión';
+        }
+    }
+
+    // ---------- Tooltip de las barras ----------
+    const tip = document.getElementById('mx-tip');
+    function mostrarTip(row, x, y) {
+        tip.textContent = row.dataset.tip;
+        tip.hidden = false;
+        const w = tip.offsetWidth;
+        tip.style.left = Math.min(Math.max(x - w / 2, 8), window.innerWidth - w - 8) + 'px';
+        tip.style.top = (y - tip.offsetHeight - 12) + 'px';
+    }
+    document.addEventListener('mousemove', e => {
+        const row = e.target.closest('.mx-bar-row');
+        if (row) mostrarTip(row, e.clientX, e.clientY); else tip.hidden = true;
+    });
+    document.addEventListener('focusin', e => {
+        const row = e.target.closest('.mx-bar-row');
+        if (!row) return;
+        const b = row.getBoundingClientRect();
+        mostrarTip(row, b.left + b.width / 2, b.top);
+    });
+    document.addEventListener('focusout', () => { tip.hidden = true; });
+
+    cargar();
+    setInterval(cargar, 5000);
+</script>
+{% endblock %}
