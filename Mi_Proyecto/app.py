@@ -622,7 +622,7 @@ def mapas():
 def youtube():
     if 'usuario_id' not in session:
         return redirect(url_for('login'))
-    return render_template('youtube.html', video_id="vK9he9d-JN0")
+    return render_template('youtube.html', video_id="O6D5wlZfZOw")
 
 @app.route('/ubicacion')
 def vista_ubicacion():
