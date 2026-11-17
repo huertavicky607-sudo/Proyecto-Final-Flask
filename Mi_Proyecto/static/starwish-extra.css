@@ -484,9 +484,6 @@
     border-radius: 20px;
 }
 .card-producto-relacionado .image-product img { width: 100%; height: 100%; object-fit: contain; padding: 10px; }
-@media (max-width: 420px) {
-    .cards-productos-relacionados { grid-template-columns: 1fr; }
-}
 
 /* ---------- DETALLE DE PRODUCTO ---------- */
 .imagen-principal {
@@ -1440,3 +1437,43 @@
     .sp-chat { height: 60vh; }
 }
 @media (prefers-reduced-motion: reduce) { .sp-typing span { animation: none; } }
+
+/* ---------- CATÁLOGO EN CELULAR: 2 columnas compactas ----------
+   Toda la tarjeta ya es un enlace al producto, así que el botón
+   "Ver y Comprar" sobre la foto se oculta para que respire. */
+@media (max-width: 600px) {
+    .cards-productos-relacionados { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .card-producto-relacionado { padding: 8px; border-radius: 16px; position: relative; }
+    .card-producto-relacionado:hover { transform: none; }
+    .card-producto-relacionado .image-product { border-radius: 12px; }
+    .card-producto-relacionado .image-product img { padding: 6px; }
+    .card-producto-relacionado .image-product .button-group { display: none; }
+    .card-producto-relacionado .info-product { gap: 8px; padding: 10px 4px 4px; }
+    .card-producto-relacionado .container-title { gap: 2px; }
+    .card-producto-relacionado .container-title h4 {
+        font-size: 14px;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .card-producto-relacionado .container-title p { display: none; }
+    .card-producto-relacionado .container-price {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+    .card-producto-relacionado .container-price span {
+        border: none;
+        padding: 0;
+        font-size: 16px;
+        color: #16a34a;
+    }
+    .card-producto-relacionado .container-price p { font-size: 12px !important; color: #94a3b8; }
+}
+/* Celulares muy angostos (menos de 340 px): una prenda por fila */
+@media (max-width: 340px) {
+    .cards-productos-relacionados { grid-template-columns: 1fr; }
+}
