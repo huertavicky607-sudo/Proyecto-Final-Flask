@@ -4,17 +4,21 @@
 {% block content %}
 <main class="container page-main">
     <div class="page-hero">
-        <h2>Video</h2>
-        <p>Contenido multimedia de Starwish.</p>
+        <h2><i class="fa-brands fa-youtube" style="color: #ef4444;"></i> Conoce Starwish</h2>
+        <p>Mira nuestras prendas en movimiento y encuentra tu próximo favorito.</p>
     </div>
 
     <div class="panel">
         <div class="video-container">
-            <iframe src="https://www.youtube.com/embed/{{ video_id }}"
-                    title="Reproductor de video"
+            <iframe src="https://www.youtube-nocookie.com/embed/{{ video_id }}?rel=0"
+                    title="Video promocional de Starwish"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowfullscreen>
             </iframe>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 22px;">
+            <a href="{{ url_for('menu') }}#catalogo" class="btn-primary-pill"><i class="fa-solid fa-bag-shopping"></i> Ver el catálogo</a>
+            <a href="https://youtu.be/{{ video_id }}" target="_blank" rel="noopener" class="btn-outline-pill"><i class="fa-brands fa-youtube"></i> Ver en YouTube</a>
         </div>
     </div>
 </main>
