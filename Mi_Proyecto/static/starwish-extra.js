@@ -479,7 +479,9 @@ window.swPago = function ({ total, unidades = 1, pagar }) {
 
 /* ---------- Aviso de cookies ----------
    sw_cookies = 'todas' (acepta métricas) | 'necesarias' (solo sesión y carrito).
-   Se puede volver a abrir desde el enlace "Cookies" del pie de página. */
+   Es una cookie de sesión (sin max-age): la respuesta se recuerda mientras
+   el navegador esté abierto, y el aviso vuelve a salir en cada nueva visita.
+   Se puede volver a abrir desde "Preferencias de cookies" en el pie de página. */
 window.swConsentimiento = function () {
     const c = document.cookie.split('; ').find(x => x.startsWith('sw_cookies='));
     return c ? c.split('=')[1] : null;
@@ -489,7 +491,7 @@ window.swConsentimiento = function () {
     if (!banner) return;
 
     function guardar(valor) {
-        document.cookie = 'sw_cookies=' + valor + '; max-age=31536000; path=/; SameSite=Lax';
+        document.cookie = 'sw_cookies=' + valor + '; path=/; SameSite=Lax';
         banner.classList.remove('show');
         setTimeout(() => { banner.hidden = true; }, 300);
         document.dispatchEvent(new CustomEvent('sw-consentimiento', { detail: valor }));
