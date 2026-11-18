@@ -7,7 +7,9 @@
     <link rel="icon" type="image/png" sizes="64x64" href="{{ url_for('static', filename='images/favicon-gato.png') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='starwish.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='starwish-extra.css') }}">
+    {# Sube este número cada vez que cambies el CSS o JS, para que los navegadores no usen la versión vieja #}
+    {% set v = '7' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='starwish-extra.css', v=v) }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     {% block head %}{% endblock %}
 </head>
@@ -163,8 +165,8 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='starwish-extra.js') }}"></script>
+    <script src="{{ url_for('static', filename='starwish-extra.js', v=v) }}"></script>
     {% block scripts %}{% endblock %}
-    <script src="{{ url_for('static', filename='assets/tracker.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/tracker.js', v=v) }}"></script>
 </body>
 </html>
